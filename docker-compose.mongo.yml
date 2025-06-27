@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  product-service-db:
+    image: mongo:6.0
+    container_name: product-service-db
+    restart: unless-stopped
+    ports:
+      - '27019:27017'
+    environment:
+      MONGO_INITDB_DATABASE: product-service-db
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: mongopassword
+    volumes:
+      - product-service-db-data:/data/db
+volumes:
+  product-service-db-data:
