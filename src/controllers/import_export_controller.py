@@ -11,8 +11,21 @@ from src.core.logger import logger
 async def import_products(content: bytes, filetype: str, collection, acting_user=None):
     """
     Import products from CSV or JSON file content.
+    
+    Args:
+        content: File content as bytes
+        filetype: File format ("csv" or "json")
+        collection: MongoDB collection instance
+        acting_user: User performing the import (optional)
+    
+    Returns:
+        List[ProductDB]: List of successfully imported products
+    
+    Raises:
+        ErrorResponse: If file type unsupported, format invalid, or database error
     """
     try:
+        # Validate file type
         if filetype not in ["csv", "json"]:
             raise ErrorResponse("Unsupported file type. Only CSV and JSON are supported.", status_code=400)
         
@@ -38,7 +51,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                     "attributes": json.loads(row.get("attributes", "{}")) if row.get("attributes") else {},
                 }
                 
-                # Validate required fields
+                # Validate required fields and business rules
                 if not product_data["name"] or product_data["price"] < 0 or product_data["in_stock"] < 0:
                     logger.warning(f"Invalid product data in CSV: {product_data}", extra={"event": "import_validation_error"})
                     continue
@@ -50,11 +63,13 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
             content_str = content.decode('utf-8')
             json_data = json.loads(content_str)
             
+            # Validate JSON structure
             if isinstance(json_data, list):
                 products_data = json_data
             else:
                 raise ErrorResponse("JSON file must contain an array of products.", status_code=400)
         
+        # Validate we have products to import
         if not products_data:
             raise ErrorResponse("No valid products found in the file.", status_code=400)
         
@@ -69,7 +84,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                         logger.warning(f"Skipping duplicate SKU: {product_data['sku']}", extra={"event": "duplicate_sku_import"})
                         continue
                 
-                # Add metadata
+                # Add metadata and defaults
                 product_data["created_at"] = datetime.now(timezone.utc)
                 product_data["updated_at"] = datetime.now(timezone.utc)
                 product_data["is_active"] = True
@@ -80,7 +95,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                 product_data["reviews"] = []
                 product_data["variants"] = product_data.get("variants", [])
                 
-                # Insert product
+                # Insert product into database
                 result = await collection.insert_one(product_data)
                 doc = await collection.find_one({"_id": result.inserted_id})
                 imported_products.append(product_doc_to_model(doc))
@@ -89,6 +104,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                 logger.error(f"Error importing product: {e}", extra={"event": "import_product_error", "product": product_data})
                 continue
         
+        # Log successful import
         logger.info(f"Imported {len(imported_products)} products", extra={"event": "import_products", "count": len(imported_products)})
         return imported_products
         
@@ -104,13 +120,24 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
 
 async def export_products(collection, filetype: str = "json"):
     """
-    Export products as JSON or CSV format.
+    Export products in JSON or CSV format.
+    
+    Args:
+        collection: MongoDB collection instance
+        filetype: Export format ("json" or "csv")
+    
+    Returns:
+        str: Exported product data as formatted string
+    
+    Raises:
+        ErrorResponse: If file type unsupported or database error
     """
     try:
+        # Validate export format
         if filetype not in ["csv", "json"]:
             raise ErrorResponse("Unsupported export type. Only CSV and JSON are supported.", status_code=400)
         
-        # Fetch all active products
+        # Fetch all active products from database
         cursor = collection.find({"is_active": True})
         products = []
         
@@ -124,10 +151,12 @@ async def export_products(collection, filetype: str = "json"):
         logger.info(f"Found {len(products)} products to export", extra={"event": "export_products_found", "count": len(products)})
         
         if filetype == "json":
-            # Convert ObjectId to string for JSON serialization
+            # Convert to JSON format with proper serialization
             try:
                 for product in products:
+                    # Convert ObjectId to string for JSON serialization
                     product["_id"] = str(product["_id"])
+                    
                     # Handle datetime objects properly
                     if isinstance(product.get("created_at"), datetime):
                         product["created_at"] = product["created_at"].isoformat()
@@ -139,7 +168,7 @@ async def export_products(collection, filetype: str = "json"):
                     else:
                         product["updated_at"] = product.get("updated_at", datetime.now(timezone.utc)).isoformat()
                     
-                    # Handle any datetime objects in history
+                    # Handle datetime objects in history
                     if "history" in product and isinstance(product["history"], list):
                         for history_entry in product["history"]:
                             if isinstance(history_entry.get("updated_at"), datetime):
@@ -165,6 +194,7 @@ async def export_products(collection, filetype: str = "json"):
                     writer = csv.DictWriter(output, fieldnames=headers)
                     writer.writeheader()
                     
+                    # Convert each product to CSV row
                     for product in products:
                         try:
                             row = {
@@ -195,6 +225,7 @@ async def export_products(collection, filetype: str = "json"):
                 logger.error(f"Error creating CSV content: {e}", extra={"event": "export_csv_error"})
                 raise ErrorResponse("Error formatting products as CSV.", status_code=500)
         
+        # Log successful export
         logger.info(f"Exported {len(products)} products as {filetype}", extra={"event": "export_products", "count": len(products), "format": filetype})
         
     except ErrorResponse:
@@ -208,7 +239,15 @@ async def export_products(collection, filetype: str = "json"):
         raise ErrorResponse("An unexpected error occurred during export.", status_code=500)
 
 def product_doc_to_model(doc):
-    """Convert MongoDB document to ProductDB model"""
+    """
+    Convert MongoDB document to ProductDB model.
+    
+    Args:
+        doc: MongoDB document dictionary
+    
+    Returns:
+        ProductDB: Product model object with all fields populated
+    """
     return ProductDB(
         id=str(doc["_id"]),
         name=doc["name"],
