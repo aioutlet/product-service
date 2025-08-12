@@ -11,9 +11,10 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 
 from src.routers import product_router, home_router
+from src.controllers import operational_controller
 from src.routers.review_router import limiter  # Import limiter from review_router since that's where rate limiting is used
 from src.core.errors import error_response_handler, http_exception_handler, ErrorResponse
-from src.core.standard_logger import logger
+from src.core.logger import logger
 from src.middlewares.correlation_id import CorrelationIdMiddleware
 
 # Load environment variables once at the entrypoint
@@ -49,6 +50,12 @@ logging.basicConfig(level=logging.INFO)
 # Include routers
 app.include_router(product_router, prefix="/api/products", tags=["products"])
 app.include_router(home_router, prefix="/api/home", tags=["home"])
+
+# Operational endpoints for infrastructure/monitoring
+app.get("/health")(operational_controller.health)
+app.get("/health/ready")(operational_controller.readiness)
+app.get("/health/live")(operational_controller.liveness)
+app.get("/metrics")(operational_controller.metrics)
 
 # Add SlowAPI middleware for rate limiting
 app.add_middleware(SlowAPIMiddleware)
