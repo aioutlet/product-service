@@ -7,3 +7,5 @@ python-jose
 python-multipart
 pytest
 pytest-asyncio
+slowapi
+httpx
