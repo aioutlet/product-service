@@ -17,12 +17,7 @@ class ProductValidatorMixin:
             raise ValueError('Price must be greater than 0')
         return v
 
-    @field_validator('in_stock')
-    @classmethod
-    def stock_valid(cls, v):
-        if v is not None and v < 0:
-            raise ValueError('Stock must be zero or positive')
-        return v
+    # Removed in_stock validator - inventory management is handled by inventory-service
 
     @field_validator('category')
     @classmethod

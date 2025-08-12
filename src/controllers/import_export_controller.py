@@ -42,7 +42,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                     "name": row.get("name", "").strip(),
                     "description": row.get("description", "").strip(),
                     "price": float(row.get("price", 0)),
-                    "in_stock": int(row.get("in_stock", 0)),
+                    # Removed in_stock field - inventory management is handled by inventory-service
                     "category": row.get("category", "").strip(),
                     "brand": row.get("brand", "").strip(),
                     "sku": row.get("sku", "").strip(),
@@ -52,7 +52,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                 }
                 
                 # Validate required fields and business rules
-                if not product_data["name"] or product_data["price"] < 0 or product_data["in_stock"] < 0:
+                if not product_data["name"] or product_data["price"] < 0:
                     logger.warning(f"Invalid product data in CSV: {product_data}", extra={"event": "import_validation_error"})
                     continue
                     
@@ -184,9 +184,9 @@ async def export_products(collection, filetype: str = "json"):
             output = io.StringIO()
             try:
                 if products:
-                    # Define CSV headers
+                    # Define CSV headers (removed in_stock - handled by inventory-service)
                     headers = [
-                        "id", "name", "description", "price", "in_stock", "category", 
+                        "id", "name", "description", "price", "category", 
                         "brand", "sku", "tags", "images", "attributes", "average_rating",
                         "num_reviews", "created_by", "created_at", "updated_at"
                     ]
@@ -202,7 +202,7 @@ async def export_products(collection, filetype: str = "json"):
                                 "name": product.get("name", ""),
                                 "description": product.get("description", ""),
                                 "price": product.get("price", 0),
-                                "in_stock": product.get("in_stock", 0),
+                                # Removed in_stock field - inventory management is handled by inventory-service
                                 "category": product.get("category", ""),
                                 "brand": product.get("brand", ""),
                                 "sku": product.get("sku", ""),
@@ -253,7 +253,7 @@ def product_doc_to_model(doc):
         name=doc["name"],
         description=doc.get("description"),
         price=doc["price"],
-        in_stock=doc["in_stock"],
+        # Removed in_stock field - inventory management is handled by inventory-service
         category=doc.get("category"),
         brand=doc.get("brand"),
         sku=doc.get("sku"),

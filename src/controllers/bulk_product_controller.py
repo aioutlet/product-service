@@ -44,8 +44,8 @@ async def bulk_create_products(products: List[ProductCreate], collection, acting
     docs = []
     for product in products:
         # Validate business rules
-        if product.price < 0 or product.in_stock < 0:
-            raise ErrorResponse("Price and stock must be non-negative.", status_code=400)
+        if product.price < 0:
+            raise ErrorResponse("Price must be non-negative.", status_code=400)
         
         # Transform and enrich product data
         data = product.dict()

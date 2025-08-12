@@ -13,7 +13,7 @@ class ProductBase(ProductValidatorMixin, BaseModel):
     name: str
     description: Optional[str] = None
     price: float
-    in_stock: int
+    # Removed in_stock field - inventory management is handled by inventory-service
     category: Optional[str] = None
     brand: Optional[str] = None
     sku: Optional[str] = None

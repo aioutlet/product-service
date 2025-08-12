@@ -189,8 +189,8 @@ async def create_product(product: ProductCreate, collection, acting_user=None):
                 raise ErrorResponse("A product with this SKU already exists.", status_code=400)
         
         # Validate business rules
-        if product.price < 0 or product.in_stock < 0:
-            raise ErrorResponse("Price and stock must be non-negative.", status_code=400)
+        if product.price < 0:
+            raise ErrorResponse("Price must be non-negative.", status_code=400)
         
         # Prepare product data for insertion
         data = product.dict()
@@ -242,8 +242,7 @@ async def update_product(product_id, product: ProductUpdate, collection, acting_
         # Validate business rules
         if "price" in update_data and update_data["price"] < 0:
             raise ErrorResponse("Price must be non-negative.", status_code=400)
-        if "in_stock" in update_data and update_data["in_stock"] < 0:
-            raise ErrorResponse("Stock must be non-negative.", status_code=400)
+        # Removed in_stock validation - inventory management is handled by inventory-service
         
         # Prevent duplicate SKU
         if "sku" in update_data:
@@ -428,7 +427,7 @@ def product_doc_to_model(doc):
         name=doc["name"],
         description=doc.get("description"),
         price=doc["price"],
-        in_stock=doc["in_stock"],
+        # Removed in_stock field - inventory management is handled by inventory-service
         category=doc.get("category"),
         brand=doc.get("brand"),
         sku=doc.get("sku"),
