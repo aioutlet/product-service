@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from src.routers import product_router, home_router
 from src.routers.review_router import limiter  # Import limiter from review_router since that's where rate limiting is used
 from src.core.errors import error_response_handler, http_exception_handler, ErrorResponse
-from src.core.logger import logger
+from src.core.standard_logger import logger
 from src.middlewares.correlation_id import CorrelationIdMiddleware
 
 # Load environment variables once at the entrypoint
