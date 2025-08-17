@@ -1,0 +1,109 @@
+# Dependabot configuration for product-service
+# This configuration will automatically check for dependency updates
+# and create pull requests when new versions are available.
+#
+# For more information, see:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # Enable version updates for pip dependencies
+  - package-ecosystem: 'pip'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Etc/UTC'
+    open-pull-requests-limit: 10
+    assignees:
+      - 'product-service-team'
+    commit-message:
+      prefix: 'deps'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+    # Group related updates together to reduce PR noise
+    groups:
+      # Group FastAPI ecosystem
+      fastapi-ecosystem:
+        patterns:
+          - 'fastapi'
+          - 'uvicorn'
+          - 'slowapi'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group MongoDB-related updates
+      mongodb-ecosystem:
+        patterns:
+          - 'motor'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group validation and data handling
+      validation-ecosystem:
+        patterns:
+          - 'pydantic'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group authentication packages
+      auth-ecosystem:
+        patterns:
+          - 'python-jose'
+          - 'python-multipart'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group testing-related updates
+      testing-ecosystem:
+        patterns:
+          - 'pytest'
+          - 'pytest-asyncio'
+          - 'httpx'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group utility packages
+      utilities:
+        patterns:
+          - 'python-dotenv'
+        update-types:
+          - 'minor'
+          - 'patch'
+
+  # Enable version updates for Docker
+  - package-ecosystem: 'docker'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Etc/UTC'
+    open-pull-requests-limit: 5
+    assignees:
+      - 'product-service-team'
+    commit-message:
+      prefix: 'docker'
+      include: 'scope'
+    labels:
+      - 'docker'
+      - 'infrastructure'
+
+  # Enable version updates for GitHub Actions (if any workflows are added later)
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Etc/UTC'
+    open-pull-requests-limit: 5
+    assignees:
+      - 'product-service-team'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
+    labels:
+      - 'github-actions'
