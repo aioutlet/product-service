@@ -1,21 +1,26 @@
-import os
 import logging
+import os
+
 import uvicorn
 from dotenv import load_dotenv
-
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
-
-from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
-from src.routers import product_router, home_router
 from src.controllers import operational_controller
-from src.routers.review_router import limiter  # Import limiter from review_router since that's where rate limiting is used
-from src.core.errors import error_response_handler, http_exception_handler, ErrorResponse
+from src.core.errors import (
+    ErrorResponse,
+    error_response_handler,
+    http_exception_handler,
+)
 from src.core.logger import logger
 from src.middlewares.correlation_id import CorrelationIdMiddleware
+from src.routers import home_router, product_router
+
+# Import limiter from review_router since that's where rate limiting is used
+from src.routers.review_router import limiter
 
 # Load environment variables once at the entrypoint
 load_dotenv()
@@ -32,17 +37,21 @@ app.state.limiter = limiter
 app.add_exception_handler(ErrorResponse, error_response_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 
+
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.error(f"Validation error: {exc.errors()}", extra={"event": "validation_error"})
-    return JSONResponse(
-        status_code=422,
-        content={"error": "Validation error", "details": exc.errors()}
+    logger.error(
+        f"Validation error: {exc.errors()}", extra={"event": "validation_error"}
     )
+    return JSONResponse(
+        status_code=422, content={"error": "Validation error", "details": exc.errors()}
+    )
+
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return PlainTextResponse("Rate limit exceeded", status_code=429)
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -63,4 +72,4 @@ app.add_middleware(SlowAPIMiddleware)
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     logger.info(f"Product service running on port {port}")
-    uvicorn.run("src.main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=port, reload=True)  # nosec B104

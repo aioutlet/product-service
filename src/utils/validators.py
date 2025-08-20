@@ -1,5 +1,6 @@
-from bson.objectid import ObjectId
 from bson.errors import InvalidId
+from bson.objectid import ObjectId
+
 
 def validate_object_id(value: str) -> ObjectId:
     try:

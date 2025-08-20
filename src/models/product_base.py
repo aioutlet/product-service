@@ -1,13 +1,18 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
 from datetime import datetime
-from .review import Review
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
 from src.validators.product_validators import ProductValidatorMixin
+
+from .review import Review
+
 
 class ProductHistoryEntry(BaseModel):
     updated_by: str
     updated_at: datetime
     changes: Dict[str, str]  # field: new_value
+
 
 class ProductBase(ProductValidatorMixin, BaseModel):
     name: str

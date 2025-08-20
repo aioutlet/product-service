@@ -1,0 +1,117 @@
+[
+  {
+    "id": "gg0e8400-e29b-41d4-a716-446655440001",
+    "name": "Sony",
+    "slug": "sony",
+    "description": "Leading electronics and entertainment company",
+    "website_url": "https://sony.com",
+    "logo_url": "https://example.com/vendors/sony.png",
+    "contact_email": "contact@sony.com",
+    "contact_phone": "+1-800-222-7669",
+    "address": {
+      "street": "550 Madison Avenue",
+      "city": "New York",
+      "state": "NY",
+      "zip": "10022",
+      "country": "US"
+    },
+    "is_verified": true,
+    "is_active": true,
+    "rating": 4.6,
+    "total_products": 1,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "gg0e8400-e29b-41d4-a716-446655440002",
+    "name": "ASUS",
+    "slug": "asus",
+    "description": "Computer and electronics manufacturer",
+    "website_url": "https://asus.com",
+    "logo_url": "https://example.com/vendors/asus.png",
+    "contact_email": "support@asus.com",
+    "contact_phone": "+1-888-678-3688",
+    "address": {
+      "street": "48720 Kato Road",
+      "city": "Fremont",
+      "state": "CA",
+      "zip": "94538",
+      "country": "US"
+    },
+    "is_verified": true,
+    "is_active": true,
+    "rating": 4.4,
+    "total_products": 1,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "gg0e8400-e29b-41d4-a716-446655440003",
+    "name": "Louis Vuitton",
+    "slug": "louis-vuitton",
+    "description": "Luxury fashion and leather goods",
+    "website_url": "https://louisvuitton.com",
+    "logo_url": "https://example.com/vendors/lv.png",
+    "contact_email": "customercare@louisvuitton.com",
+    "contact_phone": "+1-866-884-8866",
+    "address": {
+      "street": "1 E 57th St",
+      "city": "New York",
+      "state": "NY",
+      "zip": "10022",
+      "country": "US"
+    },
+    "is_verified": true,
+    "is_active": true,
+    "rating": 4.8,
+    "total_products": 1,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "gg0e8400-e29b-41d4-a716-446655440004",
+    "name": "Herman Miller",
+    "slug": "herman-miller",
+    "description": "Office furniture and design solutions",
+    "website_url": "https://hermanmiller.com",
+    "logo_url": "https://example.com/vendors/hm.png",
+    "contact_email": "info@hermanmiller.com",
+    "contact_phone": "+1-888-443-4357",
+    "address": {
+      "street": "855 East Main Ave",
+      "city": "Zeeland",
+      "state": "MI",
+      "zip": "49464",
+      "country": "US"
+    },
+    "is_verified": true,
+    "is_active": true,
+    "rating": 4.7,
+    "total_products": 1,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "gg0e8400-e29b-41d4-a716-446655440005",
+    "name": "Microsoft",
+    "slug": "microsoft",
+    "description": "Technology and software company",
+    "website_url": "https://microsoft.com",
+    "logo_url": "https://example.com/vendors/microsoft.png",
+    "contact_email": "support@microsoft.com",
+    "contact_phone": "+1-800-642-7676",
+    "address": {
+      "street": "One Microsoft Way",
+      "city": "Redmond",
+      "state": "WA",
+      "zip": "98052",
+      "country": "US"
+    },
+    "is_verified": true,
+    "is_active": true,
+    "rating": 4.5,
+    "total_products": 1,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]

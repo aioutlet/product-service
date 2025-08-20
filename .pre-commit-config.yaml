@@ -1,0 +1,126 @@
+# Pre-commit hooks for security hardening
+# Run: pre-commit install to set up the hooks
+# Run: pre-commit run --all-files to test all files
+
+repos:
+  # General code quality and security
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1024'] # Prevent files larger than 1MB
+      - id: detect-private-key
+      - id: check-case-conflict
+
+  # Secret detection - Yelp's detect-secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: ^(package-lock\.json|\.secrets\.baseline)$
+
+  # Python security - Bandit
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        args: ['-r', 'src/']
+        exclude: ^tests/
+
+  # Python dependency security - Safety
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.4.2
+    hooks:
+      - id: python-safety-dependencies-check
+        files: requirements.*\.txt$
+
+  # TruffleHog for secret scanning
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.90.5
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        description: Detect secrets in your data.
+        entry: bash -c 'trufflehog git file://. --since-commit HEAD --only-verified --fail'
+        language: system
+        stages: ['pre-commit', 'pre-push']
+
+  # Python code formatting and linting
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        args: ['--profile', 'black']
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+        args: [--max-line-length=88, --ignore=E203, W503, E902]
+
+  # Docker security scanning
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.13.1-beta
+    hooks:
+      - id: hadolint
+        args: [--ignore, DL3008, --ignore, DL3009]
+
+  # YAML linting
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+        args: [-d, '{extends: relaxed, rules: {line-length: {max: 120}}}']
+
+  # Custom patterns for additional secret detection
+  - repo: local
+    hooks:
+      - id: custom-secret-patterns
+        name: Custom Secret Patterns
+        entry: >
+          bash -c 'grep -rn --exclude-dir=.git --exclude-dir=node_modules
+          --exclude="*.log" -E
+          "(password|passwd|pwd|secret|key|token|auth|credential|private).*[=:]\s*[\"'\''`][^\"'\''`\s]{8,}" .
+          && echo "Potential secrets detected!" && exit 1 || exit 0'
+        language: system
+        pass_filenames: false
+
+  # Check for TODO/FIXME comments before commit
+  - repo: local
+    hooks:
+      - id: check-todos
+        name: Check for TODO/FIXME
+        entry: >
+          bash -c 'grep -rn --exclude-dir=.git --exclude-dir=node_modules
+          -E "(TODO|FIXME|XXX|HACK)" . && echo "Please resolve TODO/FIXME comments before committing"
+          && exit 1 || exit 0'
+        language: system
+        pass_filenames: false
+        stages: [pre-push] # Only run on push, not commit
+
+  # Environment file security check
+  - repo: local
+    hooks:
+      - id: env-file-check
+        name: Environment File Security Check
+        entry: >
+          bash -c 'find . -name "*.env*" -not -name "*.env.example"
+          -exec echo "Environment file {} should not be committed!" \;
+          -exec exit 1 \; 2>/dev/null || exit 0'
+        language: system
+        pass_filenames: false

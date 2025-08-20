@@ -1,12 +1,16 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 from src.validators.review_validators import ReviewValidatorMixin
+
 
 class ReviewReport(BaseModel):
     reported_by: str
     reason: str
     reported_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 class Review(ReviewValidatorMixin, BaseModel):
     user_id: str

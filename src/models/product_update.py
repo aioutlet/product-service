@@ -1,7 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
 from datetime import datetime
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
 from src.validators.product_validators import ProductValidatorMixin
+
 
 class ProductUpdate(ProductValidatorMixin, BaseModel):
     name: Optional[str] = None
