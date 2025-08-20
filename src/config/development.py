@@ -16,7 +16,8 @@ class DevelopmentConfig:
     # Database Configuration - MongoDB
     DATABASE_URL = os.getenv(
         "DATABASE_URL",
-        "mongodb://admin:admin123@localhost:27018/products_db",  # pragma: allowlist secret
+        # Default MongoDB connection for development
+        "mongodb://admin:admin123@localhost:27018/products_db",  # pragma: allowlist secret  # noqa: E501
     )
     DATABASE_NAME = os.getenv("DATABASE_NAME", "products_db")
 
