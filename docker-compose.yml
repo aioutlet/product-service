@@ -1,0 +1,66 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: product-service-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: mongo_dev_pass_123
+      MONGO_INITDB_DATABASE: product_service_dev
+    ports:
+      - '27018:27017'
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - aioutlet-network
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: product-service-docker
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      - PYTHON_ENV=development
+      - DB_HOST=mongodb
+      - DB_PORT=27017
+      - DB_NAME=product_service_dev
+      - DB_USER=admin
+      - DB_PASSWORD=mongo_dev_pass_123
+      - MONGODB_URL=mongodb://admin:mongo_dev_pass_123@mongodb:27017/product_service_dev?authSource=admin
+      - RABBITMQ_URL=amqp://admin:admin123@aioutlet-rabbitmq:5672/
+      - REDIS_URL=redis://:redis_dev_pass_123@aioutlet-redis:6379/1
+      - JWT_SECRET=product-service-jwt-secret-development
+      - LOG_LEVEL=debug
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:4000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - aioutlet-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  aioutlet-network:
+    external: true
+    name: aioutlet-network

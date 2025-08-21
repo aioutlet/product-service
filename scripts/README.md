@@ -9,15 +9,42 @@ This directory contains scripts to set up comprehensive security scanning and pr
 **Linux/macOS:**
 
 ```bash
-chmod +x scripts/setup-precommit.sh
-./scripts/setup-precommit.sh
+chmod +x scripts/install-precommit.sh
+./scripts/install-precommit.sh
 ```
 
 **Windows:**
 
 ```cmd
-scripts\setup-precommit.bat
+scripts\install-precommit.bat
 ```
+
+### Uninstallation
+
+If you need to remove the pre-commit hooks and security tools:
+
+**Linux/macOS:**
+
+```bash
+chmod +x scripts/uninstall-precommit.sh
+./scripts/uninstall-precommit.sh
+```
+
+**Windows:**
+
+```cmd
+scripts\uninstall-precommit.bat
+```
+
+The uninstall script will:
+
+- ✅ Remove all pre-commit Git hooks
+- ✅ Delete configuration files (.pre-commit-config.yaml, .secrets.baseline)
+- ✅ Clean up cache directories
+- ✅ Optionally uninstall Python security packages
+- ✅ Optionally remove binary tools (trufflehog, hadolint)
+- ✅ Clean up .gitignore entries
+- ✅ Verify complete removal
 
 ### What Gets Installed
 
@@ -87,6 +114,9 @@ python -m pre_commit autoupdate
 
 # Skip hooks (NOT recommended)
 git commit --no-verify
+
+# Uninstall hooks and cleanup
+bash scripts/uninstall-precommit.sh
 ```
 
 ### Secret Management
@@ -114,6 +144,13 @@ detect-secrets audit .secrets.baseline
 - **Bandit failures**: Review security warnings and fix or suppress with `# nosec`
 - **Safety failures**: Update vulnerable dependencies
 - **Secret detection**: Review flagged secrets and update baseline if legitimate
+
+#### Uninstall Issues
+
+- **Hooks still running**: Run `git config --local --unset core.hooksPath` to reset Git hooks path
+- **Python packages remain**: Manually run `pip uninstall <package-name>` for specific packages
+- **Permission denied**: Run with elevated privileges or check file permissions
+- **Binary tools remain**: Manually check and remove from `/usr/local/bin/` or `~/.local/bin/`
 
 #### Performance Issues
 
@@ -185,7 +222,39 @@ For issues with:
 
 ---
 
-## 🛡️ Additional Security Tools
+## � Available Scripts Summary
+
+This directory contains the following scripts for managing pre-commit security hooks:
+
+### Installation Scripts
+
+- `install-precommit.sh` - Linux/macOS installation script
+- `install-precommit.bat` - Windows installation script
+
+### Uninstallation Scripts
+
+- `uninstall-precommit.sh` - Linux/macOS uninstallation script
+- `uninstall-precommit.bat` - Windows uninstallation script
+
+### Quick Reference
+
+```bash
+# Install (Linux/macOS)
+./scripts/install-precommit.sh
+
+# Install (Windows)
+scripts\install-precommit.bat
+
+# Uninstall (Linux/macOS)
+./scripts/uninstall-precommit.sh
+
+# Uninstall (Windows)
+scripts\uninstall-precommit.bat
+```
+
+---
+
+## �🛡️ Additional Security Tools
 
 ### Branch Protection (GitHub)
 

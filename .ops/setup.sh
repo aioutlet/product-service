@@ -488,7 +488,28 @@ echo ""
 # Step 11: Final status
 print_success "🎉 Product Service environment setup completed successfully!"
 echo ""
-echo -e "${BLUE}📋 Setup Summary:${NC}"
+
+# Step 12: Start services with Docker Compose
+echo -e "${BLUE}� Starting services with Docker Compose...${NC}"
+if docker-compose up -d; then
+    print_success "Services started successfully"
+    echo ""
+    echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
+    sleep 15
+
+    # Check service health
+    if docker-compose ps | grep -q "Up.*healthy\|Up"; then
+        print_success "Services are healthy and ready"
+    else
+        print_warning "Services may still be starting up"
+    fi
+else
+    print_error "Failed to start services with Docker Compose"
+    exit 1
+fi
+echo ""
+
+echo -e "${BLUE}�📋 Setup Summary:${NC}"
 echo "  ✅ Python virtual environment: $VENV_DIR"
 echo "  ✅ Environment: $ENVIRONMENT"
 echo "  ✅ Configuration file: $ENV_FILE"
@@ -496,19 +517,14 @@ echo "  ✅ Service port: $SERVICE_PORT"
 echo "  ✅ MongoDB database: ${MONGODB_DB_NAME}"
 echo "  ✅ Dependencies installed"
 echo "  ✅ Database setup completed"
+echo "  ✅ Services running with Docker Compose"
 echo ""
-echo -e "${BLUE}🚀 Next Steps:${NC}"
-echo "  1. Activate virtual environment: source venv/bin/activate"
-echo "  2. Start the service: python3 src/main.py"
-echo "  3. Or use uvicorn: uvicorn src.main:app --host 0.0.0.0 --port $SERVICE_PORT --reload"
-echo "  4. Access API documentation: http://localhost:$SERVICE_PORT/docs"
-echo "  5. Health check: http://localhost:$SERVICE_PORT/health"
-echo ""
-echo -e "${BLUE}🛠️  Development Commands:${NC}"
-echo "  • Run tests: pytest"
-echo "  • Format code: black src/"
-echo "  • Lint code: flake8 src/"
-echo "  • Type check: mypy src/"
+echo -e "${BLUE}🚀 Service is now running:${NC}"
+echo "  • View status: docker-compose ps"
+echo "  • View logs: docker-compose logs -f"
+echo "  • Stop services: bash .ops/teardown.sh"
+echo "  • API documentation: http://localhost:$SERVICE_PORT/docs"
+echo "  • Health check: http://localhost:$SERVICE_PORT/health"
 echo ""
 
 # Keep virtual environment activated
