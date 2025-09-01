@@ -24,10 +24,26 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         # Add correlation ID to request state for easy access
         request.state.correlation_id = correlation_id
 
-        print(
-            f"[{correlation_id}] {request.method} {request.url.path} - "
-            "Processing request"
-        )
+        # Import logger here to avoid circular imports
+        try:
+            from src.observability.logger import logger
+            logger.debug(
+                f"{request.method} {request.url.path} - Processing request",
+                correlation_id=correlation_id,
+                metadata={
+                    "request": {
+                        "method": request.method,
+                        "path": request.url.path,
+                        "correlationId": correlation_id
+                    }
+                }
+            )
+        except ImportError:
+            # Fallback to print if observability not available
+            print(
+                f"[{correlation_id}] {request.method} {request.url.path} - "
+                "Processing request"
+            )
 
         # Process the request
         response = await call_next(request)
@@ -40,9 +56,14 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
 
 def get_correlation_id() -> str:
     """
-    Get the current correlation ID from context
+    Get the current correlation ID from context, generate one if none exists
     """
-    return correlation_id_context.get("")
+    correlation_id = correlation_id_context.get("")
+    if not correlation_id:
+        # Generate a new correlation ID if none exists in context
+        correlation_id = str(uuid.uuid4())
+        correlation_id_context.set(correlation_id)
+    return correlation_id
 
 
 def create_headers_with_correlation_id(

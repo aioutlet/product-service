@@ -1,3 +1,12 @@
+# Import tracing initialization first (before any other imports)
+import sys
+import os
+
+# Add the parent directory to Python path for module imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import src.tracing_init  # This must be first to ensure OpenTelemetry SDK is initialized
+
 import logging
 import os
 
@@ -15,8 +24,8 @@ from src.core.errors import (
     error_response_handler,
     http_exception_handler,
 )
-from src.core.logger import logger
 from src.middlewares.correlation_id import CorrelationIdMiddleware
+from src.observability import initialize_observability, logger
 from src.routers import home_router, product_router
 
 # Import limiter from review_router since that's where rate limiting is used
@@ -26,6 +35,9 @@ from src.routers.review_router import limiter
 load_dotenv()
 
 app = FastAPI()
+
+# Initialize observability system early
+initialize_observability(app)
 
 # Add correlation ID middleware first
 app.add_middleware(CorrelationIdMiddleware)
@@ -41,7 +53,8 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(
-        f"Validation error: {exc.errors()}", extra={"event": "validation_error"}
+        f"Validation error: {exc.errors()}",
+        metadata={"businessEvent": "VALIDATION_ERROR", "errors": exc.errors()}
     )
     return JSONResponse(
         status_code=422, content={"error": "Validation error", "details": exc.errors()}
@@ -50,6 +63,12 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    logger.security(
+        logger.SecurityEvents.RATE_LIMIT_EXCEEDED,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        metadata={"endpoint": str(request.url)}
+    )
     return PlainTextResponse("Rate limit exceeded", status_code=429)
 
 
@@ -71,5 +90,23 @@ app.add_middleware(SlowAPIMiddleware)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
-    logger.info(f"Product service running on port {port}")
+    logger.info(f"Product service starting on port {port}")
+    
+    # Log startup configuration
+    logger.info(
+        "Service configuration",
+        metadata={
+            "service": {
+                "name": os.getenv("SERVICE_NAME", "product-service"),
+                "version": os.getenv("SERVICE_VERSION", "1.0.0"),
+                "environment": os.getenv("ENVIRONMENT", "development"),
+                "port": port
+            },
+            "tracing": {
+                "enabled": os.getenv("ENABLE_TRACING", "true").lower() == "true",
+                "endpoint": os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+            }
+        }
+    )
+    
     uvicorn.run("src.main:app", host="0.0.0.0", port=port, reload=True)  # nosec B104
