@@ -7,6 +7,8 @@ python-jose
 python-multipart
 pytest
 pytest-asyncio
+pytest-mock
+pytest-cov
 slowapi
 httpx
 
