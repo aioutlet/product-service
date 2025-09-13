@@ -1,10 +1,15 @@
 # Error handling utilities
 
+import os
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from src.core.logger import logger
+
+# Environment detection
+IS_DEVELOPMENT = os.getenv('ENVIRONMENT', 'development') == 'development'
+IS_PRODUCTION = os.getenv('ENVIRONMENT', 'development') == 'production'
 
 
 class ErrorResponse(Exception):
@@ -16,14 +21,25 @@ class ErrorResponse(Exception):
 
 
 def error_response_handler(request: Request, exc: ErrorResponse):
+    # Log with environment-specific error details
+    extra_data = {
+        "event": "error_response",
+        "status_code": exc.status_code,
+        "url": str(request.url),
+        "method": request.method,
+        **exc.details,
+    }
+    
+    if IS_DEVELOPMENT:
+        # Include more detailed error info in development
+        import traceback
+        extra_data["traceback"] = traceback.format_exc()
+    
     logger.error(
         f"Error: {exc.message}",
-        extra={
-            "event": "error_response",
-            "status_code": exc.status_code,
-            **exc.details,
-        },
+        extra=extra_data,
     )
+    
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.message, "details": exc.details},
@@ -31,11 +47,28 @@ def error_response_handler(request: Request, exc: ErrorResponse):
 
 
 def http_exception_handler(request: Request, exc: HTTPException):
+    # Log with environment-specific error details
+    extra_data = {
+        "event": "http_exception", 
+        "status_code": exc.status_code,
+        "url": str(request.url),
+        "method": request.method,
+    }
+    
+    if IS_DEVELOPMENT:
+        # Include more detailed error info in development
+        import traceback
+        extra_data["traceback"] = traceback.format_exc()
+    
     logger.error(
         f"HTTPException: {exc.detail}",
-        extra={"event": "http_exception", "status_code": exc.status_code},
+        extra=extra_data,
     )
-    return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
+    
+    return JSONResponse(
+        status_code=exc.status_code, 
+        content={"error": exc.detail}
+    )
 
 
 class ErrorResponseModel(BaseModel):

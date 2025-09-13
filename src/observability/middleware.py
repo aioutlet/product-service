@@ -108,6 +108,9 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
                 # Calculate duration
                 duration_ms = int((time.time() - start_time) * 1000)
                 
+                # Environment-based error logging
+                is_development = os.getenv('ENVIRONMENT', 'development') == 'development'
+                
                 # Add error attributes to span
                 add_span_attributes({
                     "error": True,
@@ -116,23 +119,44 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
                     "http.response.duration_ms": duration_ms
                 })
                 
-                # Log request failure
-                logger.error(
-                    f"Request failed: {method} {url_path}",
-                    correlation_id=correlation_id,
-                    error=e,
-                    metadata={
-                        "request": {
-                            "method": method,
-                            "path": url_path,
-                            "userAgent": user_agent,
-                            "clientIp": client_ip
-                        },
-                        "response": {
-                            "durationMs": duration_ms
+                # Log request failure with environment-specific stack trace handling
+                if is_development:
+                    import traceback
+                    logger.error(
+                        f"Request failed: {method} {url_path}",
+                        correlation_id=correlation_id,
+                        error=e,
+                        metadata={
+                            "request": {
+                                "method": method,
+                                "path": url_path,
+                                "userAgent": user_agent,
+                                "clientIp": client_ip
+                            },
+                            "response": {
+                                "durationMs": duration_ms
+                            },
+                            "traceback": traceback.format_exc()
                         }
-                    }
-                )
+                    )
+                else:
+                    logger.error(
+                        f"Request failed: {method} {url_path}",
+                        correlation_id=correlation_id,
+                        error=str(e),
+                        metadata={
+                            "request": {
+                                "method": method,
+                                "path": url_path,
+                                "userAgent": user_agent,
+                                "clientIp": client_ip
+                            },
+                            "response": {
+                                "durationMs": duration_ms
+                            },
+                            "environment": os.getenv('ENVIRONMENT', 'development')
+                        }
+                    )
                 
                 # Re-raise the exception
                 raise
