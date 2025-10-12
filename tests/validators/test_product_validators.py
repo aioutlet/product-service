@@ -2,7 +2,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models.product_base import ProductBase
+from src.shared.models.product_base import ProductBase
 
 
 class TestProductValidators:

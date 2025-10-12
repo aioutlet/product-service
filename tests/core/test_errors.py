@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 
-from src.core.errors import ErrorResponse, error_response_handler, http_exception_handler
+from src.shared.core.errors import ErrorResponse, error_response_handler, http_exception_handler
 
 
 class TestErrorResponse:
@@ -48,7 +48,7 @@ class TestErrorHandlers:
         error = ErrorResponse("Test error", status_code=404, details={"id": "123"})
         
         # Call handler with mocked logger
-        with patch('src.core.errors.logger') as mock_logger:
+        with patch('src.shared.core.errors.logger') as mock_logger:
             response = error_response_handler(mock_request, error)
         
         # Verify response
@@ -65,7 +65,7 @@ class TestErrorHandlers:
         mock_request = Mock()
         error = ErrorResponse("Simple error", status_code=500)
         
-        with patch('src.core.errors.logger') as mock_logger:
+        with patch('src.shared.core.errors.logger') as mock_logger:
             response = error_response_handler(mock_request, error)
         
         assert isinstance(response, JSONResponse)
@@ -80,7 +80,7 @@ class TestErrorHandlers:
         exception = HTTPException(status_code=403, detail="Forbidden")
         
         # Call handler with mocked logger
-        with patch('src.core.errors.logger') as mock_logger:
+        with patch('src.shared.core.errors.logger') as mock_logger:
             response = http_exception_handler(mock_request, exception)
         
         # Verify response

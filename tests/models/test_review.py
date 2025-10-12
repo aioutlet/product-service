@@ -3,7 +3,7 @@ import pytest
 from datetime import datetime
 from pydantic import ValidationError
 
-from src.models.review import Review, ReviewReport
+from src.shared.models.review import Review, ReviewReport
 
 
 class TestReviewModel:

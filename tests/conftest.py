@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock
 from datetime import datetime
 from bson import ObjectId
 
-from src.models.review import Review, ReviewReport
+from src.shared.models.review import Review, ReviewReport
 
 
 @pytest.fixture

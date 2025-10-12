@@ -12,6 +12,10 @@ pytest-cov
 slowapi
 httpx
 
+# Message Broker
+aio-pika
+aiokafka
+
 # Observability and Monitoring
 opentelemetry-api
 opentelemetry-sdk
