@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 # Base stage - Common setup for all stages
 # -----------------------------------------------------------------------------
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 # Set working directory
 WORKDIR /app
