@@ -1,4 +1,4 @@
-# Product Service Worker Dockerfile
+# Product Service Consumer Dockerfile
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 ENV ENVIRONMENT=production
 
-# No port exposure needed for worker
+# No port exposure needed for consumer
 
-# Start worker process
-CMD ["python", "src/worker/worker.py"]
+# Start consumer process
+CMD ["python", "src/consumer/consumer.py"]

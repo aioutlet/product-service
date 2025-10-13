@@ -1,5 +1,5 @@
 """
-Product Service Worker - Message Consumer
+Product Service Consumer - Message Consumer
 Processes async events from message broker
 """
 import sys
@@ -13,13 +13,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from dotenv import load_dotenv
 from src.shared.observability import logger
 from src.shared.messaging.message_broker_factory import MessageBrokerFactory
-from src.worker.handlers.handler_registry import get_handler
+from src.consumer.handlers.handler_registry import get_handler
 
 # Load environment variables
 load_dotenv()
 
-class ProductWorker:
-    """Worker process for consuming and processing messages"""
+class ProductConsumer:
+    """Consumer process for consuming and processing messages"""
     
     def __init__(self):
         self.broker = None
@@ -68,9 +68,9 @@ class ProductWorker:
             raise
     
     async def start(self):
-        """Start the worker and begin consuming messages"""
+        """Start the consumer and begin consuming messages"""
         try:
-            logger.info("Product Worker starting...")
+            logger.info("Product Consumer starting...")
             
             # Create message broker instance
             broker_type = os.getenv('MESSAGE_BROKER_TYPE', 'rabbitmq')
@@ -87,18 +87,18 @@ class ProductWorker:
             await self.broker.connect()
             
             # Start consuming messages
-            logger.info(f"Worker started, consuming from queue: {queue_name}")
+            logger.info(f"Consumer started, consuming from queue: {queue_name}")
             await self.broker.consume(queue_name, self.process_message)
             
         except Exception as e:
-            logger.error(f"Failed to start worker: {str(e)}", metadata={
+            logger.error(f"Failed to start consumer: {str(e)}", metadata={
                 "error": str(e)
             })
             raise
     
     async def stop(self):
-        """Gracefully stop the worker"""
-        logger.info("Stopping Product Worker...")
+        """Gracefully stop the consumer"""
+        logger.info("Stopping Product Consumer...")
         self.is_running = False
         
         if self.broker:
@@ -108,37 +108,37 @@ class ProductWorker:
             except Exception as e:
                 logger.error(f"Error disconnecting broker: {str(e)}")
         
-        logger.info("Product Worker stopped")
+        logger.info("Product Consumer stopped")
 
 
-# Global worker instance
-worker = None
+# Global consumer instance
+consumer = None
 
 def signal_handler(signum, frame):
     """Handle shutdown signals"""
     logger.info(f"Received signal {signum}, initiating graceful shutdown...")
-    if worker:
-        asyncio.create_task(worker.stop())
+    if consumer:
+        asyncio.create_task(consumer.stop())
 
 async def main():
-    """Main entry point for the worker"""
-    global worker
+    """Main entry point for the consumer"""
+    global consumer
     
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    # Create and start worker
-    worker = ProductWorker()
+    # Create and start consumer
+    consumer = ProductConsumer()
     
     try:
-        await worker.start()
+        await consumer.start()
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received")
     except Exception as e:
-        logger.error(f"Worker error: {str(e)}")
+        logger.error(f"Consumer error: {str(e)}")
     finally:
-        await worker.stop()
+        await consumer.stop()
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -1,9 +1,9 @@
 """
 Handler Registry - Maps event types to their handler functions
 """
-from src.worker.handlers.order_completed_handler import handle_order_completed
-from src.worker.handlers.inventory_depleted_handler import handle_inventory_depleted
-from src.worker.handlers.review_created_handler import handle_review_created
+from src.consumer.handlers.order_completed_handler import handle_order_completed
+from src.consumer.handlers.inventory_depleted_handler import handle_inventory_depleted
+from src.consumer.handlers.review_created_handler import handle_review_created
 
 # Registry mapping event types to handler functions
 HANDLERS = {
