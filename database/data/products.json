@@ -1,191 +1,502 @@
 [
   {
-    "id": "507f1f77bcf86cd799439011",
-    "name": "Wireless Bluetooth Headphones",
-    "slug": "wireless-bluetooth-headphones",
-    "description": "Premium wireless Bluetooth headphones with noise cancellation and superior sound quality. Perfect for daily commuting, work, or entertainment. Features 30-hour battery life and quick charge capability.",
-    "short_description": "Premium wireless headphones with noise cancellation",
-    "sku": "WBH-001",
-    "barcode": "1234567890123",
-    "category_id": "ff0e8400-e29b-41d4-a716-446655440002",
-    "vendor_id": "gg0e8400-e29b-41d4-a716-446655440001",
-    "price": 79.99,
-    "compare_price": 99.99,
-    "cost_price": 45.0,
-    "currency": "USD",
-    "weight": 0.28,
-    "dimensions": { "length": 20, "width": 18, "height": 8, "unit": "cm" },
-    "images": ["https://example.com/images/headphones1.jpg", "https://example.com/images/headphones2.jpg"],
-    "tags": ["wireless", "bluetooth", "headphones", "audio", "noise-cancellation"],
-    "status": "active",
-    "visibility": "public",
-    "featured": true,
-    "digital": false,
-    "downloadable": false,
-    "track_inventory": true,
-    "allow_backorders": false,
-    "requires_shipping": true,
-    "tax_class": "standard",
-    "meta_title": "Wireless Bluetooth Headphones | Premium Audio",
-    "meta_description": "Buy premium wireless Bluetooth headphones with noise cancellation. Free shipping available.",
-    "meta_keywords": ["headphones", "bluetooth", "wireless", "audio"],
-    "rating": 4.5,
-    "rating_count": 142,
-    "total_sales": 286,
-    "view_count": 1250,
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
-  },
-  {
-    "id": "507f1f77bcf86cd799439012",
-    "name": "Gaming Laptop",
-    "slug": "gaming-laptop",
-    "description": "High-performance gaming laptop with Intel Core i7 processor, NVIDIA RTX 4060 graphics, 16GB RAM, and 1TB SSD. Perfect for gaming, work, and content creation with a 15.6-inch 144Hz display.",
-    "short_description": "High-performance gaming laptop with RTX 4060",
-    "sku": "GL-002",
-    "barcode": "2345678901234",
-    "category_id": "ff0e8400-e29b-41d4-a716-446655440003",
-    "vendor_id": "gg0e8400-e29b-41d4-a716-446655440002",
-    "price": 1299.99,
-    "compare_price": 1499.99,
-    "cost_price": 950.0,
-    "currency": "USD",
-    "weight": 2.3,
-    "dimensions": { "length": 36, "width": 25, "height": 2.5, "unit": "cm" },
+    "name": "iPhone 15 Pro",
+    "description": "The latest iPhone with titanium design, A17 Pro chip, and advanced camera system with 5x telephoto zoom.",
+    "price": 999.99,
+    "in_stock": 45,
+    "category": "Electronics",
+    "brand": "Apple",
+    "sku": "APL-IPH15-PRO-128",
     "images": [
-      "https://example.com/images/laptop1.jpg",
-      "https://example.com/images/laptop2.jpg",
-      "https://example.com/images/laptop3.jpg"
+      "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800",
+      "https://images.unsplash.com/photo-1592286927505-64d4ac88a659?w=800"
     ],
-    "tags": ["gaming", "laptop", "computer", "nvidia", "rtx", "intel"],
-    "status": "active",
-    "visibility": "public",
-    "featured": true,
-    "digital": false,
-    "downloadable": false,
-    "track_inventory": true,
-    "allow_backorders": false,
-    "requires_shipping": true,
-    "tax_class": "standard",
-    "meta_title": "Gaming Laptop RTX 4060 | High Performance",
-    "meta_description": "Buy high-performance gaming laptop with RTX 4060 graphics and Intel Core i7 processor.",
-    "meta_keywords": ["gaming laptop", "rtx 4060", "intel i7", "nvidia"],
-    "rating": 4.7,
-    "rating_count": 89,
-    "total_sales": 156,
-    "view_count": 2100,
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
+    "tags": ["smartphone", "ios", "camera", "5g", "premium"],
+    "attributes": {
+      "color": "Natural Titanium",
+      "storage": "128GB",
+      "network": "5G",
+      "screen_size": "6.1 inches"
+    }
   },
   {
-    "id": "507f1f77bcf86cd799439013",
-    "name": "Designer Handbag",
-    "slug": "designer-handbag",
-    "description": "Elegant designer handbag crafted from premium leather. Features multiple compartments, gold-tone hardware, and signature design elements. Perfect for special occasions and professional settings.",
-    "short_description": "Elegant designer handbag in premium leather",
-    "sku": "DHB-003",
-    "barcode": "3456789012345",
-    "category_id": "ff0e8400-e29b-41d4-a716-446655440005",
-    "vendor_id": "gg0e8400-e29b-41d4-a716-446655440003",
-    "price": 299.99,
-    "compare_price": 399.99,
-    "cost_price": 180.0,
-    "currency": "USD",
-    "weight": 0.65,
-    "dimensions": { "length": 30, "width": 12, "height": 25, "unit": "cm" },
-    "images": ["https://example.com/images/handbag1.jpg", "https://example.com/images/handbag2.jpg"],
-    "tags": ["designer", "handbag", "leather", "luxury", "fashion"],
-    "status": "active",
-    "visibility": "public",
-    "featured": false,
-    "digital": false,
-    "downloadable": false,
-    "track_inventory": true,
-    "allow_backorders": true,
-    "requires_shipping": true,
-    "tax_class": "luxury",
-    "meta_title": "Designer Handbag | Premium Leather",
-    "meta_description": "Shop elegant designer handbags crafted from premium leather. Perfect for special occasions.",
-    "meta_keywords": ["designer handbag", "leather", "luxury", "fashion"],
-    "rating": 4.8,
-    "rating_count": 67,
-    "total_sales": 95,
-    "view_count": 850,
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
+    "name": "Samsung Galaxy S24 Ultra",
+    "description": "Premium Android smartphone with S Pen, 200MP camera, and powerful AI features.",
+    "price": 1199.99,
+    "in_stock": 32,
+    "category": "Electronics",
+    "brand": "Samsung",
+    "sku": "SAM-GS24-ULTRA-256",
+    "images": [
+      "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800",
+      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800"
+    ],
+    "tags": ["smartphone", "android", "s-pen", "camera", "5g"],
+    "attributes": {
+      "color": "Titanium Gray",
+      "storage": "256GB",
+      "network": "5G",
+      "screen_size": "6.8 inches"
+    }
   },
   {
-    "id": "507f1f77bcf86cd799439014",
-    "name": "Business Analytics Software",
-    "slug": "business-analytics-software",
-    "description": "Comprehensive business analytics software for inventory management, sales tracking, and business intelligence. Includes dashboard, reporting, and integration capabilities with popular e-commerce platforms.",
-    "short_description": "Complete business analytics and inventory management solution",
-    "sku": "BAS-004",
-    "barcode": null,
-    "category_id": "ff0e8400-e29b-41d4-a716-446655440008",
-    "vendor_id": "gg0e8400-e29b-41d4-a716-446655440005",
-    "price": 499.99,
-    "compare_price": 599.99,
-    "cost_price": 150.0,
-    "currency": "USD",
-    "weight": null,
-    "dimensions": null,
-    "images": ["https://example.com/images/analytics1.jpg", "https://example.com/images/analytics2.jpg"],
-    "tags": ["software", "analytics", "business", "inventory", "management"],
-    "status": "active",
-    "visibility": "public",
-    "featured": false,
-    "digital": true,
-    "downloadable": true,
-    "track_inventory": false,
-    "allow_backorders": true,
-    "requires_shipping": false,
-    "tax_class": "digital",
-    "meta_title": "Business Analytics Software | Inventory Management",
-    "meta_description": "Comprehensive business analytics software for inventory management and business intelligence.",
-    "meta_keywords": ["business analytics", "inventory management", "software", "business intelligence"],
-    "rating": 4.3,
-    "rating_count": 34,
-    "total_sales": 78,
-    "view_count": 620,
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
+    "name": "MacBook Air M3",
+    "description": "Ultra-thin laptop with M3 chip, all-day battery life, and stunning Liquid Retina display.",
+    "price": 1099.99,
+    "in_stock": 25,
+    "category": "Computers",
+    "brand": "Apple",
+    "sku": "APL-MBA-M3-13",
+    "images": [
+      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800",
+      "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800"
+    ],
+    "tags": ["laptop", "mac", "portable", "productivity"],
+    "attributes": {
+      "color": "Midnight",
+      "storage": "256GB SSD",
+      "memory": "8GB",
+      "screen_size": "13.6 inches"
+    }
   },
   {
-    "id": "507f1f77bcf86cd799439015",
-    "name": "Ergonomic Office Chair",
-    "slug": "ergonomic-office-chair",
-    "description": "Premium ergonomic office chair with lumbar support, adjustable armrests, and breathable mesh back. Designed for all-day comfort and productivity. Perfect for home offices and professional workspaces.",
-    "short_description": "Premium ergonomic office chair with lumbar support",
-    "sku": "EOC-005",
-    "barcode": "5678901234567",
-    "category_id": "ff0e8400-e29b-41d4-a716-446655440007",
-    "vendor_id": "gg0e8400-e29b-41d4-a716-446655440004",
+    "name": "Dell XPS 13 Plus",
+    "description": "Premium Windows laptop with 12th Gen Intel Core processors and stunning InfinityEdge display.",
+    "price": 1299.99,
+    "in_stock": 18,
+    "category": "Computers",
+    "brand": "Dell",
+    "sku": "DELL-XPS13-PLUS-I7",
+    "images": [
+      "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800",
+      "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800"
+    ],
+    "tags": ["laptop", "windows", "ultrabook", "business"],
+    "attributes": {
+      "color": "Platinum Silver",
+      "storage": "512GB SSD",
+      "memory": "16GB",
+      "screen_size": "13.4 inches"
+    }
+  },
+  {
+    "name": "iPad Pro 12.9-inch M4",
+    "description": "The ultimate iPad experience with M4 chip, Ultra Retina XDR display, and Apple Pencil Pro support.",
+    "price": 1099.99,
+    "in_stock": 28,
+    "category": "Tablets",
+    "brand": "Apple",
+    "sku": "APL-IPAD-PRO-M4-12",
+    "images": [
+      "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800",
+      "https://images.unsplash.com/photo-1585790050230-5dd28404f1e6?w=800"
+    ],
+    "tags": ["tablet", "ipad", "creative", "productivity", "apple-pencil"],
+    "attributes": {
+      "color": "Space Gray",
+      "storage": "256GB",
+      "connectivity": "Wi-Fi + Cellular",
+      "screen_size": "12.9 inches"
+    }
+  },
+  {
+    "name": "Sony WH-1000XM5",
+    "description": "Industry-leading noise canceling wireless headphones with exceptional sound quality and 30-hour battery life.",
+    "price": 399.99,
+    "in_stock": 65,
+    "category": "Audio",
+    "brand": "Sony",
+    "sku": "SONY-WH1000XM5-BLK",
+    "images": [
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800",
+      "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800"
+    ],
+    "tags": ["headphones", "wireless", "noise-canceling", "bluetooth"],
+    "attributes": {
+      "color": "Black",
+      "connectivity": "Bluetooth 5.2",
+      "battery_life": "30 hours",
+      "noise_canceling": "Yes"
+    }
+  },
+  {
+    "name": "AirPods Pro (3rd generation)",
+    "description": "Apple's premium wireless earbuds with Active Noise Cancellation and Spatial Audio.",
     "price": 249.99,
-    "compare_price": 299.99,
-    "cost_price": 160.0,
-    "currency": "USD",
-    "weight": 18.5,
-    "dimensions": { "length": 70, "width": 70, "height": 120, "unit": "cm" },
-    "images": ["https://example.com/images/chair1.jpg", "https://example.com/images/chair2.jpg"],
-    "tags": ["office", "chair", "ergonomic", "furniture", "workspace"],
-    "status": "active",
-    "visibility": "public",
-    "featured": false,
-    "digital": false,
-    "downloadable": false,
-    "track_inventory": true,
-    "allow_backorders": false,
-    "requires_shipping": true,
-    "tax_class": "standard",
-    "meta_title": "Ergonomic Office Chair | Premium Comfort",
-    "meta_description": "Buy premium ergonomic office chairs with lumbar support. Perfect for home and office workspaces.",
-    "meta_keywords": ["office chair", "ergonomic", "furniture", "workspace"],
-    "rating": 4.6,
-    "rating_count": 156,
-    "total_sales": 312,
-    "view_count": 1890,
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
+    "in_stock": 120,
+    "category": "Audio",
+    "brand": "Apple",
+    "sku": "APL-AIRPODS-PRO-3",
+    "images": [
+      "https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=800",
+      "https://images.unsplash.com/photo-1588423771073-b8903fbb85b5?w=800"
+    ],
+    "tags": ["earbuds", "wireless", "noise-canceling", "spatial-audio"],
+    "attributes": {
+      "color": "White",
+      "connectivity": "Bluetooth",
+      "battery_life": "6 hours + 24 hours with case",
+      "noise_canceling": "Yes"
+    }
+  },
+  {
+    "name": "Nintendo Switch OLED",
+    "description": "Enhanced Nintendo Switch with vibrant OLED screen, improved audio, and enhanced kickstand.",
+    "price": 349.99,
+    "in_stock": 42,
+    "category": "Gaming",
+    "brand": "Nintendo",
+    "sku": "NINT-SWITCH-OLED-WHT",
+    "images": [
+      "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=800",
+      "https://images.unsplash.com/photo-1622297845775-5ff3fef71d13?w=800"
+    ],
+    "tags": ["gaming", "console", "portable", "oled"],
+    "attributes": {
+      "color": "White",
+      "storage": "64GB",
+      "screen_type": "OLED",
+      "screen_size": "7 inches"
+    }
+  },
+  {
+    "name": "PlayStation 5",
+    "description": "Next-generation gaming console with lightning-fast SSD, haptic feedback, and 4K gaming.",
+    "price": 499.99,
+    "in_stock": 15,
+    "category": "Gaming",
+    "brand": "Sony",
+    "sku": "SONY-PS5-STD",
+    "images": [
+      "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800",
+      "https://images.unsplash.com/photo-1622297845775-5ff3fef71d13?w=800"
+    ],
+    "tags": ["gaming", "console", "4k", "ssd", "haptic"],
+    "attributes": {
+      "color": "White",
+      "storage": "825GB SSD",
+      "resolution": "4K",
+      "backwards_compatible": "PS4 games"
+    }
+  },
+  {
+    "name": "Canon EOS R6 Mark II",
+    "description": "Full-frame mirrorless camera with 24.2MP sensor, 4K video recording, and advanced autofocus system.",
+    "price": 2499.99,
+    "in_stock": 8,
+    "category": "Cameras",
+    "brand": "Canon",
+    "sku": "CAN-EOSR6-MK2",
+    "images": [
+      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800",
+      "https://images.unsplash.com/photo-1606988232631-d1f8509f4da3?w=800"
+    ],
+    "tags": ["camera", "mirrorless", "full-frame", "4k-video", "professional"],
+    "attributes": {
+      "sensor": "24.2MP Full-Frame",
+      "video": "4K 60fps",
+      "mount": "RF Mount",
+      "image_stabilization": "5-axis"
+    }
+  },
+  {
+    "name": "Dyson V15 Detect",
+    "description": "Powerful cordless vacuum with laser dust detection and advanced filtration system.",
+    "price": 749.99,
+    "in_stock": 35,
+    "category": "Home Appliances",
+    "brand": "Dyson",
+    "sku": "DYS-V15-DETECT",
+    "images": [
+      "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=800",
+      "https://images.unsplash.com/photo-1565180063-45dd8acbc0ad?w=800"
+    ],
+    "tags": ["vacuum", "cordless", "laser-detection", "hepa-filter"],
+    "attributes": {
+      "type": "Cordless Stick Vacuum",
+      "battery_life": "60 minutes",
+      "filtration": "HEPA",
+      "dust_detection": "Laser"
+    }
+  },
+  {
+    "name": "KitchenAid Stand Mixer",
+    "description": "Professional-grade stand mixer with 10 speeds and multiple attachment compatibility.",
+    "price": 379.99,
+    "in_stock": 22,
+    "category": "Home Appliances",
+    "brand": "KitchenAid",
+    "sku": "KA-MIXER-PRO-RED",
+    "images": [
+      "https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=800",
+      "https://images.unsplash.com/photo-1595853035070-59a39fe84de9?w=800"
+    ],
+    "tags": ["kitchen", "mixer", "baking", "professional"],
+    "attributes": {
+      "color": "Empire Red",
+      "capacity": "6 quarts",
+      "speeds": "10",
+      "bowl_material": "Stainless Steel"
+    }
+  },
+  {
+    "name": "Fitbit Versa 4",
+    "description": "Advanced fitness smartwatch with GPS, heart rate monitoring, and 6+ day battery life.",
+    "price": 199.99,
+    "in_stock": 78,
+    "category": "Wearables",
+    "brand": "Fitbit",
+    "sku": "FIT-VERSA4-BLK",
+    "images": [
+      "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=800",
+      "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=800"
+    ],
+    "tags": ["smartwatch", "fitness", "gps", "heart-rate"],
+    "attributes": {
+      "color": "Black",
+      "battery_life": "6+ days",
+      "gps": "Built-in",
+      "water_resistance": "50m"
+    }
+  },
+  {
+    "name": "Apple Watch Series 9",
+    "description": "Most advanced Apple Watch with S9 chip, Double Tap gesture, and precise GPS tracking.",
+    "price": 399.99,
+    "in_stock": 55,
+    "category": "Wearables",
+    "brand": "Apple",
+    "sku": "APL-WATCH-S9-41",
+    "images": [
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800",
+      "https://images.unsplash.com/photo-1551816230-ef5deaed4a26?w=800"
+    ],
+    "tags": ["smartwatch", "apple", "fitness", "health"],
+    "attributes": {
+      "color": "Midnight",
+      "size": "41mm",
+      "connectivity": "GPS + Cellular",
+      "display": "Always-On Retina"
+    }
+  },
+  {
+    "name": "IKEA BEKANT Desk",
+    "description": "Modern office desk with clean lines and spacious work surface, perfect for home office setup.",
+    "price": 129.99,
+    "in_stock": 95,
+    "category": "Furniture",
+    "brand": "IKEA",
+    "sku": "IKEA-BEKANT-WHT-160",
+    "images": [
+      "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800",
+      "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=800"
+    ],
+    "tags": ["desk", "office", "furniture", "modern"],
+    "attributes": {
+      "color": "White",
+      "dimensions": "160x80 cm",
+      "material": "Particleboard, Melamine foil",
+      "adjustable_feet": "Yes"
+    }
+  },
+  {
+    "name": "Herman Miller Aeron Chair",
+    "description": "Ergonomic office chair with advanced PostureFit SL support and breathable mesh design.",
+    "price": 1395.0,
+    "in_stock": 12,
+    "category": "Furniture",
+    "brand": "Herman Miller",
+    "sku": "HM-AERON-B-GRA",
+    "images": [
+      "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=800",
+      "https://images.unsplash.com/photo-1592078615290-033ee584e267?w=800"
+    ],
+    "tags": ["chair", "ergonomic", "office", "premium"],
+    "attributes": {
+      "color": "Graphite",
+      "size": "B (Medium)",
+      "material": "Mesh",
+      "lumbar_support": "PostureFit SL"
+    }
+  },
+  {
+    "name": "Adidas Ultraboost 23",
+    "description": "Premium running shoes with responsive BOOST midsole and Primeknit upper for ultimate comfort.",
+    "price": 189.99,
+    "in_stock": 67,
+    "category": "Footwear",
+    "brand": "Adidas",
+    "sku": "ADI-UB23-BLK-10",
+    "images": [
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
+      "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=800"
+    ],
+    "tags": ["shoes", "running", "athletic", "boost"],
+    "attributes": {
+      "color": "Core Black",
+      "size": "10",
+      "gender": "Unisex",
+      "technology": "BOOST"
+    }
+  },
+  {
+    "name": "Nike Air Jordan 1 Retro High",
+    "description": "Iconic basketball shoe that started it all, featuring premium materials and classic colorway.",
+    "price": 169.99,
+    "in_stock": 43,
+    "category": "Footwear",
+    "brand": "Nike",
+    "sku": "NIKE-AJ1-CHI-9",
+    "images": [
+      "https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800",
+      "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=800"
+    ],
+    "tags": ["shoes", "basketball", "retro", "jordan"],
+    "attributes": {
+      "color": "Chicago",
+      "size": "9",
+      "gender": "Unisex",
+      "material": "Leather"
+    }
+  },
+  {
+    "name": "Patagonia Better Sweater Fleece Jacket",
+    "description": "Cozy fleece jacket made from recycled polyester with classic styling and sustainable materials.",
+    "price": 119.99,
+    "in_stock": 88,
+    "category": "Clothing",
+    "brand": "Patagonia",
+    "sku": "PAT-SWEATER-NAV-M",
+    "images": [
+      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800",
+      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=800"
+    ],
+    "tags": ["jacket", "fleece", "sustainable", "outdoor"],
+    "attributes": {
+      "color": "Navy Blue",
+      "size": "Medium",
+      "material": "100% Recycled Polyester",
+      "fit": "Regular"
+    }
+  },
+  {
+    "name": "Levi's 501 Original Jeans",
+    "description": "The original blue jean with straight leg fit and authentic button fly closure.",
+    "price": 89.99,
+    "in_stock": 156,
+    "category": "Clothing",
+    "brand": "Levi's",
+    "sku": "LEVI-501-IND-32-32",
+    "images": [
+      "https://images.unsplash.com/photo-1542272604-787c3835535d?w=800",
+      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800"
+    ],
+    "tags": ["jeans", "denim", "classic", "original"],
+    "attributes": {
+      "color": "Indigo",
+      "waist": "32",
+      "length": "32",
+      "fit": "Straight"
+    }
+  },
+  {
+    "name": "Tesla Model S Plaid Wheel Set",
+    "description": "Premium 21-inch Arachnid wheels designed specifically for Tesla Model S Plaid performance.",
+    "price": 4500.0,
+    "in_stock": 6,
+    "category": "Automotive",
+    "brand": "Tesla",
+    "sku": "TES-PLAID-WHEEL-21",
+    "images": [
+      "https://images.unsplash.com/photo-1562911791-c7a97b729ec5?w=800",
+      "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=800"
+    ],
+    "tags": ["automotive", "wheels", "tesla", "performance"],
+    "attributes": {
+      "size": "21 inch",
+      "model": "Arachnid",
+      "finish": "Gloss Black",
+      "compatibility": "Model S Plaid"
+    }
+  },
+  {
+    "name": "Bose QuietComfort Earbuds",
+    "description": "True wireless earbuds with world-class noise cancellation and premium sound quality.",
+    "price": 279.99,
+    "in_stock": 74,
+    "category": "Audio",
+    "brand": "Bose",
+    "sku": "BOSE-QC-EARBUDS-BLK",
+    "images": [
+      "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800",
+      "https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=800"
+    ],
+    "tags": ["earbuds", "wireless", "noise-canceling", "premium"],
+    "attributes": {
+      "color": "Black",
+      "battery_life": "6 hours + 12 hours with case",
+      "noise_canceling": "11 levels",
+      "water_resistance": "IPX4"
+    }
+  },
+  {
+    "name": "Microsoft Surface Pro 9",
+    "description": "Versatile 2-in-1 laptop and tablet with 12th Gen Intel Core processors and all-day battery life.",
+    "price": 999.99,
+    "in_stock": 29,
+    "category": "Computers",
+    "brand": "Microsoft",
+    "sku": "MS-SURFACE-PRO9-256",
+    "images": [
+      "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=800",
+      "https://images.unsplash.com/photo-1616788494707-ec15574b9923?w=800"
+    ],
+    "tags": ["laptop", "tablet", "2-in-1", "surface"],
+    "attributes": {
+      "color": "Platinum",
+      "storage": "256GB SSD",
+      "memory": "8GB",
+      "screen_size": "13 inches"
+    }
+  },
+  {
+    "name": "Google Pixel 8 Pro",
+    "description": "Advanced Android phone with AI-powered camera features and pure Google experience.",
+    "price": 999.99,
+    "in_stock": 38,
+    "category": "Electronics",
+    "brand": "Google",
+    "sku": "GOO-PIX8-PRO-128",
+    "images": [
+      "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800",
+      "https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=800"
+    ],
+    "tags": ["smartphone", "android", "camera", "google", "ai"],
+    "attributes": {
+      "color": "Obsidian",
+      "storage": "128GB",
+      "network": "5G",
+      "screen_size": "6.7 inches"
+    }
+  },
+  {
+    "name": "Instant Pot Duo 7-in-1",
+    "description": "Multi-functional electric pressure cooker that replaces 7 kitchen appliances in one.",
+    "price": 99.99,
+    "in_stock": 145,
+    "category": "Home Appliances",
+    "brand": "Instant Pot",
+    "sku": "IP-DUO-6QT-7IN1",
+    "images": [
+      "https://images.unsplash.com/photo-1585515320310-259814833e62?w=800",
+      "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800"
+    ],
+    "tags": ["kitchen", "pressure-cooker", "multi-function", "cooking"],
+    "attributes": {
+      "capacity": "6 Quart",
+      "functions": "7-in-1",
+      "material": "Stainless Steel",
+      "programs": "13 Smart Programs"
+    }
   }
 ]

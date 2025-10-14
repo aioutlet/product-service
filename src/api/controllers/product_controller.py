@@ -43,7 +43,7 @@ async def search_products(
         # Validate search text
         if not search_text or not search_text.strip():
             logger.warning(
-                "Empty search text provided", extra={"event": "search_products_empty"}
+                "Empty search text provided", metadata={"event": "search_products_empty"}
             )
             raise ErrorResponse("Search text cannot be empty", status_code=400)
 
@@ -95,7 +95,7 @@ async def search_products(
     except PyMongoError as e:
         logger.error(
             f"MongoDB error during search: {e}",
-            extra={"event": "mongodb_error", "search_text": search_text},
+            metadata={"event": "mongodb_error", "search_text": search_text},
         )
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
@@ -174,7 +174,7 @@ async def get_trending_products(collection, limit=4):
         
         logger.info(
             f"Fetched {len(products)} trending products",
-            extra={"event": "get_trending_products", "count": len(products)}
+            metadata={"event": "get_trending_products", "count": len(products)}
         )
         
         return products
@@ -182,11 +182,15 @@ async def get_trending_products(collection, limit=4):
     except PyMongoError as e:
         logger.error(
             f"MongoDB error fetching trending products: {e}",
-            extra={"event": "mongodb_error"}
+            metadata={"event": "mongodb_error", "error": str(e)}
         )
-        raise ErrorResponse(
-            "Database connection error. Please try again later.", status_code=503
+        raise ErrorResponse(f"Database error: {str(e)}", status_code=500)
+    except Exception as e:
+        logger.error(
+            f"Unexpected error fetching trending products: {e}",
+            metadata={"event": "trending_error", "error": str(e), "error_type": type(e).__name__}
         )
+        raise ErrorResponse(f"Error fetching trending products: {str(e)}", status_code=500)
 
 
 async def list_products(
@@ -251,7 +255,7 @@ async def list_products(
         }
 
     except PyMongoError as e:
-        logger.error(f"MongoDB error: {e}", extra={"event": "mongodb_error"})
+        logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
         )
@@ -280,20 +284,20 @@ async def get_product(product_id, collection):
         if not doc:
             logger.warning(
                 f"Product not found: {product_id}",
-                extra={"event": "get_product", "product_id": product_id},
+                metadata={"event": "get_product", "product_id": product_id},
             )
             raise ErrorResponse("Product not found", status_code=404)
 
         # Log successful retrieval
         logger.info(
             f"Fetched product {product_id}",
-            extra={"event": "get_product", "product_id": product_id},
+            metadata={"event": "get_product", "product_id": product_id},
         )
         return product_doc_to_model(doc)
     except (PyMongoError, ValueError) as e:
         logger.error(
             f"Error fetching product: {e}",
-            extra={"event": "get_product_error", "product_id": product_id},
+            metadata={"event": "get_product_error", "product_id": product_id},
         )
         raise ErrorResponse("Invalid product ID or database error.", status_code=400)
 
@@ -325,7 +329,7 @@ async def create_product(product: ProductCreate, collection, acting_user=None):
             if existing:
                 logger.warning(
                     f"Duplicate SKU: {product.sku}",
-                    extra={"event": "duplicate_sku", "sku": product.sku},
+                    metadata={"event": "duplicate_sku", "sku": product.sku},
                 )
                 raise ErrorResponse(
                     "A product with this SKU already exists.", status_code=400
@@ -349,11 +353,11 @@ async def create_product(product: ProductCreate, collection, acting_user=None):
         doc = await collection.find_one({"_id": result.inserted_id})
         logger.info(
             f"Created product {result.inserted_id}",
-            extra={"event": "create_product", "product_id": str(result.inserted_id)},
+            metadata={"event": "create_product", "product_id": str(result.inserted_id)}
         )
         return product_doc_to_model(doc)
     except PyMongoError as e:
-        logger.error(f"MongoDB error: {e}", extra={"event": "mongodb_error"})
+        logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
         )
@@ -389,7 +393,7 @@ async def update_product(
         if not update_data:
             logger.warning(
                 "No fields to update",
-                extra={"event": "update_product", "product_id": product_id},
+                metadata={"event": "update_product", "product_id": product_id},
             )
             raise ErrorResponse("No fields to update", status_code=400)
 
@@ -406,7 +410,7 @@ async def update_product(
             if existing:
                 logger.warning(
                     f"Duplicate SKU: {update_data['sku']}",
-                    extra={"event": "duplicate_sku", "sku": update_data["sku"]},
+                    metadata={"event": "duplicate_sku", "sku": update_data["sku"]},
                 )
                 raise ErrorResponse(
                     "A product with this SKU already exists.", status_code=400
@@ -437,7 +441,7 @@ async def update_product(
         if result.matched_count == 0:
             logger.warning(
                 f"Product not found: {product_id}",
-                extra={"event": "update_product", "product_id": product_id},
+                metadata={"event": "update_product", "product_id": product_id},
             )
             raise ErrorResponse("Product not found", status_code=404)
 
@@ -445,11 +449,11 @@ async def update_product(
         doc = await collection.find_one({"_id": obj_id})
         logger.info(
             f"Updated product {product_id}",
-            extra={"event": "update_product", "product_id": product_id},
+            metadata={"event": "update_product", "product_id": product_id}
         )
         return product_doc_to_model(doc)
     except PyMongoError as e:
-        logger.error(f"MongoDB error: {e}", extra={"event": "mongodb_error"})
+        logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
         )
@@ -494,11 +498,11 @@ async def delete_product(product_id, collection, acting_user=None):
         # Log successful deletion
         logger.info(
             f"Soft deleted product {product_id}",
-            extra={"event": "soft_delete_product", "product_id": product_id},
+            metadata={"event": "soft_delete_product", "product_id": product_id}
         )
         return None
     except PyMongoError as e:
-        logger.error(f"MongoDB error: {e}", extra={"event": "mongodb_error"})
+        logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
         )
@@ -532,7 +536,7 @@ async def reactivate_product(product_id, collection, acting_user=None):
         if not doc:
             logger.warning(
                 f"Product not found: {product_id}",
-                extra={"event": "reactivate_product", "product_id": product_id},
+                metadata={"event": "reactivate_product", "product_id": product_id},
             )
             raise ErrorResponse("Product not found", status_code=404)
 
@@ -540,7 +544,7 @@ async def reactivate_product(product_id, collection, acting_user=None):
         if doc.get("is_active", True):
             logger.warning(
                 f"Product already active: {product_id}",
-                extra={"event": "reactivate_product", "product_id": product_id},
+                metadata={"event": "reactivate_product", "product_id": product_id},
             )
             raise ErrorResponse("Product is already active", status_code=400)
 
@@ -552,7 +556,7 @@ async def reactivate_product(product_id, collection, acting_user=None):
             if existing:
                 logger.warning(
                     f"Cannot reactivate - SKU conflict: {doc['sku']}",
-                    extra={
+                    metadata={
                         "event": "reactivate_product_sku_conflict",
                         "product_id": product_id,
                         "sku": doc["sku"],
@@ -596,7 +600,7 @@ async def reactivate_product(product_id, collection, acting_user=None):
         doc = await collection.find_one({"_id": obj_id})
         logger.info(
             f"Reactivated product {product_id}",
-            extra={
+            metadata={
                 "event": "reactivate_product",
                 "product_id": product_id,
                 "reactivated_by": acting_user["user_id"] if acting_user else None,
@@ -607,7 +611,7 @@ async def reactivate_product(product_id, collection, acting_user=None):
     except PyMongoError as e:
         logger.error(
             f"MongoDB error during reactivation: {e}",
-            extra={"event": "mongodb_error", "product_id": product_id},
+            metadata={"event": "mongodb_error", "product_id": product_id},
         )
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
@@ -640,8 +644,10 @@ def product_doc_to_model(doc):
         average_rating=doc.get("average_rating", 0),
         num_reviews=doc.get("num_reviews", 0),
         reviews=doc.get("reviews", []),
-        created_by=doc["created_by"],
+        created_by=doc.get("created_by", "system"),
         updated_by=doc.get("updated_by"),
         created_at=doc.get("created_at", datetime.now(timezone.utc)),
         updated_at=doc.get("updated_at", datetime.now(timezone.utc)),
+        is_active=doc.get("is_active", True),
+        history=doc.get("history", []),
     )

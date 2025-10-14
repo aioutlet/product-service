@@ -1,98 +1,113 @@
 #!/usr/bin/env python3
 
+import asyncio
 import os
 import sys
-
-import psycopg2
-from psycopg2.extras import RealDictCursor
+from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
 
 
 class ProductDatabaseCleaner:
     def __init__(self):
-        self.connection = psycopg2.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            port=os.getenv("DB_PORT", 5432),
-            database=os.getenv("DB_NAME", "aioutlet_products"),
-            user=os.getenv("DB_USER", "postgres"),
-            password=os.getenv("DB_PASSWORD", "password"),
-        )
-        self.cursor = self.connection.cursor(cursor_factory=RealDictCursor)
+        # Load environment variables
+        load_dotenv()
+        
+        # Get MongoDB connection string from environment
+        self.mongodb_uri = os.getenv("MONGODB_URI")
+        self.db_name = os.getenv("DATABASE_NAME") or os.getenv("MONGODB_DB_NAME")
+        
+        if not self.mongodb_uri:
+            raise ValueError("MONGODB_URI must be set in environment or .env file")
+        
+        if not self.db_name:
+            raise ValueError("DATABASE_NAME or MONGODB_DB_NAME must be set in environment or .env file")
+        
+        self.client = None
+        self.db = None
 
-    def clear_all_data(self):
+    async def connect(self):
+        """Establish MongoDB connection"""
+        print(f"Connecting to MongoDB database '{self.db_name}'...")
+        self.client = AsyncIOMotorClient(self.mongodb_uri)
+        self.db = self.client[self.db_name]
+        
+        # Test connection
+        await self.db.command('ping')
+        print("Successfully connected to MongoDB!")
+
+    async def clear_all_data(self):
+        """Clear all product service data"""
         print("Clearing all product service data...")
 
         try:
-            clear_queries = [
-                "DELETE FROM products.review_votes;",
-                "DELETE FROM products.reviews;",
-                "DELETE FROM products.collection_products;",
-                "DELETE FROM products.collections;",
-                "DELETE FROM products.product_attributes;",
-                "DELETE FROM products.attributes;",
-                "DELETE FROM products.product_variants;",
-                "DELETE FROM products.products;",
-                "DELETE FROM products.vendors;",
-                "DELETE FROM products.categories;",
-            ]
+            collections = await self.db.list_collection_names()
+            
+            if not collections:
+                print("No collections found in database")
+                return
+            
+            for collection_name in collections:
+                result = await self.db[collection_name].delete_many({})
+                print(f"Deleted {result.deleted_count} documents from '{collection_name}' collection")
 
-            for query in clear_queries:
-                self.cursor.execute(query)
-                print(f"Executed: {query}")
-
-            self.connection.commit()
             print("All product service data cleared successfully!")
         except Exception as error:
             print(f"Error clearing product data: {error}")
-            self.connection.rollback()
             raise error
 
-    def drop_all_tables(self):
-        print("Dropping all product service tables...")
+    async def drop_all_collections(self):
+        """Drop all MongoDB collections"""
+        print("Dropping all product service collections...")
 
         try:
-            drop_queries = [
-                "DROP TABLE IF EXISTS products.review_votes CASCADE;",
-                "DROP TABLE IF EXISTS products.reviews CASCADE;",
-                "DROP TABLE IF EXISTS products.collection_products CASCADE;",
-                "DROP TABLE IF EXISTS products.collections CASCADE;",
-                "DROP TABLE IF EXISTS products.product_attributes CASCADE;",
-                "DROP TABLE IF EXISTS products.attributes CASCADE;",
-                "DROP TABLE IF EXISTS products.product_variants CASCADE;",
-                "DROP TABLE IF EXISTS products.products CASCADE;",
-                "DROP TABLE IF EXISTS products.vendors CASCADE;",
-                "DROP TABLE IF EXISTS products.categories CASCADE;",
-                "DROP SCHEMA IF EXISTS products CASCADE;",
-            ]
+            collections = await self.db.list_collection_names()
+            
+            if not collections:
+                print("No collections found in database")
+                return
+            
+            for collection_name in collections:
+                await self.db[collection_name].drop()
+                print(f"Dropped collection: {collection_name}")
 
-            for query in drop_queries:
-                self.cursor.execute(query)
-                print(f"Executed: {query}")
-
-            self.connection.commit()
-            print("All product service tables dropped successfully!")
+            print("All product service collections dropped successfully!")
         except Exception as error:
-            print(f"Error dropping product tables: {error}")
-            self.connection.rollback()
+            print(f"Error dropping product collections: {error}")
             raise error
 
-    def close(self):
-        self.cursor.close()
-        self.connection.close()
+    async def close(self):
+        """Close MongoDB connection"""
+        if self.client:
+            self.client.close()
+            print("MongoDB connection closed")
 
 
-if __name__ == "__main__":
+async def main():
+    load_dotenv()
     cleaner = ProductDatabaseCleaner()
     operation = sys.argv[1] if len(sys.argv) > 1 else "clear"
 
     try:
-        if operation == "drop":
-            cleaner.drop_all_tables()
-        else:
-            cleaner.clear_all_data()
+        print("=" * 50)
+        print("Product Service Database Cleaner")
+        print("=" * 50)
 
+        await cleaner.connect()
+
+        if operation == "drop":
+            await cleaner.drop_all_collections()
+        else:
+            await cleaner.clear_all_data()
+
+        print("=" * 50)
         print(f"Product database {operation} completed!")
+        print("=" * 50)
     except Exception as error:
         print(f"Product database {operation} failed: {error}")
         exit(1)
     finally:
-        cleaner.close()
+        await cleaner.close()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

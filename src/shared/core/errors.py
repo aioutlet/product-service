@@ -22,7 +22,7 @@ class ErrorResponse(Exception):
 
 def error_response_handler(request: Request, exc: ErrorResponse):
     # Log with environment-specific error details
-    extra_data = {
+    metadata = {
         "event": "error_response",
         "status_code": exc.status_code,
         "url": str(request.url),
@@ -33,22 +33,22 @@ def error_response_handler(request: Request, exc: ErrorResponse):
     if IS_DEVELOPMENT:
         # Include more detailed error info in development
         import traceback
-        extra_data["traceback"] = traceback.format_exc()
+        metadata["traceback"] = traceback.format_exc()
     
     logger.error(
         f"Error: {exc.message}",
-        extra=extra_data,
+        metadata=metadata
     )
     
     return JSONResponse(
         status_code=exc.status_code,
-        content={"error": exc.message, "details": exc.details},
+        content={"error": exc.message, "details": exc.details}
     )
 
 
 def http_exception_handler(request: Request, exc: HTTPException):
     # Log with environment-specific error details
-    extra_data = {
+    metadata = {
         "event": "http_exception", 
         "status_code": exc.status_code,
         "url": str(request.url),
@@ -58,11 +58,11 @@ def http_exception_handler(request: Request, exc: HTTPException):
     if IS_DEVELOPMENT:
         # Include more detailed error info in development
         import traceback
-        extra_data["traceback"] = traceback.format_exc()
+        metadata["traceback"] = traceback.format_exc()
     
     logger.error(
         f"HTTPException: {exc.detail}",
-        extra=extra_data,
+        metadata=metadata
     )
     
     return JSONResponse(

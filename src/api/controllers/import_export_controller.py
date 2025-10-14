@@ -72,7 +72,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                 if not product_data["name"] or product_data["price"] < 0:
                     logger.warning(
                         f"Invalid product data in CSV: {product_data}",
-                        extra={"event": "import_validation_error"},
+                        metadata={"event": "import_validation_error"},
                     )
                     continue
 
@@ -107,7 +107,7 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                     if existing:
                         logger.warning(
                             f"Skipping duplicate SKU: {product_data['sku']}",
-                            extra={"event": "duplicate_sku_import"},
+                            metadata={"event": "duplicate_sku_import"},
                         )
                         continue
 
@@ -132,29 +132,29 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
             except Exception as e:
                 logger.error(
                     f"Error importing product: {e}",
-                    extra={"event": "import_product_error", "product": product_data},
+                    metadata={"event": "import_product_error", "product": product_data},
                 )
                 continue
 
         # Log successful import
         logger.info(
             f"Imported {len(imported_products)} products",
-            extra={"event": "import_products", "count": len(imported_products)},
+            metadata={"event": "import_products", "count": len(imported_products)}
         )
         return imported_products
 
     except json.JSONDecodeError as e:
-        logger.error(f"JSON parsing error: {e}", extra={"event": "json_parse_error"})
+        logger.error(f"JSON parsing error: {e}", metadata={"event": "json_parse_error"})
         raise ErrorResponse("Invalid JSON format in file.", status_code=400)
     except UnicodeDecodeError as e:
-        logger.error(f"File encoding error: {e}", extra={"event": "encoding_error"})
+        logger.error(f"File encoding error: {e}", metadata={"event": "encoding_error"})
         raise ErrorResponse(
             "File encoding error. Please ensure the file is UTF-8 encoded.",
             status_code=400,
         )
     except PyMongoError as e:
         logger.error(
-            f"MongoDB error during import: {e}", extra={"event": "mongodb_error"}
+            f"MongoDB error during import: {e}", metadata={"event": "mongodb_error"}
         )
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
@@ -193,7 +193,7 @@ async def export_products(collection, filetype: str = "json"):
         except Exception as e:
             logger.error(
                 f"Error fetching products from database: {e}",
-                extra={"event": "export_fetch_error"},
+                metadata={"event": "export_fetch_error"},
             )
             raise ErrorResponse(
                 "Error fetching products from database.", status_code=500
@@ -201,7 +201,7 @@ async def export_products(collection, filetype: str = "json"):
 
         logger.info(
             f"Found {len(products)} products to export",
-            extra={"event": "export_products_found", "count": len(products)},
+            metadata={"event": "export_products_found", "count": len(products)},
         )
 
         if filetype == "json":
@@ -238,7 +238,7 @@ async def export_products(collection, filetype: str = "json"):
             except Exception as e:
                 logger.error(
                     f"Error converting products to JSON: {e}",
-                    extra={"event": "export_json_error"},
+                    metadata={"event": "export_json_error"},
                 )
                 raise ErrorResponse(
                     "Error formatting products as JSON.", status_code=500
@@ -304,7 +304,7 @@ async def export_products(collection, filetype: str = "json"):
                         except Exception as e:
                             logger.error(
                                 f"Error processing product for CSV: {e}",
-                                extra={
+                                metadata={
                                     "event": "export_csv_product_error",
                                     "product_id": str(product.get("_id", "unknown")),
                                 },
@@ -315,7 +315,7 @@ async def export_products(collection, filetype: str = "json"):
             except Exception as e:
                 logger.error(
                     f"Error creating CSV content: {e}",
-                    extra={"event": "export_csv_error"},
+                    metadata={"event": "export_csv_error"},
                 )
                 raise ErrorResponse(
                     "Error formatting products as CSV.", status_code=500
@@ -324,7 +324,7 @@ async def export_products(collection, filetype: str = "json"):
         # Log successful export
         logger.info(
             f"Exported {len(products)} products as {filetype}",
-            extra={
+            metadata={
                 "event": "export_products",
                 "count": len(products),
                 "format": filetype,
@@ -336,7 +336,7 @@ async def export_products(collection, filetype: str = "json"):
         raise
     except PyMongoError as e:
         logger.error(
-            f"MongoDB error during export: {e}", extra={"event": "mongodb_error"}
+            f"MongoDB error during export: {e}", metadata={"event": "mongodb_error"}
         )
         raise ErrorResponse(
             "Database connection error. Please try again later.", status_code=503
@@ -344,7 +344,7 @@ async def export_products(collection, filetype: str = "json"):
     except Exception as e:
         logger.error(
             f"Unexpected error during export: {e}",
-            extra={"event": "export_unexpected_error"},
+            metadata={"event": "export_unexpected_error"},
         )
         raise ErrorResponse(
             "An unexpected error occurred during export.", status_code=500
