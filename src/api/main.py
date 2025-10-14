@@ -23,8 +23,8 @@ from src.shared.core.errors import (
     error_response_handler,
     http_exception_handler,
 )
-from src.api.middlewares.correlation_id import CorrelationIdMiddleware
-from src.shared.observability import initialize_observability, logger
+from src.shared.middlewares import CorrelationIdMiddleware
+from src.shared.observability.logging import logger
 from src.api.routers import home_router, product_router
 
 # Import limiter from review_router since that's where rate limiting is used
@@ -35,8 +35,7 @@ load_dotenv()
 
 app = FastAPI()
 
-# Initialize observability system early
-initialize_observability(app)
+# Tracing already initialized in src.shared.tracing_init
 
 # Add correlation ID middleware first
 app.add_middleware(CorrelationIdMiddleware)
@@ -70,9 +69,6 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
     return PlainTextResponse("Rate limit exceeded", status_code=429)
 
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 
 # Include routers
 app.include_router(product_router, prefix="/api/products", tags=["products"])

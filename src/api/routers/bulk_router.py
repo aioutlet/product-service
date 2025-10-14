@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Body, Depends, status
 
-import src.controllers.bulk_product_controller as bulk_product_controller
+import src.api.controllers.bulk_product_controller as bulk_product_controller
 from src.shared.core.auth import get_current_user
 from src.shared.core.errors import ErrorResponseModel
 from src.shared.db.mongodb import get_product_collection

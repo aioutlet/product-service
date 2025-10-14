@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from src.controllers.home_controller import get_version, get_welcome_message, health
+from src.api.controllers.home_controller import get_version, get_welcome_message, health
 
 router = APIRouter()
 

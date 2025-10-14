@@ -8,8 +8,8 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
-from src.api.middlewares.correlation_id import get_correlation_id
-from .tracing import get_current_trace_id, get_current_span_id
+from src.shared.utils.correlation_id import get_correlation_id
+from ..tracing import get_current_trace_id, get_current_span_id
 
 # Service configuration
 SERVICE_NAME = os.getenv("SERVICE_NAME", "product-service")

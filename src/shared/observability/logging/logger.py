@@ -26,7 +26,7 @@ from .schemas import (
     create_performance_log,
     create_security_event
 )
-from .tracing import add_span_attributes, set_span_status
+from ..tracing import add_span_attributes, set_span_status
 
 
 class ProductServiceLogger:
@@ -43,37 +43,21 @@ class ProductServiceLogger:
         
         # Set up Python logging
         self._setup_python_logging()
-        
-        # Log initialization
-        self.info(
-            "Logger initialized",
-            metadata={
-                "config": self.config,
-                "service": self.service_info
-            }
-        )
     
     def _setup_python_logging(self):
         """
-        Set up Python logging configuration
+        Set up Python logging configuration with proper formatters
         """
-        # Clear any existing handlers
-        logging.getLogger().handlers.clear()
+        root_logger = logging.getLogger()
         
-        # Set up console handler
-        if self.config["toConsole"]:
-            console_handler = logging.StreamHandler(sys.stdout)
-            console_handler.setLevel(self.config["level"])
-            logging.getLogger().addHandler(console_handler)
-        
-        # Set up file handler
-        if self.config["toFile"]:
-            file_handler = logging.FileHandler(self.config["filePath"])
-            file_handler.setLevel(self.config["level"])
-            logging.getLogger().addHandler(file_handler)
+        # Clear any existing handlers to avoid duplicates
+        root_logger.handlers.clear()
         
         # Set logging level
-        logging.getLogger().setLevel(self.config["level"])
+        root_logger.setLevel(self.config["level"])
+        
+        # Disable propagation to avoid duplicate logs
+        root_logger.propagate = False
     
     def _log(
         self,
@@ -100,18 +84,18 @@ class ProductServiceLogger:
             **kwargs
         )
         
-        # Format log entry based on config
-        log_format = self.config.get("format", "console")
-        
+        # Output to console with configured format
         if self.config["toConsole"]:
+            log_format = self.config.get("format", "console")
             console_output = format_log_entry(log_entry, log_format)
-            print(console_output)
+            print(console_output, flush=True)
         
+        # Output to file always in JSON format
         if self.config["toFile"]:
-            # Always use JSON format for file logging
             file_output = format_log_entry(log_entry, "json")
-            # Write to file using Python logging
-            getattr(logging.getLogger(), level.lower())(file_output)
+            # Write directly to file to avoid Python logging duplication
+            with open(self.config["filePath"], "a") as f:
+                f.write(file_output + "\n")
         
         # Add to current span if available
         if level.upper() in ["ERROR", "CRITICAL"]:

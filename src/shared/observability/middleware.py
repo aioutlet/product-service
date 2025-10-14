@@ -1,16 +1,15 @@
-"""
+"""  
 Observability middleware for FastAPI
 """
 
+import os
 import time
-from typing import Callable
-
-from fastapi import Request, Response
+from typing import Callablefrom fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..middlewares.correlation_id import get_correlation_id
-from .logger import logger
-from .tracing import add_span_attributes, create_span_context
+from src.shared.utils.correlation_id import get_correlation_id
+from .logging.logger import logger
+from .tracing.tracer import add_span_attributes, create_span_context
 
 
 class ObservabilityMiddleware(BaseHTTPMiddleware):

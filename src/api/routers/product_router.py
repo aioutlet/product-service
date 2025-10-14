@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Response, status
 
-import src.controllers.product_controller as product_controller
+import src.api.controllers.product_controller as product_controller
 from src.shared.core.auth import get_current_user
 from src.shared.core.errors import ErrorResponseModel
 from src.shared.db.mongodb import get_product_collection
@@ -25,6 +25,27 @@ router.include_router(import_export_router, tags=["import-export"])
 
 
 # Product CRUD operations
+@router.get(
+    "/trending",
+    response_model=list[ProductDB],
+    responses={503: {"model": ErrorResponseModel}},
+)
+async def get_trending_products(
+    limit: int = Query(4, ge=1, le=20, description="Max trending products to return"),
+    collection=Depends(get_product_collection),
+):
+    """
+    Get trending products based on ratings, reviews, and recency.
+    
+    Trending algorithm:
+    - Considers products with at least 3 reviews
+    - Scores based on: average_rating × num_reviews
+    - Recent products (< 30 days old) get 1.5x boost
+    - Returns top N products by score
+    """
+    return await product_controller.get_trending_products(collection, limit)
+
+
 @router.get(
     "/search",
     response_model=ProductSearchResponse,

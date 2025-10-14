@@ -1,10 +1,19 @@
 """
 Observability module for Product Service
 Provides unified logging, tracing, and monitoring capabilities
+
+Structure:
+- logging/ - Structured logging with correlation IDs
+- tracing/ - Distributed tracing with OpenTelemetry
 """
 
-from .setup import initialize_observability
-from .logger import logger
-from .tracing import tracer, get_current_span
+# Re-export from submodules for convenience
+from .logging import logger
+from .tracing import tracer, get_current_span, initialize_tracing
 
-__all__ = ['initialize_observability', 'logger', 'tracer', 'get_current_span']
+__all__ = [
+    'logger',
+    'tracer',
+    'get_current_span',
+    'initialize_tracing',
+]

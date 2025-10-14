@@ -1,12 +1,10 @@
-import uuid
-from contextvars import ContextVar
-from typing import Optional
-
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-# Context variable to store correlation ID
-correlation_id_context: ContextVar[str] = ContextVar("correlation_id", default="")
+from src.shared.utils.correlation_id import (
+    set_correlation_id,
+    extract_correlation_id_from_headers,
+)
 
 
 class CorrelationIdMiddleware(BaseHTTPMiddleware):
@@ -15,18 +13,18 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        # Get correlation ID from header or generate new one
-        correlation_id = request.headers.get("x-correlation-id", str(uuid.uuid4()))
+        # Extract correlation ID from headers or generate new one
+        correlation_id = extract_correlation_id_from_headers(dict(request.headers))
 
-        # Set correlation ID in context
-        correlation_id_context.set(correlation_id)
+        # Set correlation ID in context (shared across API and Consumer)
+        set_correlation_id(correlation_id)
 
         # Add correlation ID to request state for easy access
         request.state.correlation_id = correlation_id
 
         # Import logger here to avoid circular imports
         try:
-            from src.shared.observability.logger import logger
+            from src.shared.observability.logging import logger
             logger.debug(
                 f"{request.method} {request.url.path} - Processing request",
                 correlation_id=correlation_id,
@@ -54,30 +52,6 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def get_correlation_id() -> str:
-    """
-    Get the current correlation ID from context, generate one if none exists
-    """
-    correlation_id = correlation_id_context.get("")
-    if not correlation_id:
-        # Generate a new correlation ID if none exists in context
-        correlation_id = str(uuid.uuid4())
-        correlation_id_context.set(correlation_id)
-    return correlation_id
-
-
-def create_headers_with_correlation_id(
-    additional_headers: Optional[dict] = None,
-) -> dict:
-    """
-    Create headers with correlation ID for outgoing requests
-    """
-    headers = {
-        "X-Correlation-ID": get_correlation_id(),
-        "Content-Type": "application/json",
-    }
-
-    if additional_headers:
-        headers.update(additional_headers)
-
-    return headers
+# Note: get_correlation_id and create_headers_with_correlation_id
+# are now available from src.shared.utils.correlation_id
+# Import them from there if needed in other modules

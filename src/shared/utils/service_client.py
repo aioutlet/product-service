@@ -9,9 +9,8 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from src.api.middlewares.correlation_id import (
+from src.shared.utils.correlation_id import (
     create_headers_with_correlation_id,
-    get_correlation_id,
 )
 
 

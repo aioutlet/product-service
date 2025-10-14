@@ -102,6 +102,93 @@ async def search_products(
         )
 
 
+async def get_trending_products(collection, limit=4):
+    """
+    Get trending products based on data-driven algorithm.
+    
+    Trending score calculation:
+    - Base score: (average_rating * num_reviews)
+    - Recency boost: Products created in last 30 days get 1.5x multiplier
+    - Minimum threshold: At least 3 reviews required to be considered trending
+    
+    Args:
+        collection: MongoDB collection instance
+        limit: Maximum number of trending products to return (default: 4)
+    
+    Returns:
+        list[ProductDB]: List of trending products sorted by score
+        
+    Raises:
+        ErrorResponse: If database error occurs
+    """
+    try:
+        # Calculate date 30 days ago for recency boost
+        thirty_days_ago = datetime.now(timezone.utc).timestamp() - (30 * 24 * 60 * 60)
+        
+        # Aggregation pipeline to calculate trending scores
+        pipeline = [
+            # Filter: only active products with at least 3 reviews
+            {
+                "$match": {
+                    "is_active": True,
+                    "num_reviews": {"$gte": 3}
+                }
+            },
+            # Add computed fields
+            {
+                "$addFields": {
+                    # Base trending score: rating * reviews
+                    "base_score": {
+                        "$multiply": ["$average_rating", "$num_reviews"]
+                    },
+                    # Check if product is recent (created in last 30 days)
+                    "is_recent": {
+                        "$gte": [
+                            {"$toLong": "$created_at"},
+                            thirty_days_ago * 1000  # Convert to milliseconds
+                        ]
+                    }
+                }
+            },
+            # Calculate final trending score with recency boost
+            {
+                "$addFields": {
+                    "trending_score": {
+                        "$cond": {
+                            "if": "$is_recent",
+                            "then": {"$multiply": ["$base_score", 1.5]},  # 50% boost for recent
+                            "else": "$base_score"
+                        }
+                    }
+                }
+            },
+            # Sort by trending score (highest first)
+            {"$sort": {"trending_score": -1}},
+            # Limit results
+            {"$limit": limit}
+        ]
+        
+        # Execute aggregation pipeline
+        cursor = collection.aggregate(pipeline)
+        products = [product_doc_to_model(doc) async for doc in cursor]
+        
+        logger.info(
+            f"Fetched {len(products)} trending products",
+            extra={"event": "get_trending_products", "count": len(products)}
+        )
+        
+        return products
+        
+    except PyMongoError as e:
+        logger.error(
+            f"MongoDB error fetching trending products: {e}",
+            extra={"event": "mongodb_error"}
+        )
+        raise ErrorResponse(
+            "Database connection error. Please try again later.", status_code=503
+        )
+
+
 async def list_products(
     collection,
     category=None,

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-import src.controllers.review_controller as review_controller
+import src.api.controllers.review_controller as review_controller
 from src.shared.core.auth import get_current_user
 from src.shared.core.errors import ErrorResponseModel
 from src.shared.db.mongodb import get_product_collection

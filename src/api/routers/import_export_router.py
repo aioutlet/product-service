@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 
-import src.controllers.import_export_controller as import_export_controller
+import src.api.controllers.import_export_controller as import_export_controller
 from src.shared.core.auth import get_current_user
 from src.shared.core.errors import ErrorResponseModel
 from src.shared.core.logger import logger

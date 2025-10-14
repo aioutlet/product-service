@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from src.api.middlewares.correlation_id import get_correlation_id
+from src.shared.utils.correlation_id import get_correlation_id
 
 # Environment-based configuration
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")

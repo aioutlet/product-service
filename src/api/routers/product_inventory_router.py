@@ -10,7 +10,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from src.controllers.product_controller import get_all_products, get_product_by_id
+from src.api.controllers.product_controller import get_all_products, get_product_by_id
 from src.shared.core.logger import get_logger
 from src.shared.db.mongodb import get_database
 from src.shared.services.inventory_client import InventoryItem, get_inventory_client

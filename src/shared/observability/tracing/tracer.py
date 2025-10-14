@@ -25,18 +25,25 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 ENABLE_TRACING = os.getenv("ENABLE_TRACING", "true").lower() == "true"
 OTEL_EXPORTER_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318/v1/traces")
 
-# Global tracer instance
+# Global tracer instance and initialization flag
 tracer = None
+_tracing_initialized = False
 
 
 def initialize_tracing():
     """
     Initialize OpenTelemetry tracing for the Product Service
+    Only initializes once, subsequent calls are ignored
     """
-    global tracer
+    global tracer, _tracing_initialized
+    
+    # Skip if already initialized
+    if _tracing_initialized:
+        return
     
     if not ENABLE_TRACING:
         print(f"[{SERVICE_NAME}] Tracing disabled by configuration")
+        _tracing_initialized = True
         return
     
     try:
@@ -63,16 +70,28 @@ def initialize_tracing():
         instrument_libraries()
         
         print(f"[{SERVICE_NAME}] Tracing initialized with endpoint: {OTEL_EXPORTER_ENDPOINT}")
+        _tracing_initialized = True
         
     except Exception as e:
         print(f"[{SERVICE_NAME}] Failed to initialize tracing: {e}")
         tracer = trace.get_tracer(SERVICE_NAME, SERVICE_VERSION)  # Fallback tracer
+        _tracing_initialized = True
+
+
+# Track instrumented libraries to avoid re-instrumentation
+_libraries_instrumented = False
 
 
 def instrument_libraries():
     """
     Auto-instrument supported libraries
+    Only instruments once, subsequent calls are ignored
     """
+    global _libraries_instrumented
+    
+    if _libraries_instrumented:
+        return
+    
     try:
         # Instrument FastAPI
         FastAPIInstrumentor().instrument()
@@ -86,13 +105,15 @@ def instrument_libraries():
         # Instrument Redis
         RedisInstrumentor().instrument()
         
-        # Instrument logging
-        LoggingInstrumentor().instrument(set_logging_format=True)
+        # Instrument logging (disable format setting to avoid conflicts with our logger)
+        LoggingInstrumentor().instrument(set_logging_format=False)
         
         print(f"[{SERVICE_NAME}] Libraries instrumented successfully")
+        _libraries_instrumented = True
         
     except Exception as e:
         print(f"[{SERVICE_NAME}] Failed to instrument libraries: {e}")
+        _libraries_instrumented = True  # Mark as attempted to avoid retries
 
 
 def get_current_span():
