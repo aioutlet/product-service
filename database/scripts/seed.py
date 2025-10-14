@@ -74,7 +74,10 @@ class ProductDatabaseSeeder:
         """Seed products from JSON file"""
         # Try products-data.json first (primary source)
         products_data_path = os.path.join(
-            os.path.dirname(__file__), "..", "data", "products.json"
+            os.path.dirname(__file__), "..", "data", "products-data.json"
+        )
+        products_seeds_path = os.path.join(
+            os.path.dirname(__file__), "..", "seeds", "products.json"
         )
        
         products_data = []
@@ -107,12 +110,17 @@ class ProductDatabaseSeeder:
             base_rating = 4.0 + (min(stock_quantity, 150) / 150) * 0.9  # 4.0 to 4.9
             num_reviews = max(3, int(stock_quantity * 0.8))  # At least 3 reviews
             
-            # Map JSON data to MongoDB schema
+            # Map JSON data to MongoDB schema with hierarchical categories
             product_doc = {
                 "name": product.get("name"),
                 "description": product.get("description"),
                 "price": float(product.get("price", 0)),
+                # Hierarchical category fields
+                "department": product.get("department"),
                 "category": product.get("category"),
+                "subcategory": product.get("subcategory"),
+                "productType": product.get("productType"),
+                # Other fields
                 "brand": product.get("brand"),
                 "sku": product.get("sku"),
                 "images": product.get("images", []),

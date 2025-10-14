@@ -80,7 +80,9 @@ async def search_products(
         description="Search text to find in product name or description",
         min_length=1,
     ),
-    category: str = Query(None, description="Filter by category"),
+    department: str = Query(None, description="Filter by department (e.g., Women, Men, Electronics)"),
+    category: str = Query(None, description="Filter by category (e.g., Clothing, Accessories)"),
+    subcategory: str = Query(None, description="Filter by subcategory (e.g., Tops, Laptops)"),
     min_price: float = Query(None, ge=0, description="Minimum price"),
     max_price: float = Query(None, ge=0, description="Maximum price"),
     tags: list[str] = Query(None, description="Filter by tags"),
@@ -90,6 +92,7 @@ async def search_products(
 ):
     """
     Search products by text in name and description with optional filters.
+    Supports hierarchical filtering by department/category/subcategory.
     Returns paginated results with metadata.
     """
     # Add no-cache headers to prevent client-side caching
@@ -98,7 +101,7 @@ async def search_products(
     response.headers["Expires"] = "0"
 
     return await product_controller.search_products(
-        collection, q, category, min_price, max_price, tags, skip, limit
+        collection, q, department, category, subcategory, min_price, max_price, tags, skip, limit
     )
 
 
@@ -108,7 +111,9 @@ async def search_products(
     responses={404: {"model": ErrorResponseModel}},
 )
 async def list_products(
-    category: str = Query(None, description="Filter by category"),
+    department: str = Query(None, description="Filter by department (e.g., Women, Men, Electronics)"),
+    category: str = Query(None, description="Filter by category (e.g., Clothing, Accessories)"),
+    subcategory: str = Query(None, description="Filter by subcategory (e.g., Tops, Laptops)"),
     min_price: float = Query(None, ge=0, description="Minimum price"),
     max_price: float = Query(None, ge=0, description="Maximum price"),
     tags: list[str] = Query(None, description="Filter by tags"),
@@ -118,9 +123,10 @@ async def list_products(
 ):
     """
     List products with optional filters and pagination.
+    Supports hierarchical filtering by department/category/subcategory.
     """
     return await product_controller.list_products(
-        collection, category, min_price, max_price, tags, skip, limit
+        collection, department, category, subcategory, min_price, max_price, tags, skip, limit
     )
 
 

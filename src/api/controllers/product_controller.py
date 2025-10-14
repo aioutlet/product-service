@@ -12,7 +12,9 @@ from src.shared.utils.validators import validate_object_id
 async def search_products(
     collection,
     search_text,
+    department=None,
     category=None,
+    subcategory=None,
     min_price=None,
     max_price=None,
     tags=None,
@@ -21,12 +23,14 @@ async def search_products(
 ):
     """
     Search products by text in name and description fields.
-    Supports additional filtering by category, price range, and tags.
+    Supports additional filtering by hierarchical taxonomy, price range, and tags.
 
     Args:
         collection: MongoDB collection instance
         search_text: Text to search for in name, description, tags, and brand
-        category: Optional category filter (case-insensitive)
+        department: Optional department filter (Level 1: Women, Men, Kids, etc.)
+        category: Optional category filter (Level 2: Clothing, Accessories, etc.)
+        subcategory: Optional subcategory filter (Level 3: Tops, Laptops, etc.)
         min_price: Optional minimum price filter
         max_price: Optional maximum price filter
         tags: Optional list of tags to filter by
@@ -62,12 +66,22 @@ async def search_products(
             {"brand": search_pattern},  # Also search in brand
         ]
 
-        # Add additional filters
+        # Add hierarchical taxonomy filters
+        if department:
+            query["department"] = {
+                "$regex": f"^{department}$",
+                "$options": "i",
+            }  # Case-insensitive department match
         if category:
             query["category"] = {
                 "$regex": f"^{category}$",
                 "$options": "i",
             }  # Case-insensitive category match
+        if subcategory:
+            query["subcategory"] = {
+                "$regex": f"^{subcategory}$",
+                "$options": "i",
+            }  # Case-insensitive subcategory match
         if min_price is not None or max_price is not None:
             price_query = {}
             if min_price is not None:
@@ -302,7 +316,9 @@ async def get_trending_products(collection, limit=4):
 
 async def list_products(
     collection,
+    department=None,
     category=None,
+    subcategory=None,
     min_price=None,
     max_price=None,
     tags=None,
@@ -314,7 +330,9 @@ async def list_products(
 
     Args:
         collection: MongoDB collection instance
-        category: Optional category filter (case-insensitive)
+        department: Optional department filter (Level 1: Women, Men, Kids, etc.)
+        category: Optional category filter (Level 2: Clothing, Accessories, etc.)
+        subcategory: Optional subcategory filter (Level 3: Tops, Laptops, etc.)
         min_price: Optional minimum price filter
         max_price: Optional maximum price filter
         tags: Optional list of tags to filter by
@@ -331,12 +349,22 @@ async def list_products(
         # Build query for active products only
         query = {"is_active": True}
 
-        # Apply optional filters
+        # Apply hierarchical taxonomy filters
+        if department:
+            query["department"] = {
+                "$regex": f"^{department}$",
+                "$options": "i",
+            }  # Case-insensitive department match
         if category:
             query["category"] = {
                 "$regex": f"^{category}$",
                 "$options": "i",
             }  # Case-insensitive category match
+        if subcategory:
+            query["subcategory"] = {
+                "$regex": f"^{subcategory}$",
+                "$options": "i",
+            }  # Case-insensitive subcategory match
         if min_price is not None or max_price is not None:
             price_query = {}
             if min_price is not None:
@@ -740,17 +768,23 @@ def product_doc_to_model(doc):
         name=doc["name"],
         description=doc.get("description"),
         price=doc["price"],
-        # Removed in_stock field - inventory management is handled by inventory-service
-        category=doc.get("category"),
         brand=doc.get("brand"),
         sku=doc.get("sku"),
+        # Hierarchical taxonomy fields
+        department=doc.get("department"),
+        category=doc.get("category"),
+        subcategory=doc.get("subcategory"),
+        product_type=doc.get("productType"),  # Note: MongoDB uses productType, model uses product_type
+        # Media and metadata
         images=doc.get("images", []),
         tags=doc.get("tags", []),
         attributes=doc.get("attributes", {}),
         variants=doc.get("variants", []),
+        # Reviews and ratings
         average_rating=doc.get("average_rating", 0),
         num_reviews=doc.get("num_reviews", 0),
         reviews=doc.get("reviews", []),
+        # Audit trail
         created_by=doc.get("created_by", "system"),
         updated_by=doc.get("updated_by"),
         created_at=doc.get("created_at", datetime.now(timezone.utc)),
