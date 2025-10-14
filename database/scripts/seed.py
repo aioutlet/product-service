@@ -76,9 +76,6 @@ class ProductDatabaseSeeder:
         products_data_path = os.path.join(
             os.path.dirname(__file__), "..", "data", "products-data.json"
         )
-        products_seeds_path = os.path.join(
-            os.path.dirname(__file__), "..", "seeds", "products.json"
-        )
        
         products_data = []
         source_file = None
@@ -125,8 +122,8 @@ class ProductDatabaseSeeder:
                 "sku": product.get("sku"),
                 "images": product.get("images", []),
                 "tags": product.get("tags", []),
-                "attributes": product.get("attributes", {}),
-                "variants": [],
+                "colors": product.get("colors", []),
+                "sizes": product.get("sizes", []),
                 "average_rating": round(base_rating, 1),
                 "num_reviews": num_reviews,
                 "reviews": [],
@@ -160,8 +157,8 @@ class ProductDatabaseSeeder:
                     "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800"
                 ],
                 "tags": ["wireless", "bluetooth", "headphones", "noise-canceling"],
-                "attributes": {"color": "Black", "connectivity": "Bluetooth 5.0", "battery": "30 hours"},
-                "variants": [],
+                "colors": ["Black", "White", "Silver"],
+                "sizes": [],
                 "average_rating": 4.7,
                 "num_reviews": 156,
                 "reviews": [],
@@ -184,8 +181,8 @@ class ProductDatabaseSeeder:
                     "https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=800"
                 ],
                 "tags": ["smartwatch", "fitness", "health", "gps"],
-                "attributes": {"color": "Silver", "display": "AMOLED", "waterproof": "5ATM"},
-                "variants": [],
+                "colors": ["Silver", "Black", "Rose Gold"],
+                "sizes": [],
                 "average_rating": 4.5,
                 "num_reviews": 203,
                 "reviews": [],
@@ -207,8 +204,8 @@ class ProductDatabaseSeeder:
                     "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=800"
                 ],
                 "tags": ["speaker", "bluetooth", "portable", "waterproof"],
-                "attributes": {"color": "Blue", "battery": "12 hours", "waterproof": "IPX7"},
-                "variants": [],
+                "colors": ["Blue", "Red", "Black"],
+                "sizes": [],
                 "average_rating": 4.3,
                 "num_reviews": 89,
                 "reviews": [],
@@ -230,8 +227,8 @@ class ProductDatabaseSeeder:
                     "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800"
                 ],
                 "tags": ["keyboard", "gaming", "mechanical", "rgb"],
-                "attributes": {"switches": "Cherry MX Blue", "backlight": "RGB", "connectivity": "USB-C"},
-                "variants": [],
+                "colors": ["Black"],
+                "sizes": [],
                 "average_rating": 4.8,
                 "num_reviews": 342,
                 "reviews": [],

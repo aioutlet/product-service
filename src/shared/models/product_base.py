@@ -31,8 +31,10 @@ class ProductBase(ProductValidatorMixin, BaseModel):
     # Media and metadata
     images: List[str] = []
     tags: List[str] = []
-    attributes: Dict[str, str] = {}
-    variants: List[Dict[str, str]] = []
+    
+    # Product variations
+    colors: List[str] = []  # Available colors: ["Red", "Blue", "Black"]
+    sizes: List[str] = []   # Available sizes: ["S", "M", "L", "XL"]
     
     # Reviews and ratings
     average_rating: float = 0
