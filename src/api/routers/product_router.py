@@ -26,6 +26,28 @@ router.include_router(import_export_router, tags=["import-export"])
 
 # Product CRUD operations
 @router.get(
+    "/trending-categories",
+    response_model=list[dict],
+    responses={503: {"model": ErrorResponseModel}},
+)
+async def get_trending_categories(
+    limit: int = Query(5, ge=1, le=20, description="Max trending categories to return"),
+    collection=Depends(get_product_collection),
+):
+    """
+    Get trending categories based on product popularity.
+    
+    Trending algorithm per category:
+    - Product count in category
+    - Average rating across products
+    - Total reviews across products
+    - Score = (avg_rating × total_reviews × product_count)
+    - Returns top N categories by score
+    """
+    return await product_controller.get_trending_categories(collection, limit)
+
+
+@router.get(
     "/trending",
     response_model=list[ProductDB],
     responses={503: {"model": ErrorResponseModel}},

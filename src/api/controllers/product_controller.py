@@ -102,6 +102,113 @@ async def search_products(
         )
 
 
+async def get_trending_categories(collection, limit=5):
+    """
+    Get trending categories based on product popularity algorithm.
+    
+    Trending score calculation per category:
+    - Product count in category
+    - Average rating across all products
+    - Total reviews across all products
+    - Trending score = (avg_rating * total_reviews * product_count)
+    
+    Args:
+        collection: MongoDB collection instance
+        limit: Maximum number of trending categories to return (default: 5)
+    
+    Returns:
+        list[dict]: List of trending categories with metadata sorted by score
+        
+    Raises:
+        ErrorResponse: If database error occurs
+    """
+    try:
+        # Aggregation pipeline to calculate trending categories
+        pipeline = [
+            # Filter: only active products
+            {
+                "$match": {
+                    "is_active": True,
+                    "category": {"$exists": True, "$ne": None, "$ne": ""}
+                }
+            },
+            # Group by category and calculate metrics
+            {
+                "$group": {
+                    "_id": "$category",
+                    "product_count": {"$sum": 1},
+                    "avg_rating": {"$avg": "$average_rating"},
+                    "total_reviews": {"$sum": "$num_reviews"},
+                    "in_stock_count": {
+                        "$sum": {"$cond": [{"$gt": ["$num_reviews", 0]}, 1, 0]}
+                    },
+                    # Get one featured product from category (highest rated)
+                    "featured_product": {
+                        "$first": {
+                            "name": "$name",
+                            "price": "$price",
+                            "images": "$images",
+                            "average_rating": "$average_rating"
+                        }
+                    }
+                }
+            },
+            # Calculate trending score
+            {
+                "$addFields": {
+                    "trending_score": {
+                        "$multiply": [
+                            {"$ifNull": ["$avg_rating", 0]},
+                            {"$ifNull": ["$total_reviews", 0]},
+                            "$product_count"
+                        ]
+                    }
+                }
+            },
+            # Sort by trending score (highest first)
+            {"$sort": {"trending_score": -1}},
+            # Limit results
+            {"$limit": limit},
+            # Format output
+            {
+                "$project": {
+                    "_id": 0,
+                    "name": "$_id",
+                    "product_count": 1,
+                    "in_stock_count": 1,
+                    "avg_rating": {"$round": ["$avg_rating", 1]},
+                    "total_reviews": 1,
+                    "trending_score": {"$round": ["$trending_score", 0]},
+                    "featured_product": 1
+                }
+            }
+        ]
+        
+        # Execute aggregation pipeline
+        cursor = collection.aggregate(pipeline)
+        categories = [doc async for doc in cursor]
+        
+        logger.info(
+            f"Fetched {len(categories)} trending categories",
+            metadata={"event": "get_trending_categories", "count": len(categories)}
+        )
+        
+        return categories
+        
+    except PyMongoError as e:
+        logger.error(
+            f"MongoDB error fetching trending categories: {e}",
+            metadata={"event": "mongodb_error", "error": str(e)}
+        )
+        raise ErrorResponse(f"Database error: {str(e)}", status_code=500)
+    except Exception as e:
+        logger.error(
+            f"Unexpected error fetching trending categories: {e}",
+            metadata={"event": "trending_categories_error", "error": str(e), "error_type": type(e).__name__}
+        )
+        raise ErrorResponse(f"Error fetching trending categories: {str(e)}", status_code=500)
+
+
 async def get_trending_products(collection, limit=4):
     """
     Get trending products based on data-driven algorithm.
