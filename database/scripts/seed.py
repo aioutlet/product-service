@@ -127,7 +127,6 @@ class ProductDatabaseSeeder:
                 "specifications": product.get("specifications", {}),
                 "average_rating": round(base_rating, 1),
                 "num_reviews": num_reviews,
-                "reviews": [],
                 "created_by": "system",
                 "updated_by": None,
                 "created_at": datetime.now(timezone.utc),

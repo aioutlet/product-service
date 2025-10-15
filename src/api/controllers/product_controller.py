@@ -783,10 +783,9 @@ def product_doc_to_model(doc):
         sizes=doc.get("sizes", []),
         # Product specifications
         specifications=doc.get("specifications", {}),
-        # Reviews and ratings
+        # Reviews and ratings (aggregate only)
         average_rating=doc.get("average_rating", 0),
         num_reviews=doc.get("num_reviews", 0),
-        reviews=doc.get("reviews", []),
         # Audit trail
         created_by=doc.get("created_by", "system"),
         updated_by=doc.get("updated_by"),
