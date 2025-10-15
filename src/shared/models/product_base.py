@@ -36,6 +36,9 @@ class ProductBase(ProductValidatorMixin, BaseModel):
     colors: List[str] = []  # Available colors: ["Red", "Blue", "Black"]
     sizes: List[str] = []   # Available sizes: ["S", "M", "L", "XL"]
     
+    # Product specifications (flexible key-value pairs)
+    specifications: Dict[str, str] = {}
+    
     # Reviews and ratings
     average_rating: float = 0
     num_reviews: int = 0

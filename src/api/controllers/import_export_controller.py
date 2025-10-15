@@ -366,19 +366,30 @@ def product_doc_to_model(doc):
         name=doc["name"],
         description=doc.get("description"),
         price=doc["price"],
-        # Removed in_stock field - inventory management is handled by inventory-service
-        category=doc.get("category"),
         brand=doc.get("brand"),
         sku=doc.get("sku"),
+        # Hierarchical taxonomy fields
+        department=doc.get("department"),
+        category=doc.get("category"),
+        subcategory=doc.get("subcategory"),
+        product_type=doc.get("productType"),
+        # Media and metadata
         images=doc.get("images", []),
         tags=doc.get("tags", []),
-        attributes=doc.get("attributes", {}),
-        variants=doc.get("variants", []),
+        # Product variations
+        colors=doc.get("colors", []),
+        sizes=doc.get("sizes", []),
+        # Product specifications
+        specifications=doc.get("specifications", {}),
+        # Reviews and ratings
         average_rating=doc.get("average_rating", 0),
         num_reviews=doc.get("num_reviews", 0),
         reviews=doc.get("reviews", []),
-        created_by=doc["created_by"],
+        # Audit trail
+        created_by=doc.get("created_by", "system"),
         updated_by=doc.get("updated_by"),
         created_at=doc.get("created_at", datetime.now(timezone.utc)),
         updated_at=doc.get("updated_at", datetime.now(timezone.utc)),
+        is_active=doc.get("is_active", True),
+        history=doc.get("history", []),
     )

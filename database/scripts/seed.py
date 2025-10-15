@@ -124,6 +124,7 @@ class ProductDatabaseSeeder:
                 "tags": product.get("tags", []),
                 "colors": product.get("colors", []),
                 "sizes": product.get("sizes", []),
+                "specifications": product.get("specifications", {}),
                 "average_rating": round(base_rating, 1),
                 "num_reviews": num_reviews,
                 "reviews": [],

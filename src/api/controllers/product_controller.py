@@ -781,6 +781,8 @@ def product_doc_to_model(doc):
         # Product variations
         colors=doc.get("colors", []),
         sizes=doc.get("sizes", []),
+        # Product specifications
+        specifications=doc.get("specifications", {}),
         # Reviews and ratings
         average_rating=doc.get("average_rating", 0),
         num_reviews=doc.get("num_reviews", 0),

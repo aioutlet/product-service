@@ -10,24 +10,17 @@
     "productType": "T-Shirts",
     "brand": "Everlane",
     "sku": "EVR-WT-WHT-M",
-    "images": [
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800"
-    ],
-    "tags": [
-      "t-shirt"
-    ],
-    "colors": [
-      "White",
-      "Black",
-      "Gray"
-    ],
-    "sizes": [
-      "XS",
-      "S",
-      "M",
-      "L",
-      "XL"
-    ]
+    "images": ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800"],
+    "tags": ["t-shirt"],
+    "colors": ["White", "Black", "Gray"],
+    "sizes": ["XS", "S", "M", "L", "XL"],
+    "specifications": {
+      "Material": "100% Organic Cotton",
+      "Weight": "180 GSM",
+      "Fit": "Relaxed Fit",
+      "Care": "Machine wash cold, tumble dry low",
+      "Origin": "Made in USA"
+    }
   },
   {
     "name": "Floral Summer Dress",
@@ -40,24 +33,18 @@
     "productType": "Summer Dresses",
     "brand": "Reformation",
     "sku": "REF-SD-FLR-S",
-    "images": [
-      "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800"
-    ],
-    "tags": [
-      "dress"
-    ],
-    "colors": [
-      "Floral",
-      "Red",
-      "Blue"
-    ],
-    "sizes": [
-      "XS",
-      "S",
-      "M",
-      "L",
-      "XL"
-    ]
+    "images": ["https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800"],
+    "tags": ["dress"],
+    "colors": ["Floral", "Red", "Blue"],
+    "sizes": ["XS", "S", "M", "L", "XL"],
+    "specifications": {
+      "Material": "100% Rayon",
+      "Weight": "Light (140 GSM)",
+      "Fit": "True to Size",
+      "Length": "Midi",
+      "Care": "Hand wash cold, hang dry",
+      "Features": "Elastic waist, side pockets"
+    }
   },
   {
     "name": "High-Waist Skinny Jeans",
@@ -70,24 +57,18 @@
     "productType": "Jeans",
     "brand": "Madewell",
     "sku": "MDW-HW-IND-28",
-    "images": [
-      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800"
-    ],
-    "tags": [
-      "jeans"
-    ],
-    "colors": [
-      "Indigo",
-      "Black",
-      "Light Blue"
-    ],
-    "sizes": [
-      "24",
-      "26",
-      "28",
-      "30",
-      "32"
-    ]
+    "images": ["https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800"],
+    "tags": ["jeans"],
+    "colors": ["Indigo", "Black", "Light Blue"],
+    "sizes": ["24", "26", "28", "30", "32"],
+    "specifications": {
+      "Material": "78% Cotton, 20% Polyester, 2% Elastane",
+      "Weight": "12 oz Denim",
+      "Fit": "Skinny, High-Rise (10 inch)",
+      "Inseam": "28 inches",
+      "Care": "Machine wash cold, tumble dry low",
+      "Features": "Stretch denim, 5-pocket styling"
+    }
   },
   {
     "name": "Gold Layered Necklace",
@@ -100,18 +81,18 @@
     "productType": "Necklaces",
     "brand": "Mejuri",
     "sku": "MEJ-NL-GLD",
-    "images": [
-      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800"
-    ],
-    "tags": [
-      "jewelry"
-    ],
-    "colors": [
-      "Gold",
-      "Silver",
-      "Rose Gold"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800"],
+    "tags": ["jewelry"],
+    "colors": ["Gold", "Silver", "Rose Gold"],
+    "sizes": [],
+    "specifications": {
+      "Material": "Gold Vermeil (18K Gold over Sterling Silver)",
+      "Chain Length": "16, 18, and 20 inch layers",
+      "Clasp": "Spring ring clasp",
+      "Weight": "8 grams",
+      "Care": "Remove before swimming, avoid contact with perfumes",
+      "Warranty": "1 year warranty"
+    }
   },
   {
     "name": "Leather Crossbody Bag",
@@ -124,18 +105,19 @@
     "productType": "Crossbody",
     "brand": "Fossil",
     "sku": "FOS-CB-BRN",
-    "images": [
-      "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800"
-    ],
-    "tags": [
-      "bag"
-    ],
-    "colors": [
-      "Brown",
-      "Black",
-      "Tan"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800"],
+    "tags": ["bag"],
+    "colors": ["Brown", "Black", "Tan"],
+    "sizes": [],
+    "specifications": {
+      "Material": "100% Genuine Leather",
+      "Dimensions": "9 inch W x 7 inch H x 3 inch D",
+      "Strap": "Adjustable crossbody strap, 22-25 inch drop",
+      "Closure": "Zip-top closure",
+      "Pockets": "1 exterior zip pocket, 2 interior slip pockets",
+      "Care": "Wipe clean with damp cloth",
+      "Features": "RFID protection"
+    }
   },
   {
     "name": "Oxford Button-Down Shirt",
@@ -148,24 +130,19 @@
     "productType": "Dress Shirts",
     "brand": "Brooks Brothers",
     "sku": "BB-OX-BLU-L",
-    "images": [
-      "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800"
-    ],
-    "tags": [
-      "shirt"
-    ],
-    "colors": [
-      "Blue",
-      "White",
-      "Pink"
-    ],
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL",
-      "XXL"
-    ]
+    "images": ["https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800"],
+    "tags": ["shirt"],
+    "colors": ["Blue", "White", "Pink"],
+    "sizes": ["S", "M", "L", "XL", "XXL"],
+    "specifications": {
+      "Material": "100% Cotton Oxford",
+      "Weight": "Medium (200 GSM)",
+      "Fit": "Classic Fit",
+      "Collar": "Button-Down Collar",
+      "Cuff": "Button Cuff",
+      "Care": "Machine wash warm, tumble dry low",
+      "Features": "Back box pleat, chest pocket"
+    }
   },
   {
     "name": "Slim Fit Chinos",
@@ -178,24 +155,18 @@
     "productType": "Chinos",
     "brand": "Bonobos",
     "sku": "BON-CH-KHK-32",
-    "images": [
-      "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800"
-    ],
-    "tags": [
-      "pants"
-    ],
-    "colors": [
-      "Khaki",
-      "Navy",
-      "Black"
-    ],
-    "sizes": [
-      "28",
-      "30",
-      "32",
-      "34",
-      "36"
-    ]
+    "images": ["https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=800"],
+    "tags": ["pants"],
+    "colors": ["Khaki", "Navy", "Black"],
+    "sizes": ["28", "30", "32", "34", "36"],
+    "specifications": {
+      "Material": "97% Cotton, 3% Elastane",
+      "Weight": "8.5 oz",
+      "Fit": "Slim Fit, Mid-Rise",
+      "Inseam Options": "28, 30, 32, 34 inches",
+      "Care": "Machine wash cold, tumble dry low",
+      "Features": "Stretch fabric, hidden coin pocket"
+    }
   },
   {
     "name": "Leather Belt",
@@ -208,17 +179,18 @@
     "productType": "Dress Belts",
     "brand": "Allen Edmonds",
     "sku": "AE-BLT-BLK-34",
-    "images": [
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800"
-    ],
-    "tags": [
-      "belt"
-    ],
-    "colors": [
-      "Black",
-      "Brown"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800"],
+    "tags": ["belt"],
+    "colors": ["Black", "Brown"],
+    "sizes": [],
+    "specifications": {
+      "Material": "Full-Grain Leather",
+      "Width": "1.25 inches",
+      "Buckle": "Brushed Nickel Buckle",
+      "Length Options": "32-44 inches",
+      "Care": "Wipe with dry cloth, condition regularly",
+      "Features": "Beveled edges, 5 adjustment holes"
+    }
   },
   {
     "name": "Stainless Steel Watch",
@@ -231,18 +203,19 @@
     "productType": "Analog Watches",
     "brand": "Citizen",
     "sku": "CIT-WA-SS",
-    "images": [
-      "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800"
-    ],
-    "tags": [
-      "watch"
-    ],
-    "colors": [
-      "Silver",
-      "Black",
-      "Gold"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800"],
+    "tags": ["watch"],
+    "colors": ["Silver", "Black", "Gold"],
+    "sizes": [],
+    "specifications": {
+      "Case Material": "Stainless Steel",
+      "Case Size": "42mm diameter",
+      "Movement": "Eco-Drive (Solar Powered)",
+      "Water Resistance": "100 meters (10 ATM)",
+      "Crystal": "Mineral Crystal",
+      "Band": "Stainless steel bracelet with fold-over clasp",
+      "Warranty": "5 year limited warranty"
+    }
   },
   {
     "name": "Kids Graphic T-Shirt Pack",
@@ -255,20 +228,18 @@
     "productType": "T-Shirts",
     "brand": "Gap Kids",
     "sku": "GAP-KT-MIX-8",
-    "images": [
-      "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=800"
-    ],
-    "tags": [
-      "kids"
-    ],
+    "images": ["https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=800"],
+    "tags": ["kids"],
     "colors": [],
-    "sizes": [
-      "XS",
-      "S",
-      "M",
-      "L",
-      "XL"
-    ]
+    "sizes": ["XS", "S", "M", "L", "XL"],
+    "specifications": {
+      "Material": "100% Cotton Jersey",
+      "Weight": "160 GSM",
+      "Pack Contents": "3 graphic t-shirts in assorted colors",
+      "Fit": "Regular Fit",
+      "Care": "Machine wash cold, tumble dry low",
+      "Age Range": "4-12 years"
+    }
   },
   {
     "name": "Kids Denim Jacket",
@@ -281,20 +252,18 @@
     "productType": "Denim Jackets",
     "brand": "Levi's Kids",
     "sku": "LEV-KJ-DEN-10",
-    "images": [
-      "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=800"
-    ],
-    "tags": [
-      "kids"
-    ],
+    "images": ["https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=800"],
+    "tags": ["kids"],
     "colors": [],
-    "sizes": [
-      "6",
-      "8",
-      "10",
-      "12",
-      "14"
-    ]
+    "sizes": ["6", "8", "10", "12", "14"],
+    "specifications": {
+      "Material": "100% Cotton Denim",
+      "Weight": "12 oz Denim",
+      "Fit": "Regular Fit",
+      "Features": "Button front, chest pockets, adjustable side tabs",
+      "Care": "Machine wash cold, tumble dry low",
+      "Age Range": "6-14 years"
+    }
   },
   {
     "name": "Kids Sneakers",
@@ -307,24 +276,18 @@
     "productType": "Athletic Sneakers",
     "brand": "Nike Kids",
     "sku": "NK-KS-BLK-3",
-    "images": [
-      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800"
-    ],
-    "tags": [
-      "kids"
-    ],
-    "colors": [
-      "Black",
-      "White",
-      "Pink"
-    ],
-    "sizes": [
-      "1Y",
-      "2Y",
-      "3Y",
-      "4Y",
-      "5Y"
-    ]
+    "images": ["https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=800"],
+    "tags": ["kids"],
+    "colors": ["Black", "White", "Pink"],
+    "sizes": ["1Y", "2Y", "3Y", "4Y", "5Y"],
+    "specifications": {
+      "Upper Material": "Synthetic leather and mesh",
+      "Sole": "Rubber outsole",
+      "Closure": "Velcro strap",
+      "Cushioning": "Foam midsole",
+      "Weight": "5 oz (per shoe)",
+      "Care": "Wipe clean with damp cloth"
+    }
   },
   {
     "name": "iPhone 15 Pro",
@@ -337,19 +300,21 @@
     "productType": "5G Smartphones",
     "brand": "Apple",
     "sku": "APL-IPH15-PRO-128",
-    "images": [
-      "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800"
-    ],
-    "tags": [
-      "smartphone"
-    ],
-    "colors": [
-      "Natural Titanium",
-      "Black Titanium",
-      "White Titanium",
-      "Blue Titanium"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800"],
+    "tags": ["smartphone"],
+    "colors": ["Natural Titanium", "Black Titanium", "White Titanium", "Blue Titanium"],
+    "sizes": [],
+    "specifications": {
+      "Display": "6.1-inch Super Retina XDR OLED, 2556 x 1179, 120Hz ProMotion",
+      "Processor": "A17 Pro chip with 6-core CPU",
+      "Storage": "128GB, 256GB, 512GB, 1TB options",
+      "Camera": "48MP Main, 12MP Ultra Wide, 12MP Telephoto (3x optical zoom)",
+      "Front Camera": "12MP TrueDepth",
+      "Battery": "Up to 23 hours video playback",
+      "Connectivity": "5G, Wi-Fi 6E, Bluetooth 5.3",
+      "Operating System": "iOS 17",
+      "Weight": "187 grams"
+    }
   },
   {
     "name": "Samsung Galaxy S24",
@@ -362,18 +327,22 @@
     "productType": "5G Smartphones",
     "brand": "Samsung",
     "sku": "SAM-GS24-256",
-    "images": [
-      "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800"
-    ],
-    "tags": [
-      "smartphone"
-    ],
-    "colors": [
-      "Phantom Black",
-      "Cream",
-      "Violet"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800"],
+    "tags": ["smartphone"],
+    "colors": ["Phantom Black", "Cream", "Violet"],
+    "sizes": [],
+    "specifications": {
+      "Display": "6.2-inch Dynamic AMOLED 2X, 2340 x 1080, 120Hz",
+      "Processor": "Snapdragon 8 Gen 3 for Galaxy",
+      "RAM": "8GB",
+      "Storage": "256GB, 512GB options",
+      "Camera": "50MP Main, 12MP Ultra Wide, 10MP Telephoto (3x optical zoom)",
+      "Front Camera": "12MP",
+      "Battery": "4000mAh with 25W fast charging",
+      "Connectivity": "5G, Wi-Fi 6E, Bluetooth 5.3",
+      "Operating System": "Android 14 with One UI 6",
+      "Weight": "167 grams"
+    }
   },
   {
     "name": "Sony WH-1000XM5",
@@ -386,17 +355,21 @@
     "productType": "Over-Ear",
     "brand": "Sony",
     "sku": "SONY-WH1000XM5",
-    "images": [
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800"
-    ],
-    "tags": [
-      "headphones"
-    ],
-    "colors": [
-      "Black",
-      "Silver"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800"],
+    "tags": ["headphones"],
+    "colors": ["Black", "Silver"],
+    "sizes": [],
+    "specifications": {
+      "Type": "Over-Ear, Wireless",
+      "Driver Size": "30mm",
+      "Frequency Response": "4Hz - 40,000Hz",
+      "Noise Cancellation": "Industry-leading Active Noise Cancellation",
+      "Battery Life": "Up to 30 hours (with ANC on)",
+      "Charging": "USB-C, Quick charge (3 min = 3 hours)",
+      "Connectivity": "Bluetooth 5.2, LDAC, AAC",
+      "Weight": "250 grams",
+      "Features": "Multipoint connection, Speak-to-Chat, Adaptive Sound Control"
+    }
   },
   {
     "name": "AirPods Pro",
@@ -409,16 +382,21 @@
     "productType": "Wireless Earbuds",
     "brand": "Apple",
     "sku": "APL-AIRPODS-PRO-3",
-    "images": [
-      "https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=800"
-    ],
-    "tags": [
-      "earbuds"
-    ],
-    "colors": [
-      "White"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=800"],
+    "tags": ["earbuds"],
+    "colors": ["White"],
+    "sizes": [],
+    "specifications": {
+      "Type": "In-Ear, Wireless",
+      "Driver": "Custom high-excursion Apple driver",
+      "Noise Cancellation": "Active Noise Cancellation with Transparency mode",
+      "Battery Life": "Up to 6 hours (earbuds), 30 hours (with case)",
+      "Charging": "USB-C, MagSafe, Qi wireless charging",
+      "Connectivity": "Bluetooth 5.3",
+      "Water Resistance": "IPX4 (sweat and water resistant)",
+      "Features": "Spatial Audio, Adaptive EQ, Touch controls",
+      "Includes": "4 pairs of silicone tips (XS, S, M, L)"
+    }
   },
   {
     "name": "MacBook Air M3",
@@ -431,18 +409,22 @@
     "productType": "Ultrabooks",
     "brand": "Apple",
     "sku": "APL-MBA-M3-13",
-    "images": [
-      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800"
-    ],
-    "tags": [
-      "laptop"
-    ],
-    "colors": [
-      "Space Gray",
-      "Silver",
-      "Midnight"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800"],
+    "tags": ["laptop"],
+    "colors": ["Space Gray", "Silver", "Midnight"],
+    "sizes": [],
+    "specifications": {
+      "Display": "13.6-inch Liquid Retina, 2560 x 1664, 500 nits brightness",
+      "Processor": "Apple M3 chip with 8-core CPU",
+      "GPU": "8-core or 10-core GPU options",
+      "RAM": "8GB, 16GB, or 24GB unified memory",
+      "Storage": "256GB, 512GB, 1TB, or 2TB SSD",
+      "Battery": "Up to 18 hours",
+      "Ports": "2x Thunderbolt / USB 4, MagSafe 3, 3.5mm headphone jack",
+      "Camera": "1080p FaceTime HD camera",
+      "Operating System": "macOS Sonoma",
+      "Weight": "1.24 kg (2.7 lbs)"
+    }
   },
   {
     "name": "Dell XPS 13",
@@ -455,17 +437,22 @@
     "productType": "Ultrabooks",
     "brand": "Dell",
     "sku": "DELL-XPS13",
-    "images": [
-      "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800"
-    ],
-    "tags": [
-      "laptop"
-    ],
-    "colors": [
-      "Platinum Silver",
-      "Graphite"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800"],
+    "tags": ["laptop"],
+    "colors": ["Platinum Silver", "Graphite"],
+    "sizes": [],
+    "specifications": {
+      "Display": "13.4-inch FHD+ (1920 x 1200) InfinityEdge, 500 nits",
+      "Processor": "Intel Core Ultra 7 155H (16 cores)",
+      "GPU": "Intel Arc Graphics",
+      "RAM": "16GB LPDDR5x",
+      "Storage": "512GB PCIe NVMe SSD",
+      "Battery": "Up to 14 hours",
+      "Ports": "2x Thunderbolt 4, 3.5mm headphone jack",
+      "Camera": "1080p webcam with IR",
+      "Operating System": "Windows 11 Home",
+      "Weight": "1.19 kg (2.6 lbs)"
+    }
   },
   {
     "name": "iPad Pro",
@@ -478,17 +465,23 @@
     "productType": "iPad",
     "brand": "Apple",
     "sku": "APL-IPAD-PRO-M4",
-    "images": [
-      "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800"
-    ],
-    "tags": [
-      "tablet"
-    ],
-    "colors": [
-      "Space Gray",
-      "Silver"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800"],
+    "tags": ["tablet"],
+    "colors": ["Space Gray", "Silver"],
+    "sizes": [],
+    "specifications": {
+      "Display": "11-inch or 13-inch Liquid Retina XDR, 2732 x 2048, ProMotion 120Hz",
+      "Processor": "Apple M4 chip with 8-core CPU",
+      "GPU": "10-core GPU",
+      "RAM": "8GB or 16GB",
+      "Storage": "256GB, 512GB, 1TB, or 2TB",
+      "Battery": "Up to 10 hours",
+      "Camera": "12MP Wide, 10MP Ultra Wide, LiDAR Scanner",
+      "Front Camera": "12MP Ultra Wide with Center Stage",
+      "Ports": "Thunderbolt / USB 4",
+      "Operating System": "iPadOS 17",
+      "Weight": "466 grams (11-inch)"
+    }
   },
   {
     "name": "Nintendo Switch OLED",
@@ -501,17 +494,20 @@
     "productType": "Portable",
     "brand": "Nintendo",
     "sku": "NINT-SWITCH-OLED",
-    "images": [
-      "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=800"
-    ],
-    "tags": [
-      "gaming"
-    ],
-    "colors": [
-      "White",
-      "Neon"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=800"],
+    "tags": ["gaming"],
+    "colors": ["White", "Neon"],
+    "sizes": [],
+    "specifications": {
+      "Display": "7-inch OLED screen, 1280 x 720",
+      "Storage": "64GB internal",
+      "Battery Life": "4.5 - 9 hours",
+      "Modes": "TV mode, Tabletop mode, Handheld mode",
+      "Connectivity": "Wi-Fi, Bluetooth 4.1",
+      "Audio": "Built-in speakers, 3.5mm audio jack",
+      "Includes": "Nintendo Switch OLED console, dock, Joy-Con controllers, grip",
+      "Weight": "420 grams (with Joy-Con attached)"
+    }
   },
   {
     "name": "PlayStation 5",
@@ -524,16 +520,21 @@
     "productType": "Home Console",
     "brand": "Sony",
     "sku": "SONY-PS5-STD",
-    "images": [
-      "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800"
-    ],
-    "tags": [
-      "gaming"
-    ],
-    "colors": [
-      "White"
-    ],
-    "sizes": []
+    "images": ["https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800"],
+    "tags": ["gaming"],
+    "colors": ["White"],
+    "sizes": [],
+    "specifications": {
+      "Processor": "AMD Zen 2, 8 cores @ 3.5GHz",
+      "GPU": "AMD RDNA 2-based, 10.28 TFLOPS",
+      "RAM": "16GB GDDR6",
+      "Storage": "825GB SSD (expandable)",
+      "Optical Drive": "4K UHD Blu-ray",
+      "Resolution": "Up to 8K, 4K @ 120Hz",
+      "Audio": "Tempest 3D AudioTech",
+      "Connectivity": "Wi-Fi 6, Bluetooth 5.1, USB-C",
+      "Includes": "DualSense wireless controller, HDMI cable, power cable"
+    }
   },
   {
     "name": "Adidas Ultraboost 23",
@@ -546,25 +547,20 @@
     "productType": "Performance",
     "brand": "Adidas",
     "sku": "ADI-UB23-BLK-10",
-    "images": [
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"
-    ],
-    "tags": [
-      "running"
-    ],
-    "colors": [
-      "Black",
-      "White",
-      "Blue"
-    ],
-    "sizes": [
-      "7",
-      "8",
-      "9",
-      "10",
-      "11",
-      "12"
-    ]
+    "images": ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"],
+    "tags": ["running"],
+    "colors": ["Black", "White", "Blue"],
+    "sizes": ["7", "8", "9", "10", "11", "12"],
+    "specifications": {
+      "Upper Material": "Primeknit+ textile",
+      "Midsole": "Boost cushioning technology",
+      "Outsole": "Continental rubber outsole",
+      "Support": "Neutral",
+      "Weight": "310 grams (size 9)",
+      "Drop": "10mm heel-to-toe drop",
+      "Features": "Energy return, adaptive fit, all-weather traction",
+      "Care": "Hand wash cold, air dry"
+    }
   },
   {
     "name": "Nike Air Jordan 1",
@@ -577,25 +573,20 @@
     "productType": "High-Top",
     "brand": "Nike",
     "sku": "NIKE-AJ1-CHI-9",
-    "images": [
-      "https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800"
-    ],
-    "tags": [
-      "basketball"
-    ],
-    "colors": [
-      "Chicago",
-      "Black",
-      "White"
-    ],
-    "sizes": [
-      "7",
-      "8",
-      "9",
-      "10",
-      "11",
-      "12"
-    ]
+    "images": ["https://images.unsplash.com/photo-1556906781-9a412961c28c?w=800"],
+    "tags": ["basketball"],
+    "colors": ["Chicago", "Black", "White"],
+    "sizes": ["7", "8", "9", "10", "11", "12"],
+    "specifications": {
+      "Upper Material": "Premium leather",
+      "Midsole": "Air-Sole unit for cushioning",
+      "Outsole": "Solid rubber outsole with pivot circles",
+      "Collar": "Padded high-top collar",
+      "Closure": "Lace-up",
+      "Weight": "450 grams (size 9)",
+      "Style": "Retro high-top",
+      "Care": "Wipe clean with damp cloth"
+    }
   },
   {
     "name": "Fleece Jacket",
@@ -608,23 +599,19 @@
     "productType": "Fleece",
     "brand": "Patagonia",
     "sku": "PAT-SWEATER-NAV-M",
-    "images": [
-      "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800"
-    ],
-    "tags": [
-      "jacket"
-    ],
-    "colors": [
-      "Navy",
-      "Black",
-      "Gray"
-    ],
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
-    ]
+    "images": ["https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800"],
+    "tags": ["jacket"],
+    "colors": ["Navy", "Black", "Gray"],
+    "sizes": ["S", "M", "L", "XL"],
+    "specifications": {
+      "Material": "100% Recycled Polyester Fleece",
+      "Weight": "Medium (300 GSM)",
+      "Fit": "Regular Fit",
+      "Features": "Full-zip front, zippered chest pocket, side pockets",
+      "Insulation": "Mid-layer warmth",
+      "Care": "Machine wash cold, tumble dry low",
+      "Sustainability": "Fair Trade Certified, made from recycled materials"
+    }
   },
   {
     "name": "Training Shorts",
@@ -637,23 +624,19 @@
     "productType": "Training",
     "brand": "Under Armour",
     "sku": "UA-TS-BLK-L",
-    "images": [
-      "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=800"
-    ],
-    "tags": [
-      "shorts"
-    ],
-    "colors": [
-      "Black",
-      "Gray",
-      "Navy"
-    ],
-    "sizes": [
-      "S",
-      "M",
-      "L",
-      "XL"
-    ]
+    "images": ["https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=800"],
+    "tags": ["shorts"],
+    "colors": ["Black", "Gray", "Navy"],
+    "sizes": ["S", "M", "L", "XL"],
+    "specifications": {
+      "Material": "100% Polyester with HeatGear fabric",
+      "Weight": "Lightweight (120 GSM)",
+      "Fit": "Loose fit",
+      "Inseam": "10 inches",
+      "Features": "Moisture-wicking, elastic waistband, hand pockets",
+      "Technology": "Anti-odor technology prevents microbe growth",
+      "Care": "Machine wash cold, tumble dry low"
+    }
   },
   {
     "name": "The Midnight Library",
@@ -666,14 +649,21 @@
     "productType": "Paperback",
     "brand": "Penguin Books",
     "sku": "PEN-ML-PB",
-    "images": [
-      "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800"
-    ],
-    "tags": [
-      "fiction"
-    ],
+    "images": ["https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800"],
+    "tags": ["fiction"],
     "colors": [],
-    "sizes": []
+    "sizes": [],
+    "specifications": {
+      "Author": "Matt Haig",
+      "Format": "Paperback",
+      "Pages": "304 pages",
+      "Publisher": "Penguin Books",
+      "Publication Date": "August 2020",
+      "Language": "English",
+      "ISBN-13": "978-0525559474",
+      "Dimensions": "5.2 x 0.7 x 8 inches",
+      "Weight": "9.6 oz"
+    }
   },
   {
     "name": "Atomic Habits",
@@ -686,14 +676,21 @@
     "productType": "Hardcover",
     "brand": "Avery",
     "sku": "AVR-AH-HC",
-    "images": [
-      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=800"
-    ],
-    "tags": [
-      "self-help"
-    ],
+    "images": ["https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=800"],
+    "tags": ["self-help"],
     "colors": [],
-    "sizes": []
+    "sizes": [],
+    "specifications": {
+      "Author": "James Clear",
+      "Format": "Hardcover",
+      "Pages": "320 pages",
+      "Publisher": "Avery",
+      "Publication Date": "October 2018",
+      "Language": "English",
+      "ISBN-13": "978-0735211292",
+      "Dimensions": "6.1 x 1.1 x 9.2 inches",
+      "Weight": "1.1 lbs"
+    }
   },
   {
     "name": "Harry Potter Box Set",
@@ -706,14 +703,22 @@
     "productType": "Box Set",
     "brand": "Scholastic",
     "sku": "SCH-HP-BS",
-    "images": [
-      "https://images.unsplash.com/photo-1618083707368-b3823daa2726?w=800"
-    ],
-    "tags": [
-      "fantasy"
-    ],
+    "images": ["https://images.unsplash.com/photo-1618083707368-b3823daa2726?w=800"],
+    "tags": ["fantasy"],
     "colors": [],
-    "sizes": []
+    "sizes": [],
+    "specifications": {
+      "Author": "J.K. Rowling",
+      "Format": "Paperback Box Set",
+      "Books Included": "7 books (complete series)",
+      "Total Pages": "4,224 pages",
+      "Publisher": "Scholastic",
+      "Language": "English",
+      "ISBN-13": "978-0545162074",
+      "Dimensions": "8.8 x 5.9 x 9.2 inches",
+      "Weight": "7.3 lbs",
+      "Age Range": "8-12 years"
+    }
   },
   {
     "name": "Educated Memoir",
@@ -726,13 +731,21 @@
     "productType": "Paperback",
     "brand": "Random House",
     "sku": "RH-ED-PB",
-    "images": [
-      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800"
-    ],
-    "tags": [
-      "memoir"
-    ],
+    "images": ["https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800"],
+    "tags": ["memoir"],
     "colors": [],
-    "sizes": []
+    "sizes": [],
+    "specifications": {
+      "Author": "Tara Westover",
+      "Format": "Paperback",
+      "Pages": "352 pages",
+      "Publisher": "Random House",
+      "Publication Date": "February 2018",
+      "Language": "English",
+      "ISBN-13": "978-0399590504",
+      "Dimensions": "5.2 x 0.7 x 8 inches",
+      "Weight": "11.2 oz",
+      "Awards": "Goodreads Choice Award Winner"
+    }
   }
 ]
