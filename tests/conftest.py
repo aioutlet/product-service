@@ -63,8 +63,6 @@ def mock_product_doc():
                 "reports": []
             }
         ],
-        "average_rating": 4.5,
-        "num_reviews": 2,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }

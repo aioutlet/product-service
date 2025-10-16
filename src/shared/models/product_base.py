@@ -37,11 +37,6 @@ class ProductBase(ProductValidatorMixin, BaseModel):
     # Product specifications (flexible key-value pairs)
     specifications: Dict[str, str] = {}
     
-    # Reviews and ratings (aggregate data only - individual reviews managed by review-service)
-    average_rating: float = 0
-    num_reviews: int = 0
-    # NOTE: Individual reviews are NOT stored here - they are managed by the review-service
-    
     # Audit trail
     created_by: str
     updated_by: Optional[str] = None

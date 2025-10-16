@@ -151,10 +151,6 @@ class TestProductValidators:
         product = ProductBase(name="Test", price=10.0, created_by="admin123")
         assert product.images == []
         assert product.tags == []
-        assert product.attributes == {}
-        assert product.variants == []
-        assert product.average_rating == 0
-        assert product.num_reviews == 0
-        assert product.reviews == []
+        assert product.specifications == {}
         assert product.is_active is True
         assert product.history == []

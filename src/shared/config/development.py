@@ -14,12 +14,20 @@ class DevelopmentConfig:
     PORT = 8000
 
     # Database Configuration - MongoDB
-    DATABASE_URL = os.getenv(
-        "DATABASE_URL",
-        # Default MongoDB connection for development
-        "mongodb://admin:admin123@localhost:27018/products_db",  # pragma: allowlist secret  # noqa: E501
-    )
-    DATABASE_NAME = os.getenv("DATABASE_NAME", "products_db")
+    # Construct MongoDB URI from environment variables
+    _mongo_host = os.getenv("MONGODB_HOST", "localhost")
+    _mongo_port = os.getenv("MONGODB_PORT", "27017")
+    _mongo_username = os.getenv("MONGO_INITDB_ROOT_USERNAME")
+    _mongo_password = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
+    _mongo_database = os.getenv("MONGO_INITDB_DATABASE", "products_db")
+    _mongo_auth_source = os.getenv("MONGODB_AUTH_SOURCE", "admin")
+    
+    if _mongo_username and _mongo_password:
+        DATABASE_URL = f"mongodb://{_mongo_username}:{_mongo_password}@{_mongo_host}:{_mongo_port}/{_mongo_database}?authSource={_mongo_auth_source}"
+    else:
+        DATABASE_URL = f"mongodb://{_mongo_host}:{_mongo_port}/{_mongo_database}"
+    
+    DATABASE_NAME = _mongo_database
 
     # Redis Configuration (for caching)
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
