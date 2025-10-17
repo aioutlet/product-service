@@ -596,7 +596,7 @@ async def update_product(
 
 async def delete_product(product_id, collection, acting_user=None):
     """
-    Soft delete a product (set is_active to False).
+    Soft delete a product (set is_active to False) and publish event.
 
     Args:
         product_id: Product ID to delete
@@ -635,6 +635,31 @@ async def delete_product(product_id, collection, acting_user=None):
             f"Soft deleted product {product_id}",
             metadata={"event": "soft_delete_product", "product_id": product_id}
         )
+
+        # Publish product.deleted event to message broker
+        try:
+            from src.shared.services.message_broker_publisher import get_publisher
+            publisher = get_publisher()
+            await publisher.publish(
+                event_type="product.deleted",
+                data={
+                    "productId": product_id,
+                    "hardDelete": False,  # Soft delete by default
+                    "deletedBy": acting_user.get("user_id") if acting_user else None,
+                    "deletedAt": datetime.now(timezone.utc).isoformat(),
+                },
+                correlation_id=None  # Could be passed from request context
+            )
+            logger.info(
+                f"Published product.deleted event for {product_id}",
+                metadata={"event": "product_deleted_event_published", "product_id": product_id}
+            )
+        except Exception as e:
+            # Don't fail the delete operation if event publishing fails
+            logger.error(
+                f"Failed to publish product.deleted event: {str(e)}",
+                metadata={"event": "product_deleted_event_error", "product_id": product_id, "error": str(e)}
+            )
         return None
     except PyMongoError as e:
         logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
@@ -848,3 +873,36 @@ def product_doc_to_model(doc):
         is_active=doc.get("is_active", True),
         history=doc.get("history", []),
     )
+
+
+async def check_product_exists(product_id: str, collection):
+    """
+    Check if a product exists and is active.
+    Internal endpoint for inter-service communication.
+
+    Args:
+        product_id: Product ID to check
+        collection: MongoDB collection instance
+
+    Returns:
+        dict: {"exists": bool} indicating if product exists and is active
+    """
+    try:
+        # Validate product ID format
+        validate_object_id(product_id)
+        
+        # Check if product exists and is active
+        product = collection.find_one(
+            {"_id": product_id, "is_active": True}
+        )
+        
+        return {"exists": product is not None}
+        
+    except Exception as e:
+        logger.error(
+            f"Error checking product existence: {str(e)}",
+            metadata={"productId": product_id, "error": str(e)}
+        )
+        # Return false on error to be safe
+        return {"exists": False}
+

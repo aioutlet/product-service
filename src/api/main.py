@@ -5,12 +5,15 @@ import os
 # Add the parent directory to Python path for module imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+# Load environment variables BEFORE any other imports that might need them
+from dotenv import load_dotenv
+load_dotenv()
+
 import src.shared.tracing_init  # This must be first to ensure OpenTelemetry SDK is initialized
 
 import logging
 
 import uvicorn
-from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
@@ -31,9 +34,6 @@ from src.shared.db.mongodb import get_product_collection
 
 # Import limiter from review_router since that's where rate limiting is used
 from src.api.routers.review_router import limiter
-
-# Load environment variables once at the entrypoint
-load_dotenv()
 
 app = FastAPI()
 

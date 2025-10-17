@@ -23,14 +23,14 @@ def get_current_user(
     token = credentials.credentials
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get("id")
-        username = payload.get("username")
+        user_id = payload.get("id") or payload.get("user_id") or payload.get("sub")
+        username = payload.get("username") or payload.get("email", "").split("@")[0]
         roles = payload.get("roles")
         if roles is None:
             roles = ["user"]
-        if not user_id or not username:
+        if not user_id:
             logger.warning(
-                "Invalid authentication credentials: missing user_id or username"
+                "Invalid authentication credentials: missing user_id"
             )
             raise ErrorResponse(
                 "Invalid authentication credentials", status_code=HTTP_401_UNAUTHORIZED

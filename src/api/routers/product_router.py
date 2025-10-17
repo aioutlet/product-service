@@ -24,6 +24,25 @@ router.include_router(bulk_router, tags=["bulk-operations"])
 router.include_router(import_export_router, tags=["import-export"])
 
 
+# Internal endpoints (for inter-service communication)
+@router.get(
+    "/internal/{product_id}/exists",
+    response_model=dict,
+    tags=["internal"]
+)
+async def check_product_exists(
+    product_id: str,
+    collection=Depends(get_product_collection),
+):
+    """
+    Check if a product exists (internal endpoint for other services).
+    
+    Returns:
+    - exists: Boolean indicating if the product exists and is active
+    """
+    return await product_controller.check_product_exists(product_id, collection)
+
+
 # Admin endpoints
 @router.get(
     "/admin/stats",
