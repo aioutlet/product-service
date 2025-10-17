@@ -11,13 +11,14 @@ import logging
 
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from src.api.controllers import operational_controller
+from src.api.controllers.product_controller import get_admin_stats
 from src.shared.core.errors import (
     ErrorResponse,
     error_response_handler,
@@ -26,6 +27,7 @@ from src.shared.core.errors import (
 from src.shared.middlewares import CorrelationIdMiddleware
 from src.shared.observability.logging import logger
 from src.api.routers import home_router, product_router
+from src.shared.db.mongodb import get_product_collection
 
 # Import limiter from review_router since that's where rate limiting is used
 from src.api.routers.review_router import limiter
@@ -73,6 +75,12 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 # Include routers
 app.include_router(product_router, prefix="/api/products", tags=["products"])
 app.include_router(home_router, prefix="/api/home", tags=["home"])
+
+# Admin routes - register the admin stats endpoint directly
+@app.get("/api/admin/stats")
+async def admin_stats_endpoint(collection=Depends(get_product_collection)):
+    """Get product statistics for admin dashboard"""
+    return await get_admin_stats(collection)
 
 # Operational endpoints for infrastructure/monitoring
 app.get("/health")(operational_controller.health)

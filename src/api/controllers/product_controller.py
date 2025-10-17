@@ -753,6 +753,60 @@ async def reactivate_product(product_id, collection, acting_user=None):
         )
 
 
+async def get_admin_stats(collection):
+    """
+    Get product statistics for admin dashboard.
+    
+    Args:
+        collection: MongoDB collection instance
+    
+    Returns:
+        dict: Statistics including total, active, lowStock, and outOfStock counts
+        
+    Raises:
+        ErrorResponse: If database error occurs
+    """
+    try:
+        logger.info("Fetching product statistics for admin dashboard")
+        
+        # Get total products count
+        total = await collection.count_documents({})
+        
+        # Get active products count (is_active = True)
+        active = await collection.count_documents({"is_active": True})
+        
+        # Note: Product service doesn't manage stock - that's in inventory service
+        # These will return 0, but we keep the structure for consistency with BFF expectations
+        low_stock = 0
+        out_of_stock = 0
+        
+        stats = {
+            "total": total,
+            "active": active,
+            "lowStock": low_stock,
+            "outOfStock": out_of_stock
+        }
+        
+        logger.info(
+            "Product statistics fetched successfully",
+            metadata={
+                "businessEvent": "ADMIN_STATS_FETCHED",
+                "stats": stats
+            }
+        )
+        
+        return stats
+        
+    except PyMongoError as e:
+        logger.error(
+            f"Failed to fetch product statistics: {str(e)}",
+            metadata={"businessEvent": "ADMIN_STATS_ERROR", "error": str(e)}
+        )
+        raise ErrorResponse(
+            "Database connection error. Please try again later.", status_code=503
+        )
+
+
 def product_doc_to_model(doc):
     """
     Convert MongoDB document to ProductDB model.

@@ -24,6 +24,28 @@ router.include_router(bulk_router, tags=["bulk-operations"])
 router.include_router(import_export_router, tags=["import-export"])
 
 
+# Admin endpoints
+@router.get(
+    "/admin/stats",
+    response_model=dict,
+    responses={503: {"model": ErrorResponseModel}},
+    tags=["admin"]
+)
+async def get_admin_product_stats(
+    collection=Depends(get_product_collection),
+):
+    """
+    Get product statistics for admin dashboard.
+    
+    Returns:
+    - total: Total number of products
+    - active: Number of active products
+    - lowStock: Products with low stock (handled by inventory service)
+    - outOfStock: Out of stock products (handled by inventory service)
+    """
+    return await product_controller.get_admin_stats(collection)
+
+
 # Product CRUD operations
 @router.get(
     "/trending-categories",
