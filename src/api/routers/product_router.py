@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, Response, status
 
 import src.api.controllers.product_controller as product_controller
-from src.shared.core.auth import get_current_user
+from src.shared.security import User, get_current_user, get_optional_user, require_admin
 from src.shared.core.errors import ErrorResponseModel
 from src.shared.db.mongodb import get_product_collection
 from src.shared.models.product import (
@@ -211,7 +211,7 @@ async def update_product(
     product_id: str,
     product: ProductUpdate,
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     """
     Update a product. Only the creator or admin can update.
@@ -230,7 +230,7 @@ async def update_product(
 async def delete_product(
     product_id: str,
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     """
     Soft delete a product. Only the creator or admin can delete.
@@ -246,7 +246,7 @@ async def delete_product(
 async def reactivate_product(
     product_id: str,
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     """
     Reactivate a soft-deleted product. Only admin can reactivate products.

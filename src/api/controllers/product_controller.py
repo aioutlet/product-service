@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from pymongo.errors import PyMongoError
 
-from src.shared.core.auth import require_admin_user
+from src.shared.security import verify_admin_access, User
 from src.shared.core.errors import ErrorResponse
 from src.shared.core.logger import logger
 from src.shared.models.product import ProductCreate, ProductDB, ProductUpdate
@@ -454,7 +454,8 @@ async def create_product(product: ProductCreate, collection, acting_user=None):
     """
     try:
         # Validate admin permissions
-        require_admin_user(acting_user)
+        if acting_user:
+            verify_admin_access(acting_user)
 
         # Prevent duplicate SKU
         if product.sku:
@@ -518,7 +519,8 @@ async def update_product(
     """
     try:
         # Validate admin permissions
-        require_admin_user(acting_user)
+        if acting_user:
+            verify_admin_access(acting_user)
 
         # Validate and convert product ID
         obj_id = validate_object_id(product_id)
@@ -560,7 +562,7 @@ async def update_product(
         changes = {k: v for k, v in update_data.items() if k in doc and doc[k] != v}
         if changes and acting_user:
             history_entry = {
-                "updated_by": acting_user["user_id"],
+                "updated_by": acting_user.user_id,
                 "updated_at": datetime.now(timezone.utc),
                 "changes": changes,
             }
@@ -611,7 +613,8 @@ async def delete_product(product_id, collection, acting_user=None):
     """
     try:
         # Validate admin permissions
-        require_admin_user(acting_user)
+        if acting_user:
+            verify_admin_access(acting_user)
 
         # Validate and convert product ID
         obj_id = validate_object_id(product_id)
@@ -645,7 +648,7 @@ async def delete_product(product_id, collection, acting_user=None):
                 data={
                     "productId": product_id,
                     "hardDelete": False,  # Soft delete by default
-                    "deletedBy": acting_user.get("user_id") if acting_user else None,
+                    "deletedBy": acting_user.user_id if acting_user else None,
                     "deletedAt": datetime.now(timezone.utc).isoformat(),
                 },
                 correlation_id=None  # Could be passed from request context
@@ -686,7 +689,8 @@ async def reactivate_product(product_id, collection, acting_user=None):
     """
     try:
         # Validate admin permissions
-        require_admin_user(acting_user)
+        if acting_user:
+            verify_admin_access(acting_user)
 
         # Validate and convert product ID
         obj_id = validate_object_id(product_id)
@@ -731,7 +735,7 @@ async def reactivate_product(product_id, collection, acting_user=None):
         # Reactivate the product with history tracking
         if acting_user:
             history_entry = {
-                "updated_by": acting_user["user_id"],
+                "updated_by": acting_user.user_id,
                 "updated_at": datetime.now(timezone.utc),
                 "changes": {"is_active": True, "action": "reactivated"},
             }
@@ -763,7 +767,7 @@ async def reactivate_product(product_id, collection, acting_user=None):
             metadata={
                 "event": "reactivate_product",
                 "product_id": product_id,
-                "reactivated_by": acting_user["user_id"] if acting_user else None,
+                "reactivated_by": acting_user.user_id if acting_user else None,
             },
         )
         return product_doc_to_model(doc)

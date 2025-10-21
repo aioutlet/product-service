@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 import src.api.controllers.import_export_controller as import_export_controller
-from src.shared.core.auth import get_current_user
+from src.shared.security import User, require_admin
 from src.shared.core.errors import ErrorResponseModel
 from src.shared.core.logger import logger
 from src.shared.db.mongodb import get_product_collection
@@ -24,10 +24,11 @@ router = APIRouter()
 async def import_products(
     file: UploadFile = File(...),
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(require_admin),
 ):
     """
     Import products from a CSV or JSON file.
+    Requires admin role.
     """
     content = await file.read()
     filetype = file.filename.split(".")[-1].lower()
@@ -49,10 +50,11 @@ async def import_products(
 async def export_products(
     filetype: str = Query("json", enum=["json", "csv"], description="Export format"),
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(require_admin),
 ):
     """
     Export products as JSON or CSV file.
+    Requires admin role.
     """
     try:
         logger.info(
@@ -60,7 +62,7 @@ async def export_products(
             extra={
                 "event": "export_start",
                 "filetype": filetype,
-                "user": user.get("user_id") if user else "unknown",
+                "user": user.user_id if user else "unknown",
             },
         )
         data = await import_export_controller.export_products(collection, filetype)

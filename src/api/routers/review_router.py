@@ -3,7 +3,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 import src.api.controllers.review_controller as review_controller
-from src.shared.core.auth import get_current_user
+from src.shared.security import User, get_current_user, get_optional_user
 from src.shared.core.errors import ErrorResponseModel
 from src.shared.db.mongodb import get_product_collection
 from src.shared.models.review import Review, ReviewReport
@@ -39,13 +39,13 @@ async def add_review(
     product_id: str,
     review: Review,
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(get_current_user),
     request: Request = None,
 ):
     """
     Add a review to a product. One review per user per product. Rate limited.
     """
-    if user["user_id"] != review.user_id:
+    if user.user_id != review.user_id:
         raise Exception("You can only create a review as yourself.")
     return await review_controller.add_review(product_id, review, collection)
 
@@ -60,7 +60,7 @@ async def update_review(
     user_id: str,
     review: Review,
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     """
     Update a review. Only the creator or admin can update.
@@ -79,7 +79,7 @@ async def delete_review(
     product_id: str,
     user_id: str,
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     """
     Delete a review. Only the creator or admin can delete.
@@ -101,13 +101,13 @@ async def report_review(
     user_id: str,
     report: ReviewReport,
     collection=Depends(get_product_collection),
-    user=Depends(get_current_user),
+    user: User = Depends(get_current_user),
     request: Request = None,
 ):
     """
     Report a review for abuse. Rate limited.
     """
-    report.reported_by = user["user_id"]
+    report.reported_by = user.user_id
     return await review_controller.report_review(
         product_id, user_id, report, collection, user
     )
