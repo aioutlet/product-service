@@ -1,312 +1,611 @@
-<p align="center">
+# Product Service<p align="center">
+
   <img alt="GoReleaser Logo" src="https://storage.googleapis.com/trufflehog-static-sources/pixel_pig.png" height="140" />
-  <h2 align="center">TruffleHog</h2>
+
+The `product-service` is a FastAPI-based microservice responsible for managing product catalog data in the AIOutlet platform. It handles product CRUD operations, reviews, ratings, and provides comprehensive product information. <h2 align="center">TruffleHog</h2>
+
   <p align="center">Find leaked credentials.</p>
-</p>
 
----
+**Architecture Pattern**: Publisher-Only (Amazon Catalog Service Pattern)</p>
 
-<div align="center">
+- Publishes events via HTTP to the message-broker-service---
+
+- Does NOT consume events from other services
+
+- Maintains product catalog data as source of truth<div align="center">
+
+- Other services query this service or consume its events
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/trufflesecurity/trufflehog/v3)](https://goreportcard.com/report/github.com/trufflesecurity/trufflehog/v3)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-brightgreen)](/LICENSE)
+
+---[![License](https://img.shields.io/badge/license-AGPL--3.0-brightgreen)](/LICENSE)
+
 [![Total Detectors](https://img.shields.io/github/directory-file-count/trufflesecurity/truffleHog/pkg/detectors?label=Total%20Detectors&type=dir)](/pkg/detectors)
+
+## Features
 
 </div>
 
----
+- **Product Management**: Create, read, update, and delete products
 
-# :mag*right: \_Now Scanning*
+- **Product Reviews**: User reviews and ratings with moderation---
 
-<div align="center">
+- **Search & Filtering**: Advanced product search and category filtering
 
-<img src="assets/scanning_logos.svg">
+- **Bulk Operations**: Import/export products in bulk# :mag*right: \_Now Scanning*
+
+- **Event Publishing**: Publishes product lifecycle events (created, updated, deleted, price changed)
+
+- **Image Management**: Product image URLs and galleries<div align="center">
+
+- **Admin Operations**: Product statistics and management endpoints
+
+- **Rate Limiting**: Protection against abuse<img src="assets/scanning_logos.svg">
+
+- **JWT Authentication**: Secure endpoints with role-based access
 
 **...and more**
 
+---
+
 </div>
+
+## Architecture
 
 # :loudspeaker: Join Our Community
 
+This service is built with **Python 3.12+** and **FastAPI**, using **MongoDB** for product storage.
+
 Have questions? Feedback? Jump in slack or discord and hang out with us
 
-Join our [Slack Community](https://join.slack.com/t/trufflehog-community/shared_invite/zt-pw2qbi43-Aa86hkiimstfdKH9UCpPzQ)
+**Publisher-Only Pattern (Amazon Catalog Service)**:
 
-Join the [Secret Scanning Discord](https://discord.gg/8Hzbrnkr7E)
+- Product Service is the **source of truth** for product catalog dataJoin our [Slack Community](https://join.slack.com/t/trufflehog-community/shared_invite/zt-pw2qbi43-Aa86hkiimstfdKH9UCpPzQ)
+
+- Publishes events when products change
+
+- Other services consume these events but don't send events backJoin the [Secret Scanning Discord](https://discord.gg/8Hzbrnkr7E)
+
+- Clean separation of concerns: Products don't depend on other domains
 
 # :tv: Demo
 
-![GitHub scanning demo](https://storage.googleapis.com/truffle-demos/non-interactive.svg)
+**Events Published**:
 
-```bash
-docker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --org=trufflesecurity
-```
+````![GitHub scanning demo](https://storage.googleapis.com/truffle-demos/non-interactive.svg)
 
-# :floppy_disk: Installation
+product.created         → New product added to catalog
 
-Several options available for you:
+product.updated         → Product details changed```bash
 
-```bash
-# MacOS users
-brew install trufflesecurity/trufflehog/trufflehog
+product.deleted         → Product removed from catalogdocker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --org=trufflesecurity
 
-# Docker
-docker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/trufflesecurity/test_keys
+product.price.changed   → Product price updated```
 
-# Docker for M1 and M2 Mac
+review.created          → New review posted
+
+review.updated          → Review modified# :floppy_disk: Installation
+
+review.deleted          → Review removed
+
+```Several options available for you:
+
+
+
+**Event Consumers** (Other Services):```bash
+
+- **Inventory Service**: Syncs product availability# MacOS users
+
+- **Search Service**: Updates search indexbrew install trufflesecurity/trufflehog/trufflehog
+
+- **Analytics Service**: Tracks product metrics
+
+- **Audit Service**: Logs product changes# Docker
+
+- **Notification Service**: Alerts subscribersdocker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/trufflesecurity/test_keys
+
+
+
+---# Docker for M1 and M2 Mac
+
 docker run --platform linux/arm64 --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/trufflesecurity/test_keys
 
+## Project Structure
+
 # Binary releases
-Download and unpack from https://github.com/trufflesecurity/trufflehog/releases
 
-# Compile from source
-git clone https://github.com/trufflesecurity/trufflehog.git
-cd trufflehog; go install
+```Download and unpack from https://github.com/trufflesecurity/trufflehog/releases
 
-# Using installation script
-curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
-# Using installation script to install a specific version
-curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin <ReleaseTag like v3.56.0>
-```
+product-service/
 
-# :closed_lock_with_key: Verifying the artifacts
+├── src/# Compile from source
 
-Checksums are applied to all artifacts, and the resulting checksum file is signed using cosign.
+│   ├── main.py                      # FastAPI application entry pointgit clone https://github.com/trufflesecurity/trufflehog.git
 
-You need the following tool to verify signature:
+│   ├── tracing_init.py              # OpenTelemetry tracing setupcd trufflehog; go install
 
-- [Cosign](https://docs.sigstore.dev/cosign/installation/)
+│   ├── controllers/                 # Business logic controllers
 
-Verification steps are as follow:
+│   │   ├── product_controller.py# Using installation script
 
-1. Download the artifact files you want, and the following files from the [releases](https://github.com/trufflesecurity/trufflehog/releases) page.
+│   │   ├── review_controller.pycurl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
 
-   - trufflehog\_{version}\_checksums.txt
-   - trufflehog\_{version}\_checksums.txt.pem
-   - trufflehog\_{version}\_checksums.txt.sig
+│   │   ├── bulk_product_controller.py# Using installation script to install a specific version
 
-2. Verify the signature:
+│   │   ├── import_export_controller.pycurl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin <ReleaseTag like v3.56.0>
 
-   ```shell
-   cosign verify-blob <path to trufflehog_{version}_checksums.txt> \
-   --certificate <path to trufflehog_{version}_checksums.txt.pem> \
-   --signature <path to trufflehog_{version}_checksums.txt.sig> \
-   --certificate-identity-regexp 'https://github\.com/trufflesecurity/trufflehog/\.github/workflows/.+' \
-   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
-   ```
+│   │   └── operational_controller.py```
 
-3. Once the signature is confirmed as valid, you can proceed to validate that the SHA256 sums align with the downloaded artifact:
+│   ├── routers/                     # API route definitions
 
-   ```shell
-   sha256sum --ignore-missing -c trufflehog_{version}_checksums.txt
-   ```
+│   │   ├── product_router.py# :closed_lock_with_key: Verifying the artifacts
 
-Replace `{version}` with the downloaded files version
+│   │   ├── review_router.py
 
-# :rocket: Quick Start
+│   │   ├── bulk_router.pyChecksums are applied to all artifacts, and the resulting checksum file is signed using cosign.
 
-## 1: Scan a repo for only verified secrets
+│   │   ├── import_export_router.py
 
-Command:
+│   │   └── home_router.pyYou need the following tool to verify signature:
 
-```bash
+│   ├── models/                      # Pydantic data models
+
+│   │   ├── product.py- [Cosign](https://docs.sigstore.dev/cosign/installation/)
+
+│   │   ├── review.py
+
+│   │   └── product_base.pyVerification steps are as follow:
+
+│   ├── db/                          # Database connections
+
+│   │   └── mongodb.py1. Download the artifact files you want, and the following files from the [releases](https://github.com/trufflesecurity/trufflehog/releases) page.
+
+│   ├── services/                    # External service clients
+
+│   │   ├── message_broker_publisher.py   - trufflehog\_{version}\_checksums.txt
+
+│   │   └── inventory_client.py   - trufflehog\_{version}\_checksums.txt.pem
+
+│   ├── security/                    # Authentication & authorization   - trufflehog\_{version}\_checksums.txt.sig
+
+│   │   └── dependencies.py
+
+│   ├── middlewares/                 # FastAPI middlewares2. Verify the signature:
+
+│   │   └── correlation_id.py
+
+│   ├── observability/               # Logging and monitoring   ```shell
+
+│   │   ├── logging/   cosign verify-blob <path to trufflehog_{version}_checksums.txt> \
+
+│   │   └── tracing/   --certificate <path to trufflehog_{version}_checksums.txt.pem> \
+
+│   ├── validators/                  # Input validation logic   --signature <path to trufflehog_{version}_checksums.txt.sig> \
+
+│   ├── config/                      # Configuration management   --certificate-identity-regexp 'https://github\.com/trufflesecurity/trufflehog/\.github/workflows/.+' \
+
+│   └── utils/                       # Utility functions   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+
+├── tests/                           # Unit and integration tests   ```
+
+├── scripts/                         # Deployment and utility scripts
+
+├── Dockerfile                       # Production Docker image3. Once the signature is confirmed as valid, you can proceed to validate that the SHA256 sums align with the downloaded artifact:
+
+├── Dockerfile.api                   # API-specific Docker image
+
+├── requirements.txt                 # Python dependencies   ```shell
+
+└── README.md                        # This file   sha256sum --ignore-missing -c trufflehog_{version}_checksums.txt
+
+```   ```
+
+
+
+---Replace `{version}` with the downloaded files version
+
+
+
+## Getting Started# :rocket: Quick Start
+
+
+
+### Prerequisites## 1: Scan a repo for only verified secrets
+
+
+
+- Python 3.12+Command:
+
+- MongoDB 7.0+
+
+- Message Broker Service running (for event publishing)```bash
+
 trufflehog git https://github.com/trufflesecurity/test_keys --only-verified
-```
 
-Expected output:
+### Installation```
 
-```
-🐷🔑🐷  TruffleHog. Unearth your secrets. 🐷🔑🐷
+
+
+1. **Clone the repository**:Expected output:
+
+   ```bash
+
+   git clone https://github.com/aioutlet/aioutlet.git```
+
+   cd services/product-service🐷🔑🐷  TruffleHog. Unearth your secrets. 🐷🔑🐷
+
+````
 
 Found verified result 🐷🔑
-Detector Type: AWS
-Decoder Type: PLAIN
-Raw result: AKIAYVP4CIPPERUVIFXG
-Line: 4
-Commit: fbc14303ffbf8fb1c2c1914e8dda7d0121633aca
+
+2. **Create virtual environment**:Detector Type: AWS
+
+   ````bashDecoder Type: PLAIN
+
+   python -m venv venvRaw result: AKIAYVP4CIPPERUVIFXG
+
+   source venv/bin/activate  # On Windows: venv\Scripts\activateLine: 4
+
+   ```Commit: fbc14303ffbf8fb1c2c1914e8dda7d0121633aca
+   ````
+
 File: keys
-Email: counter <counter@counters-MacBook-Air.local>
-Repository: https://github.com/trufflesecurity/test_keys
-Timestamp: 2022-06-16 10:17:40 -0700 PDT
-...
-```
 
-## 2: Scan a GitHub Org for only verified secrets
+3. **Install dependencies**:Email: counter <counter@counters-MacBook-Air.local>
 
-```bash
-trufflehog github --org=trufflesecurity --only-verified
-```
+   ````bashRepository: https://github.com/trufflesecurity/test_keys
 
-## 3: Scan a GitHub Repo for only verified keys and get JSON output
+   pip install -r requirements.txtTimestamp: 2022-06-16 10:17:40 -0700 PDT
 
-Command:
+   ```...
+   ````
 
-```bash
+````
+
+4. **Configure environment variables**:
+
+   ```bash## 2: Scan a GitHub Org for only verified secrets
+
+   cp .env.example .env
+
+   # Edit .env with your configuration```bash
+
+   ```trufflehog github --org=trufflesecurity --only-verified
+
+````
+
+5. **Run the service**:
+
+   ````bash## 3: Scan a GitHub Repo for only verified keys and get JSON output
+
+   python -m uvicorn src.main:app --reload --port 8003
+
+   ```Command:
+   ````
+
+The service will start on `http://localhost:8003````bash
+
 trufflehog git https://github.com/trufflesecurity/test_keys --only-verified --json
-```
 
-Expected output:
+### Environment Variables```
 
-```
-{"SourceMetadata":{"Data":{"Git":{"commit":"fbc14303ffbf8fb1c2c1914e8dda7d0121633aca","file":"keys","email":"counter \u003ccounter@counters-MacBook-Air.local\u003e","repository":"https://github.com/trufflesecurity/test_keys","timestamp":"2022-06-16 10:17:40 -0700 PDT","line":4}}},"SourceID":0,"SourceType":16,"SourceName":"trufflehog - git","DetectorType":2,"DetectorName":"AWS","DecoderName":"PLAIN","Verified":true,"Raw":"AKIAYVP4CIPPERUVIFXG","Redacted":"AKIAYVP4CIPPERUVIFXG","ExtraData":{"account":"595918472158","arn":"arn:aws:iam::595918472158:user/canarytokens.com@@mirux23ppyky6hx3l6vclmhnj","user_id":"AIDAYVP4CIPPJ5M54LRCY"},"StructuredData":null}
-...
-```
+Key environment variables (see `.env.example` for full list):Expected output:
+
+`bash`
+
+# Service Configuration{"SourceMetadata":{"Data":{"Git":{"commit":"fbc14303ffbf8fb1c2c1914e8dda7d0121633aca","file":"keys","email":"counter \u003ccounter@counters-MacBook-Air.local\u003e","repository":"https://github.com/trufflesecurity/test_keys","timestamp":"2022-06-16 10:17:40 -0700 PDT","line":4}}},"SourceID":0,"SourceType":16,"SourceName":"trufflehog - git","DetectorType":2,"DetectorName":"AWS","DecoderName":"PLAIN","Verified":true,"Raw":"AKIAYVP4CIPPERUVIFXG","Redacted":"AKIAYVP4CIPPERUVIFXG","ExtraData":{"account":"595918472158","arn":"arn:aws:iam::595918472158:user/canarytokens.com@@mirux23ppyky6hx3l6vclmhnj","user_id":"AIDAYVP4CIPPJ5M54LRCY"},"StructuredData":null}
+
+SERVICE_NAME=product-service...
+
+PORT=8003```
+
+ENVIRONMENT=development
 
 ## 4: Scan a GitHub Repo + its Issues and Pull Requests.
 
-```bash
-trufflehog github --repo=https://github.com/trufflesecurity/test_keys --issue-comments --pr-comments
-```
+# Database
 
-## 5: Scan an S3 bucket for verified keys
+MONGODB_URI=mongodb://localhost:27017```bash
+
+MONGODB_DB_NAME=product_dbtrufflehog github --repo=https://github.com/trufflesecurity/test_keys --issue-comments --pr-comments
+
+````
+
+# Message Broker (for publishing events)
+
+MESSAGE_BROKER_SERVICE_URL=http://localhost:4000## 5: Scan an S3 bucket for verified keys
+
+MESSAGE_BROKER_API_KEY=your-api-key
 
 ```bash
-trufflehog s3 --bucket=<bucket name> --only-verified
-```
+
+# JWT Authenticationtrufflehog s3 --bucket=<bucket name> --only-verified
+
+JWT_SECRET=your-secret-key```
+
+JWT_ALGORITHM=HS256
 
 ## 6: Scan S3 buckets using IAM Roles
 
-```bash
-trufflehog s3 --role-arn=<iam role arn>
-```
+# Tracing (Optional)
 
-## 7: Scan a Github Repo using SSH authentication in docker
+ENABLE_TRACING=true```bash
 
-```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318trufflehog s3 --role-arn=<iam role arn>
+
+````
+
+---## 7: Scan a Github Repo using SSH authentication in docker
+
+## API Endpoints```bash
+
 docker run --rm -v "$HOME/.ssh:/root/.ssh:ro" trufflesecurity/trufflehog:latest git ssh://github.com/trufflesecurity/test_keys
-```
 
-## 8: Scan individual files or directories
+### Public Endpoints```
 
-```bash
-trufflehog filesystem path/to/file1.txt path/to/file2.txt path/to/dir
-```
+- `GET /health` - Health check## 8: Scan individual files or directories
+
+- `GET /health/ready` - Readiness probe
+
+- `GET /health/live` - Liveness probe```bash
+
+- `GET /metrics` - Prometheus metricstrufflehog filesystem path/to/file1.txt path/to/file2.txt path/to/dir
+
+````
+
+### Product Endpoints
 
 ## 9: Scan GCS buckets for verified secrets.
 
-```bash
-trufflehog gcs --project-id=<project-ID> --cloud-environment --only-verified
-```
+- `GET /api/products` - List all products (with pagination)
 
-## 10: Scan a Docker image for verified secrets.
+- `GET /api/products/{id}` - Get product by ID```bash
+
+- `POST /api/products` - Create new product (requires auth)trufflehog gcs --project-id=<project-ID> --cloud-environment --only-verified
+
+- `PUT /api/products/{id}` - Update product (requires auth)```
+
+- `DELETE /api/products/{id}` - Delete product (requires admin)
+
+- `GET /api/products/search` - Search products## 10: Scan a Docker image for verified secrets.
+
+- `GET /api/products/category/{category}` - Get products by category
 
 Use the `--image` flag multiple times to scan multiple images.
 
-```bash
-trufflehog docker --image trufflesecurity/secrets --only-verified
-```
-
-## 11: Scan in CI
-
-Set the `--since-commit` flag to your default branch that people merge into (ex: "main"). Set the `--branch` flag to your PR's branch name (ex: "feature-1"). Depending on the CI/CD platform you use, this value can be pulled in dynamically (ex: [CIRCLE_BRANCH in Circle CI](https://circleci.com/docs/variables/) and [TRAVIS_PULL_REQUEST_BRANCH in Travis CI](https://docs.travis-ci.com/user/environment-variables/)). If the repo is cloned and the target branch is already checked out during the CI/CD workflow, then `--branch HEAD` should be sufficient. The `--fail` flag will return an 183 error code if valid credentials are found.
+### Review Endpoints
 
 ```bash
-trufflehog git file://. --since-commit main --branch feature-1 --only-verified --fail
-```
+
+- `GET /api/products/{id}/reviews` - Get product reviewstrufflehog docker --image trufflesecurity/secrets --only-verified
+
+- `POST /api/products/{id}/reviews` - Create review (requires auth)```
+
+- `PUT /api/products/{id}/reviews/{review_id}` - Update review (requires auth)
+
+- `DELETE /api/products/{id}/reviews/{review_id}` - Delete review (requires auth/admin)## 11: Scan in CI
+
+
+
+### Admin EndpointsSet the `--since-commit` flag to your default branch that people merge into (ex: "main"). Set the `--branch` flag to your PR's branch name (ex: "feature-1"). Depending on the CI/CD platform you use, this value can be pulled in dynamically (ex: [CIRCLE_BRANCH in Circle CI](https://circleci.com/docs/variables/) and [TRAVIS_PULL_REQUEST_BRANCH in Travis CI](https://docs.travis-ci.com/user/environment-variables/)). If the repo is cloned and the target branch is already checked out during the CI/CD workflow, then `--branch HEAD` should be sufficient. The `--fail` flag will return an 183 error code if valid credentials are found.
+
+
+
+- `GET /api/admin/stats` - Product statistics (requires admin)```bash
+
+- `POST /api/admin/products/bulk` - Bulk create products (requires admin)trufflehog git file://. --since-commit main --branch feature-1 --only-verified --fail
+
+- `POST /api/admin/products/export` - Export products (requires admin)```
+
+- `POST /api/admin/products/import` - Import products (requires admin)
 
 # :question: FAQ
 
+---
+
 - All I see is `🐷🔑🐷  TruffleHog. Unearth your secrets. 🐷🔑🐷` and the program exits, what gives?
-  - That means no secrets were detected
+
+## Running with Docker  - That means no secrets were detected
+
 - Why is the scan taking a long time when I scan a GitHub org
-  - Unauthenticated GitHub scans have rate limits. To improve your rate limits, include the `--token` flag with a personal access token
+
+### Build the image:  - Unauthenticated GitHub scans have rate limits. To improve your rate limits, include the `--token` flag with a personal access token
+
 - It says a private key was verified, what does that mean?
-  - Check out our Driftwood blog post to learn how to do this, in short we've confirmed the key can be used live for SSH or SSL [Blog post](https://trufflesecurity.com/blog/driftwood-know-if-private-keys-are-sensitive/)
-- Is there an easy way to ignore specific secrets?
-  - If the scanned source [supports line numbers](https://github.com/trufflesecurity/trufflehog/blob/d6375ba92172fd830abb4247cca15e3176448c5d/pkg/engine/engine.go#L358-L365), then you can add a `trufflehog:ignore` comment on the line containing the secret to ignore that secrets.
 
-# :newspaper: What's new in v3?
+```bash  - Check out our Driftwood blog post to learn how to do this, in short we've confirmed the key can be used live for SSH or SSL [Blog post](https://trufflesecurity.com/blog/driftwood-know-if-private-keys-are-sensitive/)
 
-TruffleHog v3 is a complete rewrite in Go with many new powerful features.
+docker build -t product-service:latest .- Is there an easy way to ignore specific secrets?
 
-- We've **added over 700 credential detectors that support active verification against their respective APIs**.
-- We've also added native **support for scanning GitHub, GitLab, Docker, filesystems, S3, GCS, Circle CI and Travis CI**.
-- **Instantly verify private keys** against millions of github users and **billions** of TLS certificates using our [Driftwood](https://trufflesecurity.com/blog/driftwood) technology.
-- Scan binaries, documents, and other file formats
+```  - If the scanned source [supports line numbers](https://github.com/trufflesecurity/trufflehog/blob/d6375ba92172fd830abb4247cca15e3176448c5d/pkg/engine/engine.go#L358-L365), then you can add a `trufflehog:ignore` comment on the line containing the secret to ignore that secrets.
+
+
+
+### Run the container:# :newspaper: What's new in v3?
+
+
+
+```bashTruffleHog v3 is a complete rewrite in Go with many new powerful features.
+
+docker run -p 8003:8003 \
+
+  -e MONGODB_URI=mongodb://host.docker.internal:27017 \- We've **added over 700 credential detectors that support active verification against their respective APIs**.
+
+  -e MESSAGE_BROKER_SERVICE_URL=http://host.docker.internal:4000 \- We've also added native **support for scanning GitHub, GitLab, Docker, filesystems, S3, GCS, Circle CI and Travis CI**.
+
+  product-service:latest- **Instantly verify private keys** against millions of github users and **billions** of TLS certificates using our [Driftwood](https://trufflesecurity.com/blog/driftwood) technology.
+
+```- Scan binaries, documents, and other file formats
+
 - Available as a GitHub Action and a pre-commit hook
+
+---
 
 ## What is credential verification?
 
+## Testing
+
 For every potential credential that is detected, we've painstakingly implemented programmatic verification against the API that we think it belongs to. Verification eliminates false positives. For example, the [AWS credential detector](pkg/detectors/aws/aws.go) performs a `GetCallerIdentity` API call against the AWS API to verify if an AWS credential is active.
+
+Run tests:
 
 # :memo: Usage
 
-TruffleHog has a sub-command for each source of data that you may want to scan:
+```bash
+
+pytestTruffleHog has a sub-command for each source of data that you may want to scan:
+
+````
 
 - git
-- github
+
+Run with coverage:- github
+
 - gitlab
-- docker
-- S3
-- filesystem (files and directories)
+
+````bash- docker
+
+pytest --cov=src --cov-report=html- S3
+
+```- filesystem (files and directories)
+
 - syslog
-- circleci
+
+---- circleci
+
 - travisci
-- GCS (Google Cloud Storage)
 
-Each subcommand can have options that you can see with the `--help` flag provided to the sub command:
+## Event Publishing- GCS (Google Cloud Storage)
 
-```
-$ trufflehog git --help
-usage: TruffleHog git [<flags>] <uri>
 
-Find credentials in git repositories.
 
-Flags:
-  -h, --help                Show context-sensitive help (also try --help-long and --help-man).
-      --debug               Run in debug mode.
-      --trace               Run in trace mode.
-      --profile             Enables profiling and sets a pprof and fgprof server on :18066.
-  -j, --json                Output in JSON format.
-      --json-legacy         Use the pre-v3.0 JSON format. Only works with git, gitlab, and github sources.
+The service publishes events to the message-broker-service:Each subcommand can have options that you can see with the `--help` flag provided to the sub command:
+
+
+
+```python```
+
+# Example: Publishing product.created event$ trufflehog git --help
+
+await publisher.publish(usage: TruffleHog git [<flags>] <uri>
+
+    event_type='product.created',
+
+    data={Find credentials in git repositories.
+
+        'productId': product_id,
+
+        'name': product.name,Flags:
+
+        'price': product.price,  -h, --help                Show context-sensitive help (also try --help-long and --help-man).
+
+        'category': product.category      --debug               Run in debug mode.
+
+    },      --trace               Run in trace mode.
+
+    correlation_id=correlation_id      --profile             Enables profiling and sets a pprof and fgprof server on :18066.
+
+)  -j, --json                Output in JSON format.
+
+```      --json-legacy         Use the pre-v3.0 JSON format. Only works with git, gitlab, and github sources.
+
       --github-actions      Output in GitHub Actions format.
-      --concurrency=8       Number of concurrent workers.
+
+---      --concurrency=8       Number of concurrent workers.
+
       --no-verification     Don't verify the results.
-      --only-verified       Only output verified results.
+
+## Why Publisher-Only?      --only-verified       Only output verified results.
+
       --filter-unverified   Only output first unverified result per chunk per detector if there are more than one results.
-      --filter-entropy=FILTER-ENTROPY
+
+Following **Amazon's Catalog Service pattern**:      --filter-entropy=FILTER-ENTROPY
+
                                  Filter unverified results with Shannon entropy. Start with 3.0.
-      --config=CONFIG            Path to configuration file.
-      --print-avg-detector-time
-                                 Print the average time spent on each detector.
-      --no-update           Don't check for updates.
-      --fail                Exit with code 183 if results are found.
+
+1. **Single Source of Truth**: Product Service owns product data      --config=CONFIG            Path to configuration file.
+
+2. **No Circular Dependencies**: Products don't react to other services      --print-avg-detector-time
+
+3. **Simpler Architecture**: Clear unidirectional event flow                                 Print the average time spent on each detector.
+
+4. **Better Scalability**: No need to process incoming events      --no-update           Don't check for updates.
+
+5. **Data Consistency**: Product updates are immediate, not eventual      --fail                Exit with code 183 if results are found.
+
       --verifier=VERIFIER ...    Set custom verification endpoints.
-      --archive-max-size=ARCHIVE-MAX-SIZE
-                                 Maximum size of archive to scan. (Byte units eg. 512B, 2KB, 4MB)
-      --archive-max-depth=ARCHIVE-MAX-DEPTH
-                                 Maximum depth of archive to scan.
+
+**What About Stock Status?**      --archive-max-size=ARCHIVE-MAX-SIZE
+
+- Inventory Service owns stock data                                 Maximum size of archive to scan. (Byte units eg. 512B, 2KB, 4MB)
+
+- Frontend/BFF aggregates data from both services      --archive-max-depth=ARCHIVE-MAX-DEPTH
+
+- Product Service doesn't store inventory counts                                 Maximum depth of archive to scan.
+
       --archive-timeout=ARCHIVE-TIMEOUT
-                                 Maximum time to spend extracting an archive.
-      --include-detectors="all"  Comma separated list of detector types to include. Protobuf name or IDs may be used, as well as ranges.
-      --exclude-detectors=EXCLUDE-DETECTORS
+
+**What About Reviews Updating Ratings?**                                 Maximum time to spend extracting an archive.
+
+- Review Service calls Product Service API directly for immediate consistency      --include-detectors="all"  Comma separated list of detector types to include. Protobuf name or IDs may be used, as well as ranges.
+
+- Product Service then publishes `product.rating.updated` event      --exclude-detectors=EXCLUDE-DETECTORS
+
                                  Comma separated list of detector types to exclude. Protobuf name or IDs may be used, as well as ranges. IDs defined here take precedence over the include list.
-      --version             Show application version.
+
+---      --version             Show application version.
+
   -i, --include-paths=INCLUDE-PATHS
-                                 Path to file with newline separated regexes for files to include in scan.
+
+## Contributing                                 Path to file with newline separated regexes for files to include in scan.
+
   -x, --exclude-paths=EXCLUDE-PATHS
-                                 Path to file with newline separated regexes for files to exclude in scan.
-      --exclude-globs=EXCLUDE-GLOBS
-                                 Comma separated list of globs to exclude in scan. This option filters at the `git log` level, resulting in faster scans.
-      --since-commit=SINCE-COMMIT
-                                 Commit to start scan from.
+
+1. Fork the repository                                 Path to file with newline separated regexes for files to exclude in scan.
+
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)      --exclude-globs=EXCLUDE-GLOBS
+
+3. Commit your changes (`git commit -m 'Add amazing feature'`)                                 Comma separated list of globs to exclude in scan. This option filters at the `git log` level, resulting in faster scans.
+
+4. Push to the branch (`git push origin feature/amazing-feature`)      --since-commit=SINCE-COMMIT
+
+5. Open a Pull Request                                 Commit to start scan from.
+
       --branch=BRANCH            Branch to scan.
-      --max-depth=MAX-DEPTH      Maximum depth of commits to scan.
+
+---      --max-depth=MAX-DEPTH      Maximum depth of commits to scan.
+
       --bare                Scan bare repository (e.g. useful while using in pre-receive hooks)
 
+## License
+
 Args:
-  <uri>  Git repository URL. https://, file://, or ssh:// schema expected.
-```
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.  <uri>  Git repository URL. https://, file://, or ssh:// schema expected.
+
+````
+
+---
 
 For example, to scan a `git` repository, start with
 
-```
-$ trufflehog git https://github.com/trufflesecurity/trufflehog.git
-```
+## Support
+
+````
+
+For issues and questions:$ trufflehog git https://github.com/trufflesecurity/trufflehog.git
+
+- GitHub Issues: https://github.com/aioutlet/aioutlet/issues```
+
+- Documentation: https://docs.aioutlet.com
 
 ## S3
 
+---
+
 The S3 source supports assuming IAM roles for scanning in addition to IAM users. This makes it easier for users to scan multiple AWS accounts without needing to rely on hardcoded credentials for each account.
+
+**Built with ❤️ by the AIOutlet Team**
 
 The IAM identity that TruffleHog uses initially will need to have `AssumeRole` privileges as a principal in the [trust policy](https://aws.amazon.com/blogs/security/how-to-use-trust-policies-with-iam-roles/) of each IAM role to assume.
 
@@ -314,7 +613,7 @@ To scan a specific bucket using locally set credentials or instance metadata if 
 
 ```bash
 trufflehog s3 --bucket=<bucket-name>
-```
+````
 
 To scan a specific bucket using an assumed role:
 
@@ -391,7 +690,7 @@ repos:
         # For running trufflehog in docker, use the following entry instead:
         # entry: bash -c 'docker run --rm -v "$(pwd):/workdir" -i --rm trufflesecurity/trufflehog:latest git file:///workdir --since-commit HEAD --only-verified --fail'
         language: system
-        stages: ["commit", "push"]
+        stages: ['commit', 'push']
 ```
 
 ## Regex Detector (alpha)
@@ -423,7 +722,7 @@ detectors:
         # unsafe must be set if the endpoint is HTTP
         unsafe: true
         headers:
-          - "Authorization: super secret authorization header"
+          - 'Authorization: super secret authorization header'
 ```
 
 ```

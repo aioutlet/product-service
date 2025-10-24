@@ -1,10 +1,10 @@
 """Shared test fixtures"""
 import pytest
 from unittest.mock import AsyncMock, Mock
-from datetime import datetime
+from datetime import datetime, UTC
 from bson import ObjectId
 
-from src.shared.models.review import Review, ReviewReport
+from src.models.review import Review, ReviewReport
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def mock_product_doc():
                 "username": "testuser",
                 "rating": 5,
                 "comment": "Great!",
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "updated_at": None,
                 "updated_by": None,
                 "reports": []
@@ -57,14 +57,14 @@ def mock_product_doc():
                 "username": "anotheruser",
                 "rating": 4,
                 "comment": "Good product",
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "updated_at": None,
                 "updated_by": None,
                 "reports": []
             }
         ],
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
+        "created_at": datetime.now(UTC),
+        "updated_at": datetime.now(UTC)
     }
 
 

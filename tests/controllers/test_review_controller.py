@@ -3,15 +3,15 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from bson import ObjectId
 
-from src.api.controllers.review_controller import (
+from src.controllers.review_controller import (
     list_reviews,
     add_review,
     update_review,
     delete_review,
     report_review
 )
-from src.shared.core.errors import ErrorResponse
-from src.shared.models.review import Review, ReviewReport
+from src.core.errors import ErrorResponse
+from src.models.review import Review, ReviewReport
 
 
 class TestListReviews:
@@ -55,7 +55,7 @@ class TestAddReview:
         mock_collection.find_one.return_value = mock_doc
         mock_collection.update_one.return_value = AsyncMock()
         
-        with patch('src.api.controllers.review_controller.logger') as mock_logger:
+        with patch('src.controllers.review_controller.logger') as mock_logger:
             result = await add_review(product_id, sample_review, mock_collection)
         
         assert result == sample_review
@@ -101,7 +101,7 @@ class TestUpdateReview:
             comment="Updated comment"
         )
         
-        with patch('src.api.controllers.review_controller.logger'):
+        with patch('src.controllers.review_controller.logger'):
             result = await update_review(product_id, "user123", updated_review, mock_collection, acting_user)
         
         assert result == updated_review
@@ -163,7 +163,7 @@ class TestDeleteReview:
         mock_collection.find_one.return_value = mock_product_doc
         mock_collection.update_one.return_value = AsyncMock()
         
-        with patch('src.api.controllers.review_controller.logger'):
+        with patch('src.controllers.review_controller.logger'):
             result = await delete_review(product_id, "user123", mock_collection, acting_user)
         
         assert result is None
@@ -191,7 +191,7 @@ class TestReportReview:
         mock_collection.find_one.return_value = mock_product_doc
         mock_collection.update_one.return_value = AsyncMock()
         
-        with patch('src.api.controllers.review_controller.logger'):
+        with patch('src.controllers.review_controller.logger'):
             result = await report_review(product_id, "user123", sample_review_report, mock_collection, acting_user)
         
         assert result == {"message": "Review reported"}

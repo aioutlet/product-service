@@ -1,9 +1,9 @@
 """Tests for review models"""
 import pytest
-from datetime import datetime
+from datetime import datetime, UTC
 from pydantic import ValidationError
 
-from src.shared.models.review import Review, ReviewReport
+from src.models.review import Review, ReviewReport
 
 
 class TestReviewModel:
@@ -66,7 +66,7 @@ class TestReviewModel:
             "username": "testuser",
             "rating": 4,
             "comment": "Good product",
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "updated_at": None,
             "updated_by": None,
             "reports": []
@@ -89,7 +89,7 @@ class TestReviewModel:
         assert review.updated_by is None
         
         # Simulate an update
-        review.updated_at = datetime.utcnow()
+        review.updated_at = datetime.now(UTC)
         review.updated_by = "admin456"
         review.comment = "Updated comment"
         
@@ -140,7 +140,7 @@ class TestReviewReportModel:
         report_data = {
             "reported_by": "moderator123",
             "reason": "Violation of terms",
-            "reported_at": datetime.utcnow().isoformat()
+            "reported_at": datetime.now(UTC).isoformat()
         }
         report = ReviewReport(**report_data)
         assert report.reported_by == "moderator123"
