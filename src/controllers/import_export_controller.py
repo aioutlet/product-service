@@ -119,9 +119,6 @@ async def import_products(content: bytes, filetype: str, collection, acting_user
                 product_data["created_by"] = (
                     acting_user["user_id"] if acting_user else "system"
                 )
-                product_data["average_rating"] = 0
-                product_data["num_reviews"] = 0
-                product_data["reviews"] = []
                 product_data["variants"] = product_data.get("variants", [])
 
                 # Insert product into database
@@ -261,8 +258,6 @@ async def export_products(collection, filetype: str = "json"):
                         "tags",
                         "images",
                         "attributes",
-                        "average_rating",
-                        "num_reviews",
                         "created_by",
                         "created_at",
                         "updated_at",
@@ -286,8 +281,6 @@ async def export_products(collection, filetype: str = "json"):
                                 "tags": ",".join(product.get("tags", [])),
                                 "images": ",".join(product.get("images", [])),
                                 "attributes": json.dumps(product.get("attributes", {})),
-                                "average_rating": product.get("average_rating", 0),
-                                "num_reviews": product.get("num_reviews", 0),
                                 "created_by": product.get("created_by", ""),
                                 "created_at": (
                                     product.get("created_at").isoformat()
@@ -381,9 +374,6 @@ def product_doc_to_model(doc):
         sizes=doc.get("sizes", []),
         # Product specifications
         specifications=doc.get("specifications", {}),
-        # Reviews and ratings (aggregate only)
-        average_rating=doc.get("average_rating", 0),
-        num_reviews=doc.get("num_reviews", 0),
         # Audit trail
         created_by=doc.get("created_by", "system"),
         updated_by=doc.get("updated_by"),

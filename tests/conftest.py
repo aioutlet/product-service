@@ -4,8 +4,6 @@ from unittest.mock import AsyncMock, Mock
 from datetime import datetime, UTC
 from bson import ObjectId
 
-from src.models.review import Review, ReviewReport
-
 
 @pytest.fixture
 def mock_collection():
@@ -15,54 +13,12 @@ def mock_collection():
 
 
 @pytest.fixture
-def sample_review():
-    """Sample review for testing"""
-    return Review(
-        user_id="user123",
-        username="testuser",
-        rating=5,
-        comment="Great product!"
-    )
-
-
-@pytest.fixture
-def sample_review_report():
-    """Sample review report for testing"""
-    return ReviewReport(
-        reported_by="reporter456",
-        reason="Inappropriate content"
-    )
-
-
-@pytest.fixture
 def mock_product_doc():
     """Mock product document from MongoDB"""
     return {
         "_id": ObjectId("507f1f77bcf86cd799439011"),
         "name": "Test Product",
         "price": 29.99,
-        "reviews": [
-            {
-                "user_id": "user123",
-                "username": "testuser",
-                "rating": 5,
-                "comment": "Great!",
-                "created_at": datetime.now(UTC).isoformat(),
-                "updated_at": None,
-                "updated_by": None,
-                "reports": []
-            },
-            {
-                "user_id": "user456",
-                "username": "anotheruser",
-                "rating": 4,
-                "comment": "Good product",
-                "created_at": datetime.now(UTC).isoformat(),
-                "updated_at": None,
-                "updated_by": None,
-                "reports": []
-            }
-        ],
         "created_at": datetime.now(UTC),
         "updated_at": datetime.now(UTC)
     }

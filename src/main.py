@@ -16,9 +16,7 @@ import logging
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, PlainTextResponse
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
+from fastapi.responses import JSONResponse
 
 from src.controllers import operational_controller
 from src.controllers.product_controller import get_admin_stats
@@ -32,18 +30,12 @@ from src.observability.logging import logger
 from src.routers import home_router, product_router
 from src.db.mongodb import get_product_collection
 
-# Import limiter from review_router since that's where rate limiting is used
-from src.routers.review_router import limiter
-
 app = FastAPI()
 
 # Tracing already initialized in src.tracing_init
 
 # Add correlation ID middleware first
 app.add_middleware(CorrelationIdMiddleware)
-
-# Attach limiter to app state for SlowAPI compatibility
-app.state.limiter = limiter
 
 # Register centralized error handlers
 app.add_exception_handler(ErrorResponse, error_response_handler)
@@ -61,17 +53,6 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     )
 
 
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    logger.security(
-        logger.SecurityEvents.RATE_LIMIT_EXCEEDED,
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent"),
-        metadata={"endpoint": str(request.url)}
-    )
-    return PlainTextResponse("Rate limit exceeded", status_code=429)
-
-
 # Include routers
 app.include_router(product_router, prefix="/api/products", tags=["products"])
 app.include_router(home_router, prefix="/api/home", tags=["home"])
@@ -87,9 +68,6 @@ app.get("/health")(operational_controller.health)
 app.get("/health/ready")(operational_controller.readiness)
 app.get("/health/live")(operational_controller.liveness)
 app.get("/metrics")(operational_controller.metrics)
-
-# Add SlowAPI middleware for rate limiting
-app.add_middleware(SlowAPIMiddleware)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8003))

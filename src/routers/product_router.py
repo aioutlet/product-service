@@ -13,13 +13,11 @@ from src.models.product import (
 
 from .bulk_router import router as bulk_router
 from .import_export_router import router as import_export_router
-from .review_router import router as review_router
 
 # Main product router that combines all product-related routes
 router = APIRouter()
 
 # Include all sub-routers FIRST (before parameterized routes)
-router.include_router(review_router, tags=["reviews"])
 router.include_router(bulk_router, tags=["bulk-operations"])
 router.include_router(import_export_router, tags=["import-export"])
 
@@ -98,13 +96,12 @@ async def get_trending_products(
     collection=Depends(get_product_collection),
 ):
     """
-    Get trending products based on ratings, reviews, and recency.
+    Get recently created products (trending placeholder).
     
-    Trending algorithm:
-    - Considers products with at least 3 reviews
-    - Scores based on: average_rating × num_reviews
-    - Recent products (< 30 days old) get 1.5x boost
-    - Returns top N products by score
+    NOTE: Full trending algorithm with reviews/ratings should be implemented in Web BFF
+    by aggregating data from both Product Service and Review Service.
+    
+    This returns recently created products only.
     """
     return await product_controller.get_trending_products(collection, limit)
 

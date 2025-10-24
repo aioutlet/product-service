@@ -116,71 +116,52 @@ async def search_products(
         )
 
 
-async def get_trending_categories(collection, limit=5):
+async def get_top_categories(collection, limit=5):
     """
-    Get trending categories based on product popularity algorithm.
+    Get top categories - simplified version.
     
-    Trending score calculation per category:
-    - Product count in category
-    - Average rating across all products
-    - Total reviews across all products
-    - Trending score = (avg_rating * total_reviews * product_count)
+    NOTE: Full trending logic with reviews/ratings should be implemented in Web BFF
+    by aggregating data from both Product Service and Review Service.
+    
+    This simplified version returns categories by product count only.
     
     Args:
         collection: MongoDB collection instance
-        limit: Maximum number of trending categories to return (default: 5)
+        limit: Maximum number of categories to return (default: 5)
     
     Returns:
-        list[dict]: List of trending categories with metadata sorted by score
+        list[dict]: List of categories with metadata sorted by product count
         
     Raises:
         ErrorResponse: If database error occurs
     """
     try:
-        # Aggregation pipeline to calculate trending categories
+        # Simple aggregation: group by category and count products
         pipeline = [
-            # Filter: only active products
+            # Filter: only active products with valid categories
             {
                 "$match": {
                     "is_active": True,
                     "category": {"$exists": True, "$ne": None, "$ne": ""}
                 }
             },
-            # Group by category and calculate metrics
+            # Group by category and count
             {
                 "$group": {
                     "_id": "$category",
                     "product_count": {"$sum": 1},
-                    "avg_rating": {"$avg": "$average_rating"},
-                    "total_reviews": {"$sum": "$num_reviews"},
-                    "in_stock_count": {
-                        "$sum": {"$cond": [{"$gt": ["$num_reviews", 0]}, 1, 0]}
-                    },
-                    # Get one featured product from category (highest rated)
+                    # Get one featured product from category
                     "featured_product": {
                         "$first": {
                             "name": "$name",
                             "price": "$price",
-                            "images": "$images",
-                            "average_rating": "$average_rating"
+                            "images": "$images"
                         }
                     }
                 }
             },
-            # Calculate trending score
-            {
-                "$addFields": {
-                    "trending_score": {
-                        "$multiply": [
-                            {"$ifNull": ["$avg_rating", 0]},
-                            {"$ifNull": ["$total_reviews", 0]},
-                            "$product_count"
-                        ]
-                    }
-                }
-            },
-            # Sort by trending score (highest first)
-            {"$sort": {"trending_score": -1}},
+            # Sort by product count (most products first)
+            {"$sort": {"product_count": -1}},
             # Limit results
             {"$limit": limit},
             # Format output
@@ -189,10 +170,6 @@ async def get_trending_categories(collection, limit=5):
                     "_id": 0,
                     "name": "$_id",
                     "product_count": 1,
-                    "in_stock_count": 1,
-                    "avg_rating": {"$round": ["$avg_rating", 1]},
-                    "total_reviews": 1,
-                    "trending_score": {"$round": ["$trending_score", 0]},
                     "featured_product": 1
                 }
             }
@@ -225,76 +202,33 @@ async def get_trending_categories(collection, limit=5):
 
 async def get_trending_products(collection, limit=4):
     """
-    Get trending products based on data-driven algorithm.
+    Get trending products - simplified version.
     
-    Trending score calculation:
-    - Base score: (average_rating * num_reviews)
-    - Recency boost: Products created in last 30 days get 1.5x multiplier
-    - Minimum threshold: At least 3 reviews required to be considered trending
+    NOTE: Full trending logic with reviews/ratings should be implemented in Web BFF
+    by aggregating data from both Product Service and Review Service.
+    
+    This simplified version returns recently created active products.
     
     Args:
         collection: MongoDB collection instance
-        limit: Maximum number of trending products to return (default: 4)
+        limit: Maximum number of products to return (default: 4)
     
     Returns:
-        list[ProductDB]: List of trending products sorted by score
+        list[ProductDB]: List of recently created products
         
     Raises:
         ErrorResponse: If database error occurs
     """
     try:
-        # Calculate date 30 days ago for recency boost
-        thirty_days_ago = datetime.now(timezone.utc).timestamp() - (30 * 24 * 60 * 60)
+        # Simple query: return recently created active products
+        cursor = collection.find(
+            {"is_active": True}
+        ).sort("created_at", -1).limit(limit)
         
-        # Aggregation pipeline to calculate trending scores
-        pipeline = [
-            # Filter: only active products with at least 3 reviews
-            {
-                "$match": {
-                    "is_active": True,
-                    "num_reviews": {"$gte": 3}
-                }
-            },
-            # Add computed fields
-            {
-                "$addFields": {
-                    # Base trending score: rating * reviews
-                    "base_score": {
-                        "$multiply": ["$average_rating", "$num_reviews"]
-                    },
-                    # Check if product is recent (created in last 30 days)
-                    "is_recent": {
-                        "$gte": [
-                            {"$toLong": "$created_at"},
-                            thirty_days_ago * 1000  # Convert to milliseconds
-                        ]
-                    }
-                }
-            },
-            # Calculate final trending score with recency boost
-            {
-                "$addFields": {
-                    "trending_score": {
-                        "$cond": {
-                            "if": "$is_recent",
-                            "then": {"$multiply": ["$base_score", 1.5]},  # 50% boost for recent
-                            "else": "$base_score"
-                        }
-                    }
-                }
-            },
-            # Sort by trending score (highest first)
-            {"$sort": {"trending_score": -1}},
-            # Limit results
-            {"$limit": limit}
-        ]
-        
-        # Execute aggregation pipeline
-        cursor = collection.aggregate(pipeline)
         products = [product_doc_to_model(doc) async for doc in cursor]
         
         logger.info(
-            f"Fetched {len(products)} trending products",
+            f"Fetched {len(products)} recent products (trending placeholder)",
             metadata={"event": "get_trending_products", "count": len(products)}
         )
         
@@ -866,9 +800,6 @@ def product_doc_to_model(doc):
         sizes=doc.get("sizes", []),
         # Product specifications
         specifications=doc.get("specifications", {}),
-        # Reviews and ratings (aggregate only)
-        average_rating=doc.get("average_rating", 0),
-        num_reviews=doc.get("num_reviews", 0),
         # Audit trail
         created_by=doc.get("created_by", "system"),
         updated_by=doc.get("updated_by"),
