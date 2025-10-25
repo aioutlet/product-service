@@ -84,7 +84,7 @@ async def get_trending_categories(
     - Score = (avg_rating × total_reviews × product_count)
     - Returns top N categories by score
     """
-    return await product_controller.get_trending_categories(collection, limit)
+    return await product_controller.get_top_categories(collection, limit)
 
 
 @router.get(
