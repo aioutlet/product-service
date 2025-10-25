@@ -5,14 +5,29 @@ import os
 # Add the parent directory to Python path for module imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-# Load environment variables BEFORE any other imports that might need them
+# Industry-standard initialization pattern:
+# 1. Load environment variables
+# 2. Validate configuration (blocking - must pass)
+# 3. Initialize tracing and observability
+# 4. Check dependency health (non-blocking - log only)
+# 5. Start application
+
+# STEP 1: Load environment variables
+print('Step 1: Loading environment variables...')
 from dotenv import load_dotenv
 load_dotenv()
 
-import src.tracing_init  # This must be first to ensure OpenTelemetry SDK is initialized
+# STEP 2: Validate configuration (BLOCKING - must pass)
+print('Step 2: Validating configuration...')
+from src.validators.config_validator import validate_config
+validate_config()
+
+# STEP 3: Initialize tracing (must be after config validation, before other imports)
+print('Step 3: Initializing observability...')
+import src.tracing_init  # This must be before other imports to ensure OpenTelemetry SDK is initialized
 
 import logging
-
+import asyncio
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -30,9 +45,25 @@ from src.observability.logging import logger
 from src.routers import home_router, product_router
 from src.db.mongodb import get_product_collection
 
-app = FastAPI()
+# STEP 4: Check dependency health (non-blocking)
+async def check_dependencies_on_startup():
+    """Check dependencies after application starts"""
+    from src.utils.dependency_health_checker import check_dependency_health, get_dependencies
+    
+    print('Step 4: Checking dependency health...')
+    dependencies = get_dependencies()
+    dependency_count = len(dependencies)
 
-# Tracing already initialized in src.tracing_init
+    if dependency_count > 0:
+        print(f'[DEPS] Found {dependency_count} dependencies to check')
+        try:
+            await check_dependency_health(dependencies)
+        except Exception as error:
+            print(f'[DEPS] ⚠️ Dependency health check failed: {str(error)}')
+    else:
+        print('[DEPS] 📝 No dependencies configured for health checking')
+
+app = FastAPI()
 
 # Add correlation ID middleware first
 app.add_middleware(CorrelationIdMiddleware)
@@ -53,6 +84,12 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     )
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Run dependency health checks after FastAPI starts"""
+    await check_dependencies_on_startup()
+
+
 # Include routers
 app.include_router(product_router, prefix="/api/products", tags=["products"])
 app.include_router(home_router, prefix="/api/home", tags=["home"])
@@ -71,6 +108,8 @@ app.get("/metrics")(operational_controller.metrics)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8003))
+    
+    print('Step 5: Starting product service...')
     logger.info(f"Product API service starting on port {port}")
     
     # Log startup configuration

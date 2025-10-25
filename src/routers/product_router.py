@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, Response, status
+from typing import List, Optional
 
 import src.controllers.product_controller as product_controller
 from src.security import User, get_current_user, get_optional_user, require_admin
@@ -149,12 +150,12 @@ async def search_products(
     responses={404: {"model": ErrorResponseModel}},
 )
 async def list_products(
-    department: str = Query(None, description="Filter by department (e.g., Women, Men, Electronics)"),
-    category: str = Query(None, description="Filter by category (e.g., Clothing, Accessories)"),
-    subcategory: str = Query(None, description="Filter by subcategory (e.g., Tops, Laptops)"),
-    min_price: float = Query(None, ge=0, description="Minimum price"),
-    max_price: float = Query(None, ge=0, description="Maximum price"),
-    tags: list[str] = Query(None, description="Filter by tags"),
+    department: Optional[str] = Query(None, description="Filter by department (e.g., Women, Men, Electronics)"),
+    category: Optional[str] = Query(None, description="Filter by category (e.g., Clothing, Accessories)"),
+    subcategory: Optional[str] = Query(None, description="Filter by subcategory (e.g., Tops, Laptops)"),
+    min_price: Optional[float] = Query(None, ge=0, description="Minimum price"),
+    max_price: Optional[float] = Query(None, ge=0, description="Maximum price"),
+    tags: Optional[List[str]] = Query(None, description="Filter by tags"),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(20, ge=1, le=100, description="Max items to return"),
     collection=Depends(get_product_collection),

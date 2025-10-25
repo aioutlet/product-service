@@ -260,74 +260,72 @@ async def list_products(
     limit=20,
 ):
     """
-    List products with optional filtering and pagination.
-
-    Args:
-        collection: MongoDB collection instance
-        department: Optional department filter (Level 1: Women, Men, Kids, etc.)
-        category: Optional category filter (Level 2: Clothing, Accessories, etc.)
-        subcategory: Optional subcategory filter (Level 3: Tops, Laptops, etc.)
-        min_price: Optional minimum price filter
-        max_price: Optional maximum price filter
-        tags: Optional list of tags to filter by
-        skip: Number of results to skip for pagination
-        limit: Maximum number of results to return
-
-    Returns:
-        dict: Product list with pagination info and total count
-
-    Raises:
-        ErrorResponse: If database error occurs
+    List products with optional filters and pagination.
+    Supports hierarchical filtering by department/category/subcategory.
     """
+    query = {}
+    
+    # Hierarchical filtering: department > category > subcategory
+    if department:
+        query["department"] = department
+    if category:
+        query["category"] = category
+    if subcategory:
+        query["subcategory"] = subcategory
+    
+    # Price range filtering
+    if min_price is not None or max_price is not None:
+        query["price"] = {}
+        if min_price is not None:
+            query["price"]["$gte"] = min_price
+        if max_price is not None:
+            query["price"]["$lte"] = max_price
+    
+    # Tags filtering (match any tag)
+    if tags:
+        query["tags"] = {"$in": tags}
+    
     try:
-        # Build query for active products only
-        query = {"is_active": True}
-
-        # Apply hierarchical taxonomy filters
-        if department:
-            query["department"] = {
-                "$regex": f"^{department}$",
-                "$options": "i",
-            }  # Case-insensitive department match
-        if category:
-            query["category"] = {
-                "$regex": f"^{category}$",
-                "$options": "i",
-            }  # Case-insensitive category match
-        if subcategory:
-            query["subcategory"] = {
-                "$regex": f"^{subcategory}$",
-                "$options": "i",
-            }  # Case-insensitive subcategory match
-        if min_price is not None or max_price is not None:
-            price_query = {}
-            if min_price is not None:
-                price_query["$gte"] = min_price
-            if max_price is not None:
-                price_query["$lte"] = max_price
-            query["price"] = price_query
-        if tags:
-            query["tags"] = {"$in": tags}
-
         # Execute query with pagination
         cursor = collection.find(query).skip(skip).limit(limit)
-        products = [product_doc_to_model(doc) async for doc in cursor]
-
-        # Get total count for pagination info
+        products = await cursor.to_list(length=limit)
+        
+        # Get total count for pagination
         total_count = await collection.count_documents(query)
-
-        return {
-            "products": products,
-            "total_count": total_count,
-            "current_page": (skip // limit) + 1 if limit > 0 else 1,
-            "total_pages": (total_count + limit - 1) // limit if limit > 0 else 1,
-        }
-
-    except PyMongoError as e:
-        logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
-        raise ErrorResponse(
-            "Database connection error. Please try again later.", status_code=503
+        
+        # Convert MongoDB documents to ProductDB models
+        product_list = [product_doc_to_model(doc) for doc in products]
+        
+        logger.info(
+            f"Listed {len(product_list)} products",
+            metadata={
+                "event": "list_products",
+                "count": len(product_list),
+                "total": total_count,
+                "filters": {
+                    "department": department,
+                    "category": category,
+                    "subcategory": subcategory,
+                    "min_price": min_price,
+                    "max_price": max_price,
+                    "tags": tags,
+                }
+            }
         )
+        
+        # Calculate pagination metadata
+        current_page = (skip // limit) + 1 if limit > 0 else 1
+        total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
+        
+        return {
+            "products": product_list,
+            "total_count": total_count,
+            "current_page": current_page,
+            "total_pages": total_pages
+        }
+    except PyMongoError as e:
+        logger.error(f"Error listing products: {e}", metadata={"event": "list_products_error"})
+        raise ErrorResponse("Failed to list products", status_code=500)
 
 
 async def get_product(product_id, collection):
@@ -806,8 +804,31 @@ def product_doc_to_model(doc):
         created_at=doc.get("created_at", datetime.now(timezone.utc)),
         updated_at=doc.get("updated_at", datetime.now(timezone.utc)),
         is_active=doc.get("is_active", True),
-        history=doc.get("history", []),
+        history=_sanitize_history(doc.get("history", [])),
     )
+
+
+def _sanitize_history(history):
+    """
+    Sanitize history data to remove problematic fields that don't match current schema.
+    Removes 'is_active' from changes since it's no longer in ProductUpdate model.
+    """
+    if not history:
+        return []
+    
+    sanitized = []
+    for entry in history:
+        if isinstance(entry, dict) and "changes" in entry:
+            # Remove is_active from changes if it exists
+            changes = {k: v for k, v in entry["changes"].items() if k != "is_active"}
+            sanitized.append({
+                **entry,
+                "changes": changes
+            })
+        else:
+            sanitized.append(entry)
+    
+    return sanitized
 
 
 async def check_product_exists(product_id: str, collection):
