@@ -97,7 +97,7 @@ class TestProductControllerEventPublishing:
         )
 
         # Act
-        result = await create_product(
+        await create_product(
             sample_product_create,
             mock_collection,
             mock_acting_user
@@ -191,7 +191,7 @@ class TestProductControllerEventPublishing:
             'src.controllers.product_controller.validate_object_id',
             return_value=product_id
         ):
-            result = await update_product(
+            await update_product(
                 product_id,
                 sample_product_update,
                 mock_collection,
@@ -248,7 +248,7 @@ class TestProductControllerEventPublishing:
             'src.controllers.product_controller.validate_object_id',
             return_value=product_id
         ):
-            result = await update_product(
+            await update_product(
                 product_id,
                 price_update,
                 mock_collection,
