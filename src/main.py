@@ -43,6 +43,7 @@ from src.core.errors import (
 from src.middlewares import CorrelationIdMiddleware
 from src.observability.logging import logger
 from src.routers import home_router, product_router
+from src.routers.event_subscriptions import router as event_subscriptions_router
 from src.db.mongodb import get_product_collection
 
 # STEP 4: Check dependency health (non-blocking)
@@ -93,6 +94,7 @@ async def startup_event():
 # Include routers
 app.include_router(product_router, prefix="/api/products", tags=["products"])
 app.include_router(home_router, prefix="/api/home", tags=["home"])
+app.include_router(event_subscriptions_router, tags=["events"])  # Event consumption (REQ-3.2)
 
 # Admin routes - register the admin stats endpoint directly
 @app.get("/api/admin/stats")
