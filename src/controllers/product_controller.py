@@ -518,6 +518,9 @@ async def update_product(
         if not doc:
             raise ErrorResponse("Product not found", status_code=404)
 
+        # Save old price for price change event
+        old_price = doc.get("price") if "price" in update_data else None
+
         # Track history of changes
         changes = {k: v for k, v in update_data.items() if k in doc and doc[k] != v}
         if changes and acting_user:
@@ -571,15 +574,15 @@ async def update_product(
             )
         
         # Publish product.price.changed event if price was updated (PRD REQ-3.1.4)
-        if "price" in changes:
+        if old_price is not None and old_price != update_data.get("price"):
             try:
                 publisher = get_dapr_publisher()
                 await publisher.publish(
                     event_type="product.price.changed",
                     data={
                         "productId": product_id,
-                        "oldPrice": changes["price"],
-                        "newPrice": update_data["price"],
+                        "oldPrice": old_price,  # Old price saved before update
+                        "newPrice": update_data["price"],  # New price from update
                         "changedAt": updated_product.updated_at.isoformat(),
                         "changedBy": acting_user.user_id if acting_user else None
                     },
