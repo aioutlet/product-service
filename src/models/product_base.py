@@ -82,6 +82,10 @@ class ProductBase(ProductValidatorMixin, BaseModel):
     badges: List[ProductBadge] = []
     qa_stats: QAStats = Field(default_factory=QAStats)
     
+    # Admin features (REQ-5.x)
+    size_chart_id: Optional[str] = None  # Reference to size chart (REQ-5.4)
+    restrictions: Optional[Dict[str, Any]] = None  # Product restrictions (REQ-5.5)
+    
     # Audit trail
     created_by: str
     updated_by: Optional[str] = None
