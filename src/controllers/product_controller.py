@@ -7,6 +7,7 @@ from src.core.errors import ErrorResponse
 from src.core.logger import logger
 from src.models.product import ProductCreate, ProductDB, ProductUpdate
 from src.utils.validators import validate_object_id
+from src.services.dapr_publisher import get_dapr_publisher
 
 
 async def search_products(
@@ -419,11 +420,38 @@ async def create_product(product: ProductCreate, collection, acting_user=None):
 
         # Retrieve and return created product
         doc = await collection.find_one({"_id": result.inserted_id})
+        product_model = product_doc_to_model(doc)
+        
         logger.info(
             f"Created product {result.inserted_id}",
             metadata={"event": "create_product", "product_id": str(result.inserted_id)}
         )
-        return product_doc_to_model(doc)
+        
+        # Publish product.created event via Dapr (PRD REQ-3.1.1)
+        try:
+            publisher = get_dapr_publisher()
+            await publisher.publish(
+                event_type="product.created",
+                data={
+                    "productId": str(result.inserted_id),
+                    "name": product_model.name,
+                    "price": product_model.price,
+                    "category": product_model.category,
+                    "department": product_model.department,
+                    "sku": product_model.sku,
+                    "createdAt": product_model.created_at.isoformat(),
+                    "createdBy": acting_user.user_id if acting_user else None
+                },
+                correlation_id=None  # Could be passed from request context
+            )
+        except Exception as e:
+            # Don't fail the create operation if event publishing fails
+            logger.error(
+                f"Failed to publish product.created event: {str(e)}",
+                metadata={"event": "product_created_event_error", "product_id": str(result.inserted_id)}
+            )
+        
+        return product_model
     except PyMongoError as e:
         logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
@@ -516,11 +544,54 @@ async def update_product(
 
         # Retrieve and return updated product
         doc = await collection.find_one({"_id": obj_id})
+        updated_product = product_doc_to_model(doc)
+        
         logger.info(
             f"Updated product {product_id}",
             metadata={"event": "update_product", "product_id": product_id}
         )
-        return product_doc_to_model(doc)
+        
+        # Publish product.updated event via Dapr (PRD REQ-3.1.2)
+        try:
+            publisher = get_dapr_publisher()
+            await publisher.publish(
+                event_type="product.updated",
+                data={
+                    "productId": product_id,
+                    "updatedFields": list(update_data.keys()),
+                    "updatedAt": updated_product.updated_at.isoformat(),
+                    "updatedBy": acting_user.user_id if acting_user else None
+                },
+                correlation_id=None
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to publish product.updated event: {str(e)}",
+                metadata={"event": "product_updated_event_error", "product_id": product_id}
+            )
+        
+        # Publish product.price.changed event if price was updated (PRD REQ-3.1.4)
+        if "price" in changes:
+            try:
+                publisher = get_dapr_publisher()
+                await publisher.publish(
+                    event_type="product.price.changed",
+                    data={
+                        "productId": product_id,
+                        "oldPrice": changes["price"],
+                        "newPrice": update_data["price"],
+                        "changedAt": updated_product.updated_at.isoformat(),
+                        "changedBy": acting_user.user_id if acting_user else None
+                    },
+                    correlation_id=None
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to publish product.price.changed event: {str(e)}",
+                    metadata={"event": "product_price_changed_event_error", "product_id": product_id}
+                )
+        
+        return updated_product
     except PyMongoError as e:
         logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
@@ -571,29 +642,24 @@ async def delete_product(product_id, collection, acting_user=None):
             metadata={"event": "soft_delete_product", "product_id": product_id}
         )
 
-        # Publish product.deleted event to message broker
+        # Publish product.deleted event via Dapr (PRD REQ-3.1.3)
         try:
-            from src.services.message_broker_publisher import get_publisher
-            publisher = get_publisher()
+            publisher = get_dapr_publisher()
             await publisher.publish(
                 event_type="product.deleted",
                 data={
                     "productId": product_id,
-                    "hardDelete": False,  # Soft delete by default
+                    "softDelete": True,  # Soft delete indicator
                     "deletedBy": acting_user.user_id if acting_user else None,
                     "deletedAt": datetime.now(timezone.utc).isoformat(),
                 },
                 correlation_id=None  # Could be passed from request context
             )
-            logger.info(
-                f"Published product.deleted event for {product_id}",
-                metadata={"event": "product_deleted_event_published", "product_id": product_id}
-            )
         except Exception as e:
             # Don't fail the delete operation if event publishing fails
             logger.error(
                 f"Failed to publish product.deleted event: {str(e)}",
-                metadata={"event": "product_deleted_event_error", "product_id": product_id, "error": str(e)}
+                metadata={"event": "product_deleted_event_error", "product_id": product_id}
             )
         return None
     except PyMongoError as e:
