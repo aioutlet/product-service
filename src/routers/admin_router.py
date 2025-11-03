@@ -5,13 +5,15 @@ Implements PRD REQ-5.x: Admin features
 """
 from typing import List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, Body, Query, status
+from fastapi import APIRouter, Depends, Body, Query, status, UploadFile, File
+from fastapi.responses import Response
 
 from src.security import User, require_admin
 from src.core.errors import ErrorResponse
 from src.db.mongodb import get_product_collection
 from src.controllers.product_controller import get_admin_stats
 from src.services.dapr_publisher import get_dapr_publisher
+from src.services.bulk_import_service import get_bulk_import_service
 from src.observability.logging import logger
 from src.utils.validators import validate_object_id
 from src.models.admin_models import SizeChart, ProductRestrictions
@@ -673,5 +675,293 @@ async def get_product_restrictions(
         )
         raise ErrorResponse(
             f"Failed to get restrictions: {str(e)}",
+            status_code=500
+        )
+
+
+# ============================================================================
+# REQ-5.2: Bulk Product Operations
+# ============================================================================
+
+@router.get(
+    "/bulk-import/template",
+    summary="Download Excel import template",
+    description="Download category-specific Excel template for bulk import (REQ-5.2.1)"
+)
+async def download_import_template(
+    category: Optional[str] = Query(None, description="Category for template"),
+    user: User = Depends(require_admin)
+):
+    """
+    Download Excel template for bulk product import.
+    Template includes field descriptions, validation rules, and examples.
+    """
+    try:
+        bulk_service = get_bulk_import_service()
+        template_content = bulk_service.generate_excel_template(category)
+        
+        filename = f"product_import_template_{category or 'general'}.xlsx"
+        
+        logger.info(
+            f"Generated import template for category: {category}",
+            metadata={
+                'event': 'template_downloaded',
+                'category': category,
+                'downloadedBy': user.user_id
+            }
+        )
+        
+        return Response(
+            content=template_content,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(
+            f"Failed to generate template: {str(e)}",
+            metadata={'error': str(e)}
+        )
+        raise ErrorResponse(
+            f"Failed to generate template: {str(e)}",
+            status_code=500
+        )
+
+
+@router.post(
+    "/bulk-import/validate",
+    response_model=dict,
+    summary="Validate bulk import file",
+    description="Validate Excel file and return validation errors (REQ-5.2.2)"
+)
+async def validate_import_file(
+    file: UploadFile = File(..., description="Excel file to validate"),
+    user: User = Depends(require_admin)
+):
+    """
+    Validate bulk import file without importing.
+    Returns validation errors and valid product count.
+    """
+    try:
+        # Validate file type
+        if not file.filename.endswith(('.xlsx', '.xls')):
+            raise ErrorResponse(
+                "Only Excel files (.xlsx, .xls) are supported",
+                status_code=400
+            )
+        
+        # Read file content
+        content = await file.read()
+        
+        # Validate
+        bulk_service = get_bulk_import_service()
+        valid_products, errors = bulk_service.validate_import_data(
+            content,
+            file.filename
+        )
+        
+        logger.info(
+            f"Validated import file: {file.filename}",
+            metadata={
+                'event': 'import_file_validated',
+                'filename': file.filename,
+                'validCount': len(valid_products),
+                'errorCount': len(errors),
+                'validatedBy': user.user_id
+            }
+        )
+        
+        return {
+            "filename": file.filename,
+            "validProductCount": len(valid_products),
+            "errorCount": len(errors),
+            "errors": [e.dict() for e in errors]
+        }
+        
+    except ErrorResponse:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to validate file: {str(e)}",
+            metadata={'error': str(e), 'filename': file.filename}
+        )
+        raise ErrorResponse(
+            f"Failed to validate file: {str(e)}",
+            status_code=500
+        )
+
+
+@router.post(
+    "/bulk-import",
+    response_model=dict,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Start bulk product import",
+    description="Start async bulk import job (REQ-5.2.2)"
+)
+async def start_bulk_import(
+    file: UploadFile = File(..., description="Excel file to import"),
+    import_mode: str = Query("partial", enum=["partial", "all-or-nothing"]),
+    collection=Depends(get_product_collection),
+    user: User = Depends(require_admin)
+):
+    """
+    Start asynchronous bulk product import.
+    
+    Modes:
+    - partial: Skip invalid rows, import valid ones
+    - all-or-nothing: Rollback if any row fails
+    
+    Returns job ID for tracking progress.
+    """
+    try:
+        # Validate file type
+        if not file.filename.endswith(('.xlsx', '.xls')):
+            raise ErrorResponse(
+                "Only Excel files (.xlsx, .xls) are supported",
+                status_code=400
+            )
+        
+        # Read and validate file
+        content = await file.read()
+        bulk_service = get_bulk_import_service()
+        valid_products, errors = bulk_service.validate_import_data(
+            content,
+            file.filename
+        )
+        
+        if not valid_products:
+            raise ErrorResponse(
+                "No valid products found in file",
+                status_code=400,
+                details={"errors": [e.dict() for e in errors]}
+            )
+        
+        # Create import job
+        job = await bulk_service.create_import_job(
+            filename=file.filename,
+            total_rows=len(valid_products),
+            created_by=user.user_id,
+            import_mode=import_mode
+        )
+        
+        # Publish job created event (background worker will process)
+        await bulk_service.publish_import_job_event(
+            job.job_id,
+            "product.bulk.import.job.created",
+            {
+                "filename": file.filename,
+                "totalRows": len(valid_products),
+                "importMode": import_mode,
+                "createdBy": user.user_id,
+                "products": valid_products  # Pass products to worker
+            }
+        )
+        
+        logger.info(
+            f"Started bulk import job: {job.job_id}",
+            metadata={
+                'event': 'bulk_import_started',
+                'jobId': job.job_id,
+                'filename': file.filename,
+                'totalRows': len(valid_products),
+                'mode': import_mode,
+                'startedBy': user.user_id
+            }
+        )
+        
+        return {
+            "message": "Import job started",
+            "jobId": job.job_id,
+            "totalRows": len(valid_products),
+            "errorCount": len(errors),
+            "status": "pending"
+        }
+        
+    except ErrorResponse:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to start import: {str(e)}",
+            metadata={'error': str(e), 'filename': file.filename}
+        )
+        raise ErrorResponse(
+            f"Failed to start import: {str(e)}",
+            status_code=500
+        )
+
+
+@router.get(
+    "/bulk-import/jobs/{job_id}",
+    response_model=dict,
+    summary="Get import job status",
+    description="Get status and progress of import job (REQ-5.2.4)"
+)
+async def get_import_job_status(
+    job_id: str,
+    user: User = Depends(require_admin)
+):
+    """Get import job status and progress."""
+    try:
+        bulk_service = get_bulk_import_service()
+        job = await bulk_service.get_import_job(job_id)
+        
+        if not job:
+            raise ErrorResponse("Import job not found", status_code=404)
+        
+        # Remove _id field
+        job.pop('_id', None)
+        
+        return job
+        
+    except ErrorResponse:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to get job status: {str(e)}",
+            metadata={'error': str(e), 'jobId': job_id}
+        )
+        raise ErrorResponse(
+            f"Failed to get job status: {str(e)}",
+            status_code=500
+        )
+
+
+@router.get(
+    "/bulk-import/jobs",
+    response_model=dict,
+    summary="List import jobs",
+    description="List import job history with pagination (REQ-5.2.4)"
+)
+async def list_import_jobs(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    status: Optional[str] = Query(None, enum=["pending", "processing", "completed", "failed", "cancelled"]),
+    user: User = Depends(require_admin)
+):
+    """List import jobs with optional status filter."""
+    try:
+        bulk_service = get_bulk_import_service()
+        jobs, total = await bulk_service.list_import_jobs(skip, limit, status)
+        
+        # Remove _id fields
+        for job in jobs:
+            job.pop('_id', None)
+        
+        return {
+            "jobs": jobs,
+            "total": total,
+            "skip": skip,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        logger.error(
+            f"Failed to list jobs: {str(e)}",
+            metadata={'error': str(e)}
+        )
+        raise ErrorResponse(
+            f"Failed to list jobs: {str(e)}",
             status_code=500
         )
