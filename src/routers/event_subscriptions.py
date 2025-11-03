@@ -2,14 +2,16 @@
 Event Subscriptions Router
 Handles Dapr Pub/Sub event consumption for product service.
 Implements PRD REQ-3.2: Events Consumed (Inbound Integration)
+Implements PRD REQ-5.2.2: Background worker for bulk import
 """
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, BackgroundTasks
 
 from src.services.review_aggregator import update_review_aggregates
 from src.services.inventory_sync import update_availability_status
 from src.services.badge_manager import evaluate_badge_criteria
 from src.services.qa_sync import update_qa_stats
 from src.services.dapr_publisher import get_dapr_publisher
+from src.workers.bulk_import_worker import get_bulk_import_worker
 from src.observability.logging import logger
 
 router = APIRouter()
@@ -72,6 +74,12 @@ async def subscribe():
             'pubsubname': 'aioutlet-pubsub',
             'topic': 'product.question.deleted',
             'route': '/events/question-deleted'
+        },
+        # Bulk import events (REQ-5.2.2)
+        {
+            'pubsubname': 'aioutlet-pubsub',
+            'topic': 'product.bulk.import.job.created',
+            'route': '/events/bulk-import-job-created'
         }
     ]
     return subscriptions
@@ -417,6 +425,55 @@ async def handle_question_deleted(request: Request):
             f"Failed to process question.deleted event: {str(e)}",
             metadata={
                 'event': 'question_deleted_handler_error',
+                'error': str(e)
+            }
+        )
+        return {'status': 'RETRY'}
+
+
+@router.post('/events/bulk-import-job-created')
+async def handle_bulk_import_job_created(
+    request: Request,
+    background_tasks: BackgroundTasks
+):
+    """
+    Handles product.bulk.import.job.created events.
+    Triggers background worker to process import job (REQ-5.2.2).
+    """
+    try:
+        event = await request.json()
+        job_id = event['data']['jobId']
+        products = event['data'].get('products', [])
+        import_mode = event['data'].get('importMode', 'partial')
+
+        logger.info(
+            f"Received bulk import job: {job_id}",
+            metadata={
+                'event': 'bulk_import_job_received',
+                'jobId': job_id,
+                'productCount': len(products),
+                'importMode': import_mode
+            }
+        )
+
+        # Get worker and schedule background processing
+        worker = get_bulk_import_worker()
+
+        # Process in background (non-blocking)
+        background_tasks.add_task(
+            worker.process_import_job,
+            job_id,
+            products,
+            import_mode
+        )
+
+        return {'status': 'SUCCESS'}
+
+    except Exception as e:
+        logger.error(
+            f"Failed to handle bulk import job event: {str(e)}",
+            metadata={
+                'event': 'bulk_import_job_handler_error',
                 'error': str(e)
             }
         )
