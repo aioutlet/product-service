@@ -4,6 +4,22 @@
 
 📋 **Read First**: All business requirements are in [`docs/PRD.md`](../docs/PRD.md). This file covers **HOW** to implement those requirements using our chosen technology stack.
 
+**PRD Structure Reference**:
+
+- **Section 2**: Technical Architecture (Technology Stack, Data Model, Events, Environment Variables)
+- **Section 3**: API Specifications (32+ endpoints with full request/response examples, Error Code Catalog)
+- **Section 4**: Functional Requirements (Product Management, Search, Validation, Admin, Variations)
+- **Section 5**: Non-Functional Requirements (Performance, Security, Scalability, Observability)
+
+**Key PRD Sections**:
+
+- **Section 2.3**: Event-Driven Integration (Outbound/Inbound events with JSON schemas)
+- **Section 2.7**: Environment Variables (80+ variables for configuration)
+- **Section 3.2-3.5**: API Endpoints with complete request/response examples
+- **Section 3.6**: Error Code Catalog (50+ standardized error codes)
+- **Section 4.1-4.6**: Functional requirements for features
+- **Section 5.1-5.7**: Non-functional requirements (performance, security, etc.)
+
 ## Service Overview
 
 - **Service Name**: Product Service
@@ -28,7 +44,7 @@
   - Modern Python type hints
   - Easy to test and maintain
 
-#### Data Storage (Implementing PRD REQ-4.x)
+#### Data Storage (Implementing PRD Section 4.1-4.6)
 
 - **Database**: MongoDB
 - **Driver**: motor (async MongoDB driver)
@@ -38,16 +54,16 @@
   - Good performance for read-heavy workloads
   - Easy hierarchical data storage (department/category/subcategory)
 
-#### Event Publishing (Implementing PRD REQ-3.x)
+#### Event Publishing (Implementing PRD Section 2.3.2)
 
 - **Solution**: Dapr Pub/Sub
 - **Component Name**: `aioutlet-pubsub`
 - **Backend**: RabbitMQ (configurable via Dapr component)
 - **Why Dapr**:
   - Framework-agnostic (can switch to Kafka/Azure Service Bus without code changes)
-  - Built-in retries and resilience (meets PRD NFR-2.3)
-  - Automatic distributed tracing (meets PRD NFR-5.1)
-  - Fire-and-forget pattern (meets PRD REQ-3.5)
+  - Built-in retries and resilience (meets PRD Section 5.3)
+  - Automatic distributed tracing (meets PRD Section 5.6)
+  - Fire-and-forget pattern (meets PRD Section 2.3.2)
   - At-least-once delivery guarantee (meets PRD event delivery requirements)
   - No custom message broker service needed
 
@@ -66,7 +82,7 @@ from src.observability import logger
 class DaprPublisher:
     """
     Publisher for sending events via Dapr pub/sub.
-    Implements PRD REQ-3.x: Event Publishing requirements.
+    Implements PRD Section 2.3.2: Outbound Events requirements.
     """
 
     def __init__(self):
@@ -85,10 +101,9 @@ class DaprPublisher:
         Publish an event via Dapr pub/sub.
 
         Meets Requirements:
-        - PRD REQ-3.1 to REQ-3.4: Specific event publishing
-        - PRD REQ-3.5: Fire-and-forget, don't fail on publish error
-        - PRD NFR-2.3: Automatic retries via Dapr
-        - PRD NFR-5.1: Correlation ID propagation
+        - PRD Section 2.3.2: Specific event publishing (8 event types)
+        - PRD Section 5.3.2: Fire-and-forget, don't fail on publish error
+        - PRD Section 5.6.1: Correlation ID propagation for distributed tracing
 
         Args:
             event_type: Event type (e.g., 'product.created')
@@ -96,7 +111,7 @@ class DaprPublisher:
             correlation_id: Correlation ID for tracing
         """
         try:
-            # Build event payload matching PRD event schema
+            # Build event payload matching PRD event schema (Section 2.3.2)
             event_payload = {
                 'eventType': event_type,
                 'eventId': str(uuid.uuid4()),
@@ -127,7 +142,7 @@ class DaprPublisher:
             )
 
         except Exception as e:
-            # Per PRD REQ-3.5: Log but don't fail the operation
+            # Per PRD Section 5.3.2: Log but don't fail the operation
             logger.error(
                 f"Failed to publish event via Dapr: {str(e)}",
                 metadata={
@@ -150,7 +165,7 @@ def get_dapr_publisher() -> DaprPublisher:
     return _dapr_publisher
 ```
 
-#### Event Consumption (Implementing PRD REQ-12.x)
+#### Event Consumption (Implementing PRD Section 2.3.3)
 
 - **Solution**: Dapr Pub/Sub subscriptions
 - **Pattern**: HTTP endpoints that Dapr calls when events arrive
@@ -221,7 +236,7 @@ async def subscribe():
 async def handle_review_created(request: Request):
     """
     Handles review.created events from Review Service.
-    Updates product rating aggregates (REQ-12.1).
+    Updates product rating aggregates (PRD Section 2.3.3 - review.created).
     """
     try:
         event = await request.json()
@@ -254,7 +269,7 @@ async def handle_review_created(request: Request):
 async def handle_inventory_updated(request: Request):
     """
     Handles inventory.stock.updated events from Inventory Service.
-    Updates product availability status (REQ-12.2).
+    Updates product availability status (PRD Section 2.3.3 - inventory.stock.updated).
     """
     try:
         event = await request.json()
@@ -296,7 +311,7 @@ async def handle_inventory_updated(request: Request):
 async def handle_sales_updated(request: Request):
     """
     Handles analytics.product.sales.updated events.
-    Evaluates Best Seller badge criteria (REQ-12.3).
+    Evaluates Best Seller badge criteria (PRD Section 2.3.3 - analytics events).
     """
     try:
         event = await request.json()
@@ -348,7 +363,7 @@ async def handle_sales_updated(request: Request):
    - Don't use consumed data for critical business logic
    - Denormalized data is for read optimization only
 
-### Background Workers (Implementing PRD REQ-12.4)
+### Background Workers (Implementing PRD Section 4.4.2)
 
 #### Bulk Import Worker Pattern
 
@@ -416,7 +431,7 @@ async def bulk_import_worker():
         return {'status': 'SUCCESS'}
 ```
 
-### Caching Strategy (Implementing PRD NFR-1.x)
+### Caching Strategy (Implementing PRD Section 5.1)
 
 #### Caching with Dapr State Store
 
@@ -530,10 +545,10 @@ async def update_product(product_id: str, updates: dict):
 
 **Eventual Consistency** (accept delay):
 
-- Review aggregates (5 second target per REQ-12.1)
-- Inventory availability (10 second target per REQ-12.2)
-- Sales rank and badges (1 hour refresh per REQ-12.3)
-- Q&A counts (30 second target per REQ-14.1)
+- Review aggregates (5 second target per Section 2.3.3)
+- Inventory availability (10 second target per Section 2.3.3)
+- Sales rank and badges (1 hour refresh per Section 2.3.3)
+- Q&A counts (30 second target per Section 2.3.3)
 
 **Trade-offs**:
 
@@ -541,9 +556,9 @@ async def update_product(product_id: str, updates: dict):
 - **Cost**: UI may show slightly stale data (e.g., review count off by 1)
 - **Mitigation**: Clear UI indicators ("Updated 2 minutes ago")
 
-### Observability (Implementing PRD NFR-5.x)
+### Observability (Implementing PRD Section 5.6)
 
-#### Distributed Tracing (PRD NFR-5.1)
+#### Distributed Tracing (PRD Section 5.6.1)
 
 - **Solution**: Dapr automatic tracing with OpenTelemetry
 - **Implementation**:
@@ -551,7 +566,7 @@ async def update_product(product_id: str, updates: dict):
   - Dapr automatically injects trace context into all pub/sub messages
   - OpenTelemetry compatible (works with Zipkin, Jaeger, Application Insights)
 
-#### Logging (PRD NFR-5.2)
+#### Logging (PRD Section 5.6.2)
 
 - **Library**: Python `logging` with structured JSON output
 - **Format**: JSON with timestamp, level, message, metadata
@@ -564,7 +579,7 @@ async def update_product(product_id: str, updates: dict):
   - userId (if available)
   - error details (if applicable)
 
-#### Metrics (PRD NFR-5.3)
+#### Metrics (PRD Section 5.6.3)
 
 - **Format**: Prometheus-compatible endpoints
 - **Metrics to Track**:
@@ -574,31 +589,245 @@ async def update_product(product_id: str, updates: dict):
   - Database query duration
   - Event publishing attempts/failures
 
-#### Health Checks (PRD NFR-5.4)
+#### Health Checks (PRD Section 3.5)
 
-- **Endpoint**: `/health` (liveness)
-- **Endpoint**: `/health/ready` (readiness)
+- **Endpoint**: `/health` (liveness) - Section 3.5.1
+- **Endpoint**: `/health/ready` (readiness) - Section 3.5.2
 - **Checks**: MongoDB connectivity
 
-### Security (Implementing PRD NFR-4.x)
+### Security (Implementing PRD Section 5.4)
 
-#### Authentication (PRD NFR-4.1)
+#### Authentication (PRD Section 5.4.1)
 
 - **Method**: JWT token validation
 - **Middleware**: FastAPI dependency injection
 - **Token Source**: Authorization header (`Bearer <token>`)
 
-#### Authorization (PRD NFR-4.2)
+#### Authorization (PRD Section 5.4.4)
 
 - **Admin Operations**: Require `admin` role in JWT
 - **Function**: `verify_admin_access(user)` in `src/security`
 - **Error**: 403 Forbidden for non-admin users
 
-#### Input Validation (PRD NFR-4.3)
+#### Input Validation (PRD Section 5.4.3)
 
 - **Library**: Pydantic models (FastAPI built-in)
 - **ObjectId Validation**: `validate_object_id()` utility
 - **Sanitization**: Automatic via Pydantic
+
+### Environment Configuration (PRD Section 2.7)
+
+All environment variables are comprehensively documented in **PRD Section 2.7** with 80+ variables across 11 categories:
+
+- **Section 2.7.1**: Database Configuration (MongoDB connection, pooling)
+- **Section 2.7.2**: Message Broker Configuration (RabbitMQ settings)
+- **Section 2.7.3**: Dapr Configuration (sidecar ports, pub/sub component name)
+- **Section 2.7.4**: Authentication & Authorization (JWT public key, algorithm)
+- **Section 2.7.5**: Service Configuration (service name, port, log level, CORS)
+- **Section 2.7.6**: Performance & Caching (rate limiting, caching, pagination limits)
+- **Section 2.7.7**: File Upload Configuration (import/image size limits)
+- **Section 2.7.8**: Monitoring & Observability (metrics, tracing, Jaeger)
+- **Section 2.7.9**: Health Check Configuration (probe timeouts)
+- **Section 2.7.10**: Event Publishing Configuration (retry settings, batching)
+- **Section 2.7.11**: Example Configuration Files (development, production, Kubernetes)
+
+**Key Environment Variables for Dapr Integration**:
+
+```bash
+# Dapr Configuration (Section 2.7.3)
+DAPR_HTTP_PORT=3500          # Dapr HTTP sidecar port
+DAPR_GRPC_PORT=50001         # Dapr gRPC sidecar port
+DAPR_PUBSUB_NAME=product-pubsub  # Pub/sub component name
+DAPR_APP_ID=product-service  # Dapr application identifier
+DAPR_APP_PORT=8003           # Port where product service listens
+
+# Database (Section 2.7.1)
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DATABASE=aioutlet_products
+
+# Message Broker (Section 2.7.2)
+RABBITMQ_HOST=localhost
+RABBITMQ_PORT=5672
+RABBITMQ_USER=admin
+RABBITMQ_PASSWORD=secretpassword
+
+# Authentication (Section 2.7.4)
+JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\n...
+JWT_ALGORITHM=RS256
+
+# Service (Section 2.7.5)
+SERVICE_NAME=product-service
+ENVIRONMENT=production
+LOG_LEVEL=info
+```
+
+**Refer to PRD Section 2.7.11 for complete .env.development, .env.production, and Kubernetes ConfigMap examples.**
+
+### Error Handling (PRD Section 3.6)
+
+All API error codes are standardized and documented in **PRD Section 3.6: Error Code Catalog** with 50+ error codes.
+
+**Error Code Categories**:
+
+- **Section 3.6.1**: Client Error Codes (4xx) - 21 codes including validation, authentication, authorization, not found, conflict
+- **Section 3.6.2**: Server Error Codes (5xx) - 9 codes for internal errors, database failures, timeouts
+- **Section 3.6.3**: Business Logic Error Codes - 10 domain-specific error codes
+- **Section 3.6.4**: Error Response Format - Standard structure with examples
+
+**Standard Error Response Format** (Section 3.6.4):
+
+```json
+{
+  "error": "ERROR_CODE",
+  "message": "Human-readable error description",
+  "details": {
+    "field": "specific_field_name",
+    "value": "invalid_value",
+    "constraint": "validation_constraint"
+  },
+  "correlationId": "req-abc-123",
+  "timestamp": "2025-11-04T19:30:00Z",
+  "path": "/api/products",
+  "method": "POST"
+}
+```
+
+**Implementation Pattern**:
+
+```python
+# src/errors/error_handler.py
+from fastapi import HTTPException
+from typing import Dict, Any, Optional
+
+class APIError(HTTPException):
+    """
+    Standard API error following PRD Section 3.6.4 format.
+    All error codes from Section 3.6.1-3.6.3.
+    """
+    def __init__(
+        self,
+        error_code: str,
+        message: str,
+        status_code: int,
+        details: Optional[Dict[str, Any]] = None,
+        correlation_id: Optional[str] = None
+    ):
+        self.error_code = error_code
+        self.correlation_id = correlation_id
+        self.details = details
+
+        super().__init__(
+            status_code=status_code,
+            detail={
+                "error": error_code,
+                "message": message,
+                "details": details,
+                "correlationId": correlation_id,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+        )
+
+# Common error factories (using codes from PRD Section 3.6)
+class ProductErrors:
+    @staticmethod
+    def not_found(product_id: str, correlation_id: str = None):
+        return APIError(
+            error_code="PRODUCT_NOT_FOUND",
+            message=f"Product with ID '{product_id}' does not exist",
+            status_code=404,
+            details={"productId": product_id},
+            correlation_id=correlation_id
+        )
+
+    @staticmethod
+    def duplicate_sku(sku: str, correlation_id: str = None):
+        return APIError(
+            error_code="DUPLICATE_SKU",
+            message=f"SKU '{sku}' already exists",
+            status_code=409,
+            details={"sku": sku},
+            correlation_id=correlation_id
+        )
+
+    @staticmethod
+    def validation_error(field: str, value: Any, constraint: str, correlation_id: str = None):
+        return APIError(
+            error_code="VALIDATION_ERROR",
+            message="Request validation failed",
+            status_code=400,
+            details={
+                "field": field,
+                "value": value,
+                "constraint": constraint
+            },
+            correlation_id=correlation_id
+        )
+
+    @staticmethod
+    def admin_required(correlation_id: str = None):
+        return APIError(
+            error_code="ADMIN_ROLE_REQUIRED",
+            message="Admin role required for this operation",
+            status_code=403,
+            correlation_id=correlation_id
+        )
+
+# Usage in controllers
+@app.post('/api/products')
+async def create_product(product: ProductCreate, correlation_id: str = None):
+    # Check for duplicate SKU
+    existing = await product_repo.find_by_sku(product.sku)
+    if existing:
+        raise ProductErrors.duplicate_sku(product.sku, correlation_id)
+
+    # Validate admin permission
+    if not user.has_role('admin'):
+        raise ProductErrors.admin_required(correlation_id)
+
+    # Create product...
+```
+
+**Key Error Codes to Use** (from Section 3.6.1-3.6.3):
+
+- `VALIDATION_ERROR` (400) - Request validation failed
+- `UNAUTHORIZED` (401) - Authentication failed
+- `ADMIN_ROLE_REQUIRED` (403) - Admin role required
+- `PRODUCT_NOT_FOUND` (404) - Product doesn't exist
+- `DUPLICATE_SKU` (409) - SKU already exists
+- `PAYLOAD_TOO_LARGE` (413) - File exceeds size limit
+- `TOO_MANY_REQUESTS` (429) - Rate limit exceeded
+- `INTERNAL_SERVER_ERROR` (500) - Unexpected server error
+- `DATABASE_ERROR` (500) - Database operation failed
+- `SERVICE_UNAVAILABLE` (503) - Service temporarily unavailable
+
+**Refer to PRD Section 3.6 for the complete catalog of 50+ error codes with descriptions and client actions.**
+
+### API Request/Response Examples (PRD Section 3.2-3.5)
+
+All API endpoints have comprehensive request/response examples in the PRD:
+
+- **Section 3.2**: Product Management APIs (18 endpoints with full JSON examples)
+
+  - 3.2.1-3.2.4: Core CRUD operations
+  - 3.2.5-3.2.6: Product existence check and batch lookup
+  - 3.2.7-3.2.9: Bulk operations (import, job status, variations)
+  - 3.2.10-3.2.13: Badge management and SEO metadata
+  - 3.2.14-3.2.18: Template download, error reports, image upload, variations
+
+- **Section 3.3**: Product Discovery APIs (5 endpoints)
+
+  - 3.3.1-3.3.2: Search with offset and cursor pagination
+  - 3.3.3: Category-based product listing
+  - 3.3.4: Autocomplete suggestions
+  - 3.3.5: Trending products
+
+- **Section 3.4**: Admin APIs (authorization requirements, audit trail)
+
+- **Section 3.5**: Health Check APIs
+  - 3.5.1: Liveness probe
+  - 3.5.2: Readiness probe with dependency health
+
+**When implementing endpoints, refer to PRD Section 3 for exact request/response formats, authentication headers, and error responses.**
 
 ## Dapr Configuration
 
@@ -778,20 +1007,21 @@ product-service-dapr:
 
 ## Code Generation Guidelines for Copilot
 
-### When Implementing Event Publishing (PRD REQ-3.x)
+### When Implementing Event Publishing (PRD Section 2.3.2)
 
 **Prompt Template**:
 
 ```
-"Implement PRD REQ-3.1 (publish product.created event) using Dapr pub/sub.
-Event schema must match PRD docs/PRD.md section 'Event Schemas'.
-Use DaprPublisher from src/services/dapr_publisher.py."
+"Implement product.created event publishing (PRD Section 2.3.2) using Dapr pub/sub.
+Event schema must match PRD docs/PRD.md Section 2.3.2.
+Use DaprPublisher from src/services/dapr_publisher.py.
+Use error code from Section 3.6 if needed."
 ```
 
 **DO ✅**:
 
 - Use Dapr pub/sub via `DaprClient`
-- Match event schema exactly as in PRD
+- Match event schema exactly as in PRD Section 2.3.2
 - Include correlation ID for tracing
 - Use try-except to prevent failures from breaking API
 - Log all publishing attempts
@@ -804,23 +1034,24 @@ Use DaprPublisher from src/services/dapr_publisher.py."
 - Skip correlation ID
 - Call message broker service directly
 
-### When Implementing CRUD Operations (PRD REQ-1.x)
+### When Implementing CRUD Operations (PRD Section 4.1)
 
 **Prompt Template**:
 
 ```
-"Implement PRD REQ-1.2 (update product) in product_controller.py.
-Follow existing pattern with history tracking. Publish product.updated
-event using Dapr publisher."
+"Implement product update endpoint (PRD Section 4.1.2 and API example Section 3.2.3).
+Follow history tracking pattern. Publish product.updated event per Section 2.3.2.
+Use error codes from Section 3.6.1-3.6.3."
 ```
 
 **DO ✅**:
 
-- Validate admin permissions first
+- Validate admin permissions first (Section 5.4.4)
 - Track changes in history array
 - Update `updated_at` timestamp
-- Publish appropriate events after successful DB operation
-- Return full product object
+- Publish appropriate events after successful DB operation (Section 2.3.2)
+- Return full product object matching Section 3.2.3 response
+- Use standardized error codes from Section 3.6
 
 **DON'T ❌**:
 
@@ -828,26 +1059,28 @@ event using Dapr publisher."
 - Forget to update timestamps
 - Publish events before DB commit
 - Return partial objects
+- Use custom error formats (use Section 3.6.4 format)
 
-### When Implementing Search/Filter (PRD REQ-2.x)
+### When Implementing Search/Filter (PRD Section 4.2)
 
 **Prompt Template**:
 
 ```
-"Implement PRD REQ-2.2 (hierarchical filtering) in product_controller.py.
-Support department/category/subcategory filters with pagination (offset-based
-and cursor-based per REQ-2.5)."
+"Implement hierarchical category filtering (PRD Section 4.2.2 and API Section 3.3.1).
+Support department/category/subcategory filters with pagination.
+Use both offset-based (Section 3.3.1) and cursor-based (Section 3.3.2) pagination."
 ```
 
 **DO ✅**:
 
 - Use MongoDB aggregation pipelines for efficiency
 - Return only active products for customer-facing endpoints
-- Include pagination metadata (total, page, limit, has_next, has_previous)
-- Index fields used in filtering
+- Include pagination metadata matching Section 3.3.1 response format
+- Index fields used in filtering (Section 2.5)
 - Implement both offset-based (simple) and cursor-based (large datasets) pagination
 - Limit offset-based pagination to first 10,000 results (500 pages × 20 items)
 - Use cursor encoding for stateless pagination (base64 encode sort key + ID)
+- Return error code `DEEP_PAGINATION_NOT_SUPPORTED` for page > 500 (Section 3.6.3)
 
 **DON'T ❌**:
 
@@ -1037,7 +1270,7 @@ def add_cursor_condition(query: dict, cursor_data: dict, sort: str) -> dict:
    - Saves expensive COUNT() operation
    - Users don't need total for infinite scroll
 
-### When Adding Logging (PRD NFR-5.2)
+### When Adding Logging (PRD Section 5.6.2)
 
 **DO ✅**:
 
@@ -1060,6 +1293,43 @@ print(f"Product created: {product_id}")  # No
 logger.info("Created product")  # Too vague
 ```
 
+### When Handling Errors (PRD Section 3.6)
+
+**DO ✅**:
+
+```python
+# Use standardized error codes from Section 3.6
+from src.errors.error_handler import ProductErrors
+
+# Validation error
+if not product.price or product.price < 0:
+    raise ProductErrors.validation_error(
+        field="price",
+        value=product.price,
+        constraint="must be positive",
+        correlation_id=correlation_id
+    )
+
+# Not found error
+product = await product_repo.find_by_id(product_id)
+if not product:
+    raise ProductErrors.not_found(product_id, correlation_id)
+
+# Admin permission error
+if not user.has_role('admin'):
+    raise ProductErrors.admin_required(correlation_id)
+```
+
+**DON'T ❌**:
+
+```python
+# Don't use generic HTTP exceptions
+raise HTTPException(status_code=404, detail="Not found")  # No
+
+# Don't use custom error formats
+return {"error": "Product not found"}  # No - doesn't match Section 3.6.4 format
+```
+
 ## Testing Guidelines
 
 ### Unit Tests
@@ -1076,11 +1346,12 @@ logger.info("Created product")  # Too vague
 
 ### Test Checklist (Per PRD Acceptance Criteria)
 
-- ✅ All PRD REQ-\* implemented
-- ✅ All PRD NFR-\* validated
-- ✅ API contracts match PRD exactly
-- ✅ Event schemas match PRD exactly
-- ✅ Admin operations validate permissions
+- ✅ All functional requirements (Section 4.x) implemented
+- ✅ All non-functional requirements (Section 5.x) validated
+- ✅ API contracts match PRD Section 3 exactly
+- ✅ Event schemas match PRD Section 2.3.2 and 2.3.3 exactly
+- ✅ Error codes match PRD Section 3.6 catalog
+- ✅ Admin operations validate permissions (Section 5.4.4)
 - ✅ Events reach consumers (audit, notification services)
 - ✅ Soft-deleted products not in search results
 - ✅ SKU uniqueness enforced
@@ -1090,10 +1361,11 @@ logger.info("Created product")  # Too vague
 ### Creating New Feature
 
 ```
-"Read docs/PRD.md REQ-X.X. Implement this requirement in
+"Read docs/PRD.md Section 4.x.x. Implement this requirement in
 src/controllers/product_controller.py using the patterns in
-.github/copilot-instructions.md. Include proper logging and
-event publishing."
+.github/copilot-instructions.md. Follow API format from Section 3.x.x.
+Use error codes from Section 3.6. Include proper logging per Section 5.6.2
+and event publishing per Section 2.3.2."
 ```
 
 ### Migrating Existing Code to Dapr
@@ -1102,14 +1374,14 @@ event publishing."
 "Refactor src/controllers/product_controller.py to use Dapr for event
 publishing. Replace any existing event publishing code with DaprPublisher
 from src/services/dapr_publisher.py. Maintain same event schemas from
-PRD docs/PRD.md."
+PRD Section 2.3.2."
 ```
 
 ### Adding Tests
 
 ```
-"Create tests/integration/test_events.py that verifies PRD REQ-3.1
-(product.created event) is published via Dapr. Mock Dapr client as
+"Create tests/integration/test_events.py that verifies product.created
+event (PRD Section 2.3.2) is published via Dapr. Mock Dapr client as
 shown in .github/copilot-instructions.md testing section."
 ```
 
@@ -1117,16 +1389,26 @@ shown in .github/copilot-instructions.md testing section."
 
 ```
 "@workspace Review src/controllers/product_controller.py.
-Verify it implements PRD requirements REQ-1.x and REQ-3.x correctly.
-Check if Dapr pub/sub is used properly per .github/copilot-instructions.md.
-List any deviations or issues."
+Verify it implements PRD Section 4.1 (CRUD operations) and Section 2.3.2
+(event publishing) correctly. Check if Dapr pub/sub is used properly per
+.github/copilot-instructions.md. Verify error handling uses Section 3.6
+error codes. List any deviations or issues."
+```
+
+### Implementing New API Endpoint
+
+```
+"Implement GET /api/products/trending endpoint following PRD Section 3.3.5.
+Use exact request/response format from PRD. Support query parameters for
+category and timeWindow. Use error codes from Section 3.6 for validation errors.
+Add structured logging per Section 5.6.2."
 ```
 
 ## Performance Optimization
 
-### Database Indexes (PRD NFR-1.3)
+### Database Indexes (PRD Section 2.5)
 
-Required indexes for performance:
+Required indexes for performance (documented in PRD Section 2.5):
 
 ```python
 # In database setup/migration
@@ -1146,15 +1428,15 @@ await collection.create_index("price")
 
 ## Monitoring & Alerts
 
-### Key Metrics to Monitor
+### Key Metrics to Monitor (PRD Section 5.6.3)
 
-1. **Latency**: p95 < 200ms for reads, < 500ms for writes
-2. **Throughput**: Handle 1,000 req/s sustained
-3. **Error Rate**: < 0.1%
-4. **Event Publishing Success**: > 99.9%
-5. **Database Connection Pool**: Utilization < 80%
+1. **Latency**: p95 < 200ms for reads, < 500ms for writes (Section 5.1.1)
+2. **Throughput**: Handle 1,000 req/s sustained (Section 5.1.2)
+3. **Error Rate**: < 0.1% (Section 5.2)
+4. **Event Publishing Success**: > 99.9% (Section 5.3.2)
+5. **Database Connection Pool**: Utilization < 80% (Section 5.1.3)
 
-### Alert Thresholds
+### Alert Thresholds (PRD Section 5.6.3 - Alerting Thresholds)
 
 - Error rate > 1% for 5 minutes
 - p95 latency > 500ms for 5 minutes
@@ -1215,32 +1497,43 @@ pandas==2.1.3  # Data manipulation (optional, for large imports)
 
 ## Quick Reference: PRD Requirements → Implementation
 
-| PRD Requirement         | Implementation Approach                                              |
-| ----------------------- | -------------------------------------------------------------------- |
-| REQ-1.x (CRUD)          | FastAPI endpoints + MongoDB + Motor driver                           |
-| REQ-2.x (Search)        | MongoDB text indexes + aggregation pipelines                         |
-| REQ-3.x (Events Pub)    | Dapr Pub/Sub publisher                                               |
-| REQ-4.x (Validation)    | Pydantic models + custom validators                                  |
-| REQ-5.x (Admin)         | JWT role checking + history tracking                                 |
-| REQ-6.x (Inter-service) | FastAPI endpoint (optimized query)                                   |
-| REQ-7.x (Bulk Import)   | Background worker + Dapr State Store for job tracking                |
-| REQ-8.x (Variations)    | MongoDB parent-child relationships + reference fields                |
-| REQ-9.x (Attributes)    | MongoDB flexible schema + category-based validation                  |
-| REQ-10.x (Badges)       | Badge collection + TTL indexes for expiration                        |
-| REQ-11.x (SEO)          | URL slug fields + unique indexes + metadata objects                  |
-| REQ-12.1 (Review Sync)  | Dapr subscription + denormalized review aggregates                   |
-| REQ-12.2 (Inventory)    | Dapr subscription + availability status field                        |
-| REQ-12.3 (Badges Auto)  | Dapr subscription + badge evaluation service                         |
-| REQ-12.4 (Bulk Worker)  | Background worker consuming self-published events + distributed lock |
-| REQ-13.x (Videos)       | Video URL array + metadata objects                                   |
-| REQ-14.x (Q&A)          | Dapr subscription + denormalized Q&A counts                          |
-| REQ-15.x (Size Charts)  | Category-level size chart references                                 |
-| REQ-16.x (Restrictions) | Restriction flags + metadata fields                                  |
-| NFR-1.x (Performance)   | Async I/O + DB indexes + pagination + Redis caching via Dapr         |
-| NFR-2.x (Reliability)   | Error handling + Dapr retries + idempotent event handlers            |
-| NFR-3.x (Scalability)   | Stateless design + horizontal scaling + eventual consistency         |
-| NFR-4.x (Security)      | JWT validation + role-based access control                           |
-| NFR-5.x (Observability) | Structured logging + Dapr tracing + Prometheus metrics               |
+| PRD Section       | Requirement                   | Implementation Approach                                            |
+| ----------------- | ----------------------------- | ------------------------------------------------------------------ |
+| **Section 4.1**   | Product CRUD Operations       | FastAPI endpoints + MongoDB + Motor driver                         |
+| **Section 4.1.1** | Create Products               | POST /api/products (Section 3.2.1) + validation + event publishing |
+| **Section 4.1.2** | Update Products               | PUT /api/products/{id} (Section 3.2.3) + history tracking          |
+| **Section 4.1.3** | Soft Delete Products          | DELETE /api/products/{id} (Section 3.2.4) + status flag            |
+| **Section 4.1.4** | Prevent Duplicate SKUs        | MongoDB unique index on SKU field                                  |
+| **Section 4.2**   | Product Discovery & Search    | MongoDB text indexes + aggregation pipelines                       |
+| **Section 4.2.1** | Text Search                   | MongoDB full-text search with weighted fields                      |
+| **Section 4.2.2** | Hierarchical Filtering        | Query filters on taxonomy fields (department/category/subcategory) |
+| **Section 4.2.3** | Price Range Filtering         | MongoDB range queries with indexes                                 |
+| **Section 4.2.5** | Pagination                    | Offset-based (Section 3.3.1) and cursor-based (Section 3.3.2)      |
+| **Section 4.2.6** | Trending Products             | GET /api/products/trending (Section 3.3.5) with analytics data     |
+| **Section 4.3**   | Data Consistency & Validation | Pydantic models + custom validators                                |
+| **Section 4.4**   | Administrative Features       | Role-based access control + audit logging                          |
+| **Section 4.4.2** | Bulk Product Operations       | Background worker + Dapr State Store for job tracking              |
+| **Section 4.4.3** | Badge Management              | Badge collection + TTL indexes for expiration + auto-evaluation    |
+| **Section 4.5**   | Product Variations            | MongoDB parent-child relationships + reference fields              |
+| **Section 4.6**   | Enhanced Product Attributes   | MongoDB flexible schema + category-based validation                |
+| **Section 2.3.2** | Event Publishing (Outbound)   | Dapr Pub/Sub publisher (8 event types)                             |
+| **Section 2.3.3** | Event Consumption (Inbound)   | Dapr subscriptions + denormalized data (11 event types)            |
+| **Section 2.4**   | Data Model                    | MongoDB collections with flexible schema                           |
+| **Section 2.5**   | Database Indexes              | Compound indexes for performance (text, unique, taxonomy)          |
+| **Section 2.6**   | Inter-Service Communication   | Synchronous REST APIs for product lookups                          |
+| **Section 2.7**   | Environment Variables         | 80+ variables across 11 categories for configuration               |
+| **Section 3.2**   | Product Management APIs       | 18 endpoints with full request/response examples                   |
+| **Section 3.3**   | Product Discovery APIs        | 5 endpoints with pagination and filtering                          |
+| **Section 3.4**   | Admin APIs                    | Role-based authorization + audit trail                             |
+| **Section 3.5**   | Health Check APIs             | Liveness (3.5.1) and readiness (3.5.2) probes                      |
+| **Section 3.6**   | Error Code Catalog            | 50+ standardized error codes (4xx, 5xx, business logic)            |
+| **Section 5.1**   | Performance Requirements      | Async I/O + DB indexes + pagination + Redis caching via Dapr       |
+| **Section 5.2**   | Scalability Requirements      | Stateless design + horizontal scaling                              |
+| **Section 5.3**   | Availability Requirements     | Error handling + Dapr retries + idempotent event handlers          |
+| **Section 5.4**   | Security Requirements         | JWT validation + role-based access control + input validation      |
+| **Section 5.5**   | Reliability Requirements      | Health checks + circuit breakers + retry logic                     |
+| **Section 5.6**   | Observability Requirements    | Structured logging + Dapr tracing + Prometheus metrics             |
+| **Section 5.7**   | Error Handling Requirements   | Standard error format (3.6.4) + correlation IDs                    |
 
 ---
 
