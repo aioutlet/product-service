@@ -834,6 +834,158 @@ async def handle_review_event(event: dict, db: AsyncIOMotorDatabase) -> None:
 
 ---
 
+### Service-to-Service Communication (Dapr Service Invocation)
+
+Product Service can be called by other internal services using **Dapr Service Invocation** building block for synchronous request-response patterns.
+
+#### Architecture Pattern
+
+```
+┌─────────────────┐                    ┌─────────────────┐
+│  Order Service  │                    │ Product Service │
+│  + Dapr Sidecar │                    │  + Dapr Sidecar │
+└────────┬────────┘                    └────────▲────────┘
+         │                                      │
+         │ 1. Invoke product-service           │
+         │    GET /products/{id}               │
+         ▼                                      │
+┌──────────────────────┐              ┌──────────────────────┐
+│ Dapr Runtime (Order) │──── HTTP ───►│ Dapr Runtime (Prod)  │
+│ Service Invocation   │              │ Service Invocation   │
+└──────────────────────┘              └──────────────────────┘
+         │                                      │
+         │ 2. Service Discovery                 │ 3. Forward to App
+         │    (find product-service)            │    localhost:8003
+         │                                      │
+         └──────────────────────────────────────┘
+                    4. Return Response
+```
+
+#### Inbound Service Invocation (Product Service as Receiver)
+
+**Callers**: order-service, cart-service, recommendation-service, etc.
+
+**Endpoints exposed for service invocation**:
+
+```python
+# app/api/v1/products.py
+from fastapi import APIRouter, Depends, HTTPException
+from app.services.product_service import ProductService
+
+router = APIRouter()
+
+# Called by order-service to validate products in order
+@router.get("/products/{product_id}")
+async def get_product(
+    product_id: str,
+    product_service: ProductService = Depends(get_product_service)
+):
+    """
+    Get product details by ID.
+    Used by other services for product validation and information.
+    """
+    product = await product_service.get_by_id(product_id)
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return {"success": True, "data": product}
+
+# Called by cart-service to check inventory
+@router.post("/products/check-availability")
+async def check_availability(
+    product_ids: list[str],
+    product_service: ProductService = Depends(get_product_service)
+):
+    """
+    Check if products are available and active.
+    Used by cart-service before adding items.
+    """
+    results = await product_service.check_bulk_availability(product_ids)
+    return {"success": True, "data": results}
+```
+
+**Note**: No special code changes needed in product-service. Dapr handles the invocation transparently.
+
+#### Outbound Service Invocation (Product Service as Caller)
+
+**Future Use Case**: If product-service needs to call other services (not currently implemented)
+
+```python
+# Example: Call inventory-service to check stock (hypothetical)
+from dapr.clients import DaprClient
+import json
+
+async def check_inventory_stock(product_id: str, quantity: int) -> dict:
+    """Call inventory-service via Dapr service invocation."""
+    try:
+        with DaprClient() as dapr:
+            response = dapr.invoke_method(
+                app_id='inventory-service',  # Target service app-id
+                method_name='inventory/check',  # Endpoint path
+                data=json.dumps({
+                    'productId': product_id,
+                    'quantity': quantity
+                }),
+                http_verb='POST'
+            )
+
+            return json.loads(response.data)
+    except Exception as e:
+        logger.error(f"Failed to check inventory via Dapr: {e}")
+        raise
+```
+
+#### Benefits of Dapr Service Invocation
+
+1. **Service Discovery**: No need to hard-code URLs (e.g., `http://product-service:8003`)
+2. **mTLS**: Automatic mutual TLS encryption between services
+3. **Retries**: Built-in retry logic with exponential backoff
+4. **Timeouts**: Configurable timeout handling
+5. **Observability**: Distributed tracing via OpenTelemetry
+6. **Resiliency**: Circuit breakers and bulkheads
+7. **Load Balancing**: Automatic load distribution across instances
+
+#### Configuration
+
+**Dapr Sidecar**:
+
+```yaml
+# components/pubsub.yaml (already configured)
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: product-pubsub
+spec:
+  type: pubsub.rabbitmq
+  # ...
+```
+
+**No additional configuration needed** for service invocation - it works out of the box with Dapr sidecars.
+
+#### Service Invocation vs Pub/Sub
+
+| Pattern                | Use Case                        | Example                                                  |
+| ---------------------- | ------------------------------- | -------------------------------------------------------- |
+| **Service Invocation** | Synchronous request-response    | order-service → product-service (GET /products/{id})     |
+| **Pub/Sub**            | Asynchronous event notification | product-service → search-service (product.created event) |
+
+**When to use Service Invocation**:
+
+- Need immediate response
+- Direct service dependency is acceptable
+- CRUD operations (GET, POST, PUT, DELETE)
+- Validation/authorization checks
+
+**When to use Pub/Sub**:
+
+- Fire-and-forget notifications
+- Multiple consumers for same event
+- Decoupled architecture
+- Event-driven workflows
+
+---
+
 ## API Layer
 
 ### REST Endpoints
