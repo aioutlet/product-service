@@ -1,0 +1,28 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: aioutlet-pubsub
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    - name: host
+      value: "amqp://admin:admin123@rabbitmq:5672"
+    - name: exchangeName
+      value: "aioutlet.events"
+    - name: exchangeKind
+      value: "topic"
+    - name: durable
+      value: "true"
+    - name: deletedWhenUnused
+      value: "false"
+    - name: autoAck
+      value: "false"
+    - name: deliveryMode
+      value: "2"  # persistent
+    - name: requeueInFailure
+      value: "true"
+    - name: prefetchCount
+      value: "10"
+scopes:
+  - product-service

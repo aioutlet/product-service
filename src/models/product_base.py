@@ -1,5 +1,5 @@
 from datetime import datetime, UTC
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,6 +15,40 @@ class ProductHistoryEntry(BaseModel):
     updated_by: str
     updated_at: datetime
     changes: Dict[str, str]  # field: new_value
+
+
+class ReviewAggregates(BaseModel):
+    """Denormalized review data from Review Service (REQ-3.2.1)"""
+    average_rating: float = 0.0  # 1-5 stars, decimal precision
+    total_reviews: int = 0
+    verified_purchase_count: int = 0
+    rating_distribution: Dict[str, int] = {
+        "5": 0, "4": 0, "3": 0, "2": 0, "1": 0
+    }
+
+
+class InventoryStatus(BaseModel):
+    """Denormalized inventory data from Inventory Service (REQ-3.2.2)"""
+    availability: str = "unknown"  # in_stock, low_stock, out_of_stock, pre_order, discontinued
+    available_quantity: int = 0
+    low_stock_threshold: int = 10
+    last_updated: Optional[datetime] = None
+
+
+class ProductBadge(BaseModel):
+    """Product badges for marketing (REQ-3.2.3)"""
+    badge_type: str  # best-seller, trending, hot-deal
+    assigned_at: datetime
+    expires_at: Optional[datetime] = None
+    auto_assigned: bool = True
+    criteria: Dict[str, Any] = {}
+
+
+class QAStats(BaseModel):
+    """Denormalized Q&A stats from Q&A Service (REQ-3.2.4)"""
+    total_questions: int = 0
+    answered_questions: int = 0
+    last_updated: Optional[datetime] = None
 
 
 class ProductBase(ProductValidatorMixin, BaseModel):
@@ -41,6 +75,16 @@ class ProductBase(ProductValidatorMixin, BaseModel):
     
     # Product specifications (flexible key-value pairs)
     specifications: Dict[str, str] = {}
+    
+    # Denormalized data from other services (REQ-3.2.x - Event Consumption)
+    review_aggregates: ReviewAggregates = Field(default_factory=ReviewAggregates)
+    inventory_status: InventoryStatus = Field(default_factory=InventoryStatus)
+    badges: List[ProductBadge] = []
+    qa_stats: QAStats = Field(default_factory=QAStats)
+    
+    # Admin features (REQ-5.x)
+    size_chart_id: Optional[str] = None  # Reference to size chart (REQ-5.4)
+    restrictions: Optional[Dict[str, Any]] = None  # Product restrictions (REQ-5.5)
     
     # Audit trail
     created_by: str
