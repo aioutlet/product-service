@@ -45,7 +45,8 @@ from src.api import (
     badges_router,
     restrictions_router,
     size_charts,
-    bulk_import
+    bulk_import,
+    product_attributes
 )
 from src.dependencies import get_products_collection
 
@@ -119,6 +120,7 @@ app.include_router(badges_router, prefix="/api")
 app.include_router(size_charts.router)
 app.include_router(restrictions_router, prefix="/api")
 app.include_router(bulk_import.router, prefix="/api")
+app.include_router(product_attributes.router, prefix="/api")
 app.include_router(health_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 

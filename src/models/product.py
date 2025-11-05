@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from src.models.restrictions import ProductRestrictions
+from src.models.attribute_schema import ProductAttributes
 
 def utc_now():
     return datetime.now(UTC)
@@ -81,8 +82,15 @@ class ProductBase(BaseModel):
     child_skus: List[str] = Field(default_factory=list)
     child_count: int = 0
     
+    # Legacy attributes (flat dict - deprecated, use structured_attributes instead)
     attributes: Dict[str, str] = Field(default_factory=dict)
     specifications: Dict[str, str] = Field(default_factory=dict)
+    
+    # Structured attributes (new)
+    structured_attributes: Optional[ProductAttributes] = Field(
+        None,
+        description="Structured product attributes with validation"
+    )
     
     images: List[ProductImage] = Field(default_factory=list)
     image_url: Optional[str] = None
@@ -130,6 +138,7 @@ class ProductCreate(BaseModel):
     variation_attributes: List[str] = Field(default_factory=list)
     attributes: Dict[str, str] = Field(default_factory=dict)
     specifications: Dict[str, str] = Field(default_factory=dict)
+    structured_attributes: Optional[ProductAttributes] = None
     images: List[ProductImage] = Field(default_factory=list)
     image_url: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
@@ -159,6 +168,7 @@ class ProductUpdate(BaseModel):
     child_skus: Optional[List[str]] = None
     attributes: Optional[Dict[str, str]] = None
     specifications: Optional[Dict[str, str]] = None
+    structured_attributes: Optional[ProductAttributes] = None
     images: Optional[List[ProductImage]] = None
     image_url: Optional[str] = None
     tags: Optional[List[str]] = None
