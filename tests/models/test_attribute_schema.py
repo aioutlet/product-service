@@ -382,16 +382,16 @@ class TestSchemaRequestModels:
     
     def test_schema_response(self):
         """Test schema response model"""
-        schema = CategorySchema(
+        response = SchemaResponse(
+            id="507f1f77bcf86cd799439011",
             category_name="Clothing",
             display_name="Clothing & Apparel",
             attribute_groups=[],
             version="1.0",
-            is_active=True
-        )
-        response = SchemaResponse(
-            schema=schema,
+            is_active=True,
             created_at="2024-01-01T00:00:00Z",
             updated_at="2024-01-01T00:00:00Z"
         )
-        assert response.schema.category_name == "Clothing"
+        assert response.category_name == "Clothing"
+        assert response.id == "507f1f77bcf86cd799439011"
+        assert response.created_at == "2024-01-01T00:00:00Z"

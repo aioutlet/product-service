@@ -60,7 +60,7 @@ async def list_schemas(
             category_name=schema["category_name"],
             display_name=schema["display_name"],
             attribute_groups=schema["attribute_groups"],
-            version=schema.get("version", 1),
+            version=str(schema.get("version", "1.0")),
             is_active=schema.get("is_active", True),
             created_at=schema.get("created_at"),
             updated_at=schema.get("updated_at")
@@ -96,7 +96,7 @@ async def get_schema(
         category_name=schema["category_name"],
         display_name=schema["display_name"],
         attribute_groups=schema["attribute_groups"],
-        version=schema.get("version", 1),
+        version=str(schema.get("version", "1.0")),
         is_active=schema.get("is_active", True),
         created_at=schema.get("created_at"),
         updated_at=schema.get("updated_at")

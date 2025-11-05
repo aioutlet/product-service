@@ -16,7 +16,13 @@ from urllib.parse import urlparse
 def _log(message: str):
     """Print log message with timestamp in consistent format"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"[{timestamp}] INFO - {message}")
+    # Encode with UTF-8 to handle Unicode characters (emojis)
+    try:
+        print(f"[{timestamp}] INFO - {message}", flush=True)
+    except UnicodeEncodeError:
+        # Fallback: Replace Unicode characters with ASCII equivalents
+        safe_message = message.encode('ascii', errors='replace').decode('ascii')
+        print(f"[{timestamp}] INFO - {safe_message}", flush=True)
 
 
 def is_valid_url(url: str) -> bool:
@@ -221,19 +227,19 @@ def validate_config():
 
         # Check if required variable is missing
         if rule['required'] and not value:
-            errors.append(f"❌ {key} is required but not set")
+            errors.append(f"[X] {key} is required but not set")
             continue
 
         # Skip validation if value is not set and not required
         if not value and not rule['required']:
             if 'default' in rule:
-                warnings.append(f"⚠️  {key} not set, using default: {rule['default']}")
+                warnings.append(f"[!] {key} not set, using default: {rule['default']}")
                 os.environ[key] = rule['default']
             continue
 
         # Validate the value
         if value and rule['validator'] and not rule['validator'](value):
-            errors.append(f"❌ {key}: {rule['error_message']}")
+            errors.append(f"[X] {key}: {rule['error_message']}")
             if len(value) > 100:
                 errors.append(f"   Current value: {value[:100]}...")
             else:
@@ -247,14 +253,15 @@ def validate_config():
     # If there are errors, log them and exit
     if errors:
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f'[{timestamp}] ERROR - [CONFIG] Configuration validation failed:', file=sys.stderr)
+        print(f'[{timestamp}] ERROR - [CONFIG] Configuration validation failed:', file=sys.stderr, flush=True)
         for error in errors:
-            print(f'[{timestamp}] ERROR - {error}', file=sys.stderr)
-        print(f'[{timestamp}] ERROR - 💡 Please check your .env file and ensure all required variables are set correctly.', 
-              file=sys.stderr)
+            safe_error = error.encode('ascii', errors='replace').decode('ascii')
+            print(f'[{timestamp}] ERROR - {safe_error}', file=sys.stderr, flush=True)
+        print(f'[{timestamp}] ERROR - [TIP] Please check your .env file and ensure all required variables are set correctly.', 
+              file=sys.stderr, flush=True)
         sys.exit(1)
 
-    _log('[CONFIG] ✅ All required environment variables are valid')
+    _log('[CONFIG] [OK] All required environment variables are valid')
 
 
 def get_config(key: str, default=None):
