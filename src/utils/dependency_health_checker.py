@@ -145,4 +145,9 @@ def get_dependencies() -> Dict[str, str]:
     dapr_health_url = f"http://localhost:{dapr_port}/v1.0/healthz"
     dependencies['dapr-sidecar'] = dapr_health_url
 
+    # Add other services via Dapr (these will be checked when Dapr is available)
+    # The actual service health can be checked via Dapr service invocation
+    # dependencies['user-service-via-dapr'] = f"http://localhost:{dapr_port}/v1.0/invoke/user-service/method/health"
+    # dependencies['inventory-service-via-dapr'] = f"http://localhost:{dapr_port}/v1.0/invoke/inventory-service/method/health"
+
     return dependencies

@@ -2,16 +2,15 @@
 Inventory Service Client
 
 This module provides a client to interact with the inventory-service
-for stock-related operations. This follows the microservices pattern
-where the product-service queries the inventory-service for stock information.
+using Dapr Service Invocation for better reliability and service discovery.
 """
 
 from typing import List, Optional
 
-import httpx
 from pydantic import BaseModel
 
 from src.core.logger import get_logger
+from src.services.dapr_service_client import get_dapr_service_client
 
 logger = get_logger(__name__)
 
@@ -45,21 +44,16 @@ class InventoryItem(BaseModel):
 
 class InventoryServiceClient:
     """
-    Client for communicating with the inventory-service.
+    Client for communicating with the inventory-service via Dapr Service Invocation.
 
     This client provides methods to check stock availability,
     get inventory information, and other inventory-related operations.
     """
 
-    def __init__(self, base_url: str = "http://localhost:8080"):
-        """
-        Initialize the inventory service client.
-
-        Args:
-            base_url: Base URL of the inventory service
-        """
-        self.base_url = base_url.rstrip("/")
-        self.client = httpx.AsyncClient()
+    def __init__(self):
+        """Initialize the Dapr-based inventory service client."""
+        self.dapr_client = get_dapr_service_client()
+        self.app_id = "inventory-service"
 
     async def check_stock(self, items: List[StockCheckItem]) -> StockCheckResponse:
         """
@@ -72,17 +66,17 @@ class InventoryServiceClient:
             StockCheckResponse: Stock availability information
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the request fails
         """
         try:
-            response = await self.client.post(
-                f"{self.base_url}/stock/check",
-                json={"items": [item.model_dump() for item in items]},
+            response_data = await self.dapr_client.invoke_service(
+                app_id=self.app_id,
+                method_name="stock/check",
+                data={"items": [item.model_dump() for item in items]},
+                http_verb="POST"
             )
-            response.raise_for_status()
-            data = response.json()
-            return StockCheckResponse(**data)
-        except httpx.HTTPError as e:
+            return StockCheckResponse(**response_data)
+        except Exception as e:
             logger.error(f"Failed to check stock with inventory service: {e}")
             raise
 
@@ -97,16 +91,18 @@ class InventoryServiceClient:
             InventoryItem: Inventory information or None if not found
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the request fails
         """
         try:
-            response = await self.client.get(f"{self.base_url}/inventory/sku/{sku}")
-            if response.status_code == 404:
+            response_data = await self.dapr_client.invoke_service(
+                app_id=self.app_id,
+                method_name=f"inventory/sku/{sku}",
+                http_verb="GET"
+            )
+            return InventoryItem(**response_data)
+        except Exception as e:
+            if "404" in str(e):
                 return None
-            response.raise_for_status()
-            data = response.json()
-            return InventoryItem(**data)
-        except httpx.HTTPError as e:
             logger.error(f"Failed to get inventory for SKU {sku}: {e}")
             raise
 
@@ -123,18 +119,18 @@ class InventoryServiceClient:
             InventoryItem: Inventory information or None if not found
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the request fails
         """
         try:
-            response = await self.client.get(
-                f"{self.base_url}/inventory/product/{product_id}"
+            response_data = await self.dapr_client.invoke_service(
+                app_id=self.app_id,
+                method_name=f"inventory/product/{product_id}",
+                http_verb="GET"
             )
-            if response.status_code == 404:
+            return InventoryItem(**response_data)
+        except Exception as e:
+            if "404" in str(e):
                 return None
-            response.raise_for_status()
-            data = response.json()
-            return InventoryItem(**data)
-        except httpx.HTTPError as e:
             logger.error(f"Failed to get inventory for product {product_id}: {e}")
             raise
 
@@ -149,7 +145,7 @@ class InventoryServiceClient:
             List[InventoryItem]: List of inventory items
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the request fails
         """
         try:
             # Use the stock check endpoint which supports multiple SKUs
@@ -165,7 +161,7 @@ class InventoryServiceClient:
                         inventory_items.append(inventory)
 
             return inventory_items
-        except httpx.HTTPError as e:
+        except Exception as e:
             logger.error(f"Failed to get multiple inventory items: {e}")
             raise
 
@@ -188,13 +184,9 @@ class InventoryServiceClient:
             has_items = len(response.items) > 0
             item_available = response.items[0].available if has_items else False
             return has_response and has_items and item_available
-        except httpx.HTTPError:
+        except Exception:
             logger.warning(f"Could not check availability for SKU {sku}")
             return False
-
-    async def close(self):
-        """Close the HTTP client."""
-        await self.client.aclose()
 
 
 # Global client instance
@@ -210,14 +202,8 @@ def get_inventory_client() -> InventoryServiceClient:
     """
     global _inventory_client
     if _inventory_client is None:
-        # TODO: Load base_url from configuration
         _inventory_client = InventoryServiceClient()
     return _inventory_client
 
 
-async def close_inventory_client():
-    """Close the global inventory client."""
-    global _inventory_client
-    if _inventory_client:
-        await _inventory_client.close()
-        _inventory_client = None
+# Note: No close method needed since we're using Dapr service invocation
