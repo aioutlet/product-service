@@ -17,9 +17,9 @@ from src.services.size_chart_service import SizeChartService
 from src.dependencies import (
     get_size_chart_service,
     get_correlation_id,
-    get_current_user
+    get_current_user,
+    CurrentUser
 )
-from src.auth.models import CurrentUser
 
 
 router = APIRouter(prefix="/api/size-charts", tags=["size-charts"])

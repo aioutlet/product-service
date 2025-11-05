@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 
 from src.repositories.size_chart_repository import SizeChartRepository
+from src.services.dapr_publisher import get_dapr_publisher
 from src.models.size_chart import (
     CreateSizeChartRequest,
     UpdateSizeChartRequest,
@@ -327,6 +328,7 @@ class SizeChartService:
         self,
         size_chart_id: str,
         product_id: str,
+        assigned_by: Optional[str] = None,
         correlation_id: Optional[str] = None
     ) -> bool:
         """
@@ -335,6 +337,7 @@ class SizeChartService:
         Args:
             size_chart_id: Size chart ID
             product_id: Product ID
+            assigned_by: User ID who assigned the size chart
             correlation_id: Request correlation ID
             
         Returns:
@@ -366,6 +369,21 @@ class SizeChartService:
                     "correlation_id": correlation_id
                 }
             )
+            
+            # Publish sizechart.assigned event
+            try:
+                publisher = get_dapr_publisher()
+                await publisher.publish_sizechart_assigned(
+                    size_chart_id=size_chart_id,
+                    product_ids=[product_id],
+                    assigned_by=assigned_by,
+                    correlation_id=correlation_id
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to publish sizechart.assigned event: {str(e)}",
+                    metadata={"size_chart_id": size_chart_id, "product_id": product_id}
+                )
         
         return success
     
@@ -373,6 +391,7 @@ class SizeChartService:
         self,
         size_chart_id: str,
         product_id: str,
+        unassigned_by: Optional[str] = None,
         correlation_id: Optional[str] = None
     ) -> bool:
         """
@@ -381,6 +400,7 @@ class SizeChartService:
         Args:
             size_chart_id: Size chart ID
             product_id: Product ID
+            unassigned_by: User ID who unassigned the size chart
             correlation_id: Request correlation ID
             
         Returns:
@@ -401,5 +421,20 @@ class SizeChartService:
                     "correlation_id": correlation_id
                 }
             )
+            
+            # Publish sizechart.unassigned event
+            try:
+                publisher = get_dapr_publisher()
+                await publisher.publish_sizechart_unassigned(
+                    size_chart_id=size_chart_id,
+                    product_ids=[product_id],
+                    unassigned_by=unassigned_by,
+                    correlation_id=correlation_id
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to publish sizechart.unassigned event: {str(e)}",
+                    metadata={"size_chart_id": size_chart_id, "product_id": product_id}
+                )
         
         return success

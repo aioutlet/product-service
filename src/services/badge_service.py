@@ -17,6 +17,8 @@ from src.models.badge import (
     BadgeType, BadgePriority, Badge, BadgeRule, BadgeRuleCondition,
     BadgeEvaluationResult, BadgeStatistics
 )
+from src.services.dapr_publisher import get_dapr_publisher
+from src.core.logger import logger
 
 
 class BadgeService:
@@ -115,7 +117,8 @@ class BadgeService:
         badge_type: BadgeType,
         assigned_by: Optional[str] = None,
         expires_at: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        correlation_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Manually assign a badge to a product.
@@ -126,6 +129,7 @@ class BadgeService:
             assigned_by: User ID who assigned the badge (None for automated)
             expires_at: Optional expiration date
             metadata: Additional badge metadata
+            correlation_id: Request correlation ID
             
         Returns:
             Updated product with badge
@@ -166,13 +170,33 @@ class BadgeService:
 
         if not update_result:
             raise ValueError(f"Failed to update product {product_id}")
+        
+        # Publish badge.assigned event
+        try:
+            publisher = get_dapr_publisher()
+            await publisher.publish_badge_assigned(
+                product_id=product_id,
+                badge_type=badge_type.value,
+                expires_at=expires_at.isoformat() if expires_at else None,
+                assigned_by=assigned_by,
+                automated=assigned_by is None,
+                correlation_id=correlation_id
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to publish badge.assigned event: {str(e)}",
+                metadata={"product_id": product_id, "badge_type": badge_type.value}
+            )
 
         return await self.product_repository.find_by_id(product_id)
 
     async def remove_badge(
         self,
         product_id: str,
-        badge_type: BadgeType
+        badge_type: BadgeType,
+        removed_by: Optional[str] = None,
+        reason: Optional[str] = None,
+        correlation_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Remove a badge from a product.
@@ -180,6 +204,9 @@ class BadgeService:
         Args:
             product_id: Product ID
             badge_type: Type of badge to remove
+            removed_by: User ID who removed the badge
+            reason: Reason for removal (e.g., 'expired', 'manual')
+            correlation_id: Request correlation ID
             
         Returns:
             Updated product without badge
@@ -214,6 +241,22 @@ class BadgeService:
 
         if not update_result:
             raise ValueError(f"Failed to update product {product_id}")
+        
+        # Publish badge.removed event
+        try:
+            publisher = get_dapr_publisher()
+            await publisher.publish_badge_removed(
+                product_id=product_id,
+                badge_type=badge_type.value,
+                removed_by=removed_by,
+                reason=reason,
+                correlation_id=correlation_id
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to publish badge.removed event: {str(e)}",
+                metadata={"product_id": product_id, "badge_type": badge_type.value}
+            )
 
         return await self.product_repository.find_by_id(product_id)
 

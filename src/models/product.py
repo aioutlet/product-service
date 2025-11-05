@@ -89,6 +89,9 @@ class ProductBase(BaseModel):
     colors: List[str] = Field(default_factory=list)
     sizes: List[str] = Field(default_factory=list)
     
+    # Size chart reference
+    size_chart_id: Optional[str] = Field(None, description="ID of the associated size chart")
+    
     badges: List[ProductBadge] = Field(default_factory=list)
     seo: Optional[SEOMetadata] = None
     restrictions: Optional[Restrictions] = None

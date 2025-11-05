@@ -9,6 +9,7 @@ from typing import List, Optional
 from datetime import datetime, timezone
 
 from src.repositories.product_repository import ProductRepository
+from src.services.dapr_publisher import get_dapr_publisher
 from src.core.logger import logger
 from src.core.errors import ErrorResponse
 from src.models.product import ProductCreate, ProductDB, ProductUpdate
@@ -92,6 +93,24 @@ class BulkOperationsService:
             metadata={"count": len(result.inserted_ids)}
         )
         
+        # Publish bulk.completed event
+        try:
+            publisher = get_dapr_publisher()
+            await publisher.publish_bulk_operation_completed(
+                operation="create",
+                success_count=len(result.inserted_ids),
+                failure_count=0,
+                total_count=len(products),
+                executed_by=acting_user.user_id if acting_user else None,
+                details={"skus": skus},
+                correlation_id=correlation_id
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to publish bulk.completed event: {str(e)}",
+                metadata={"operation": "create", "count": len(result.inserted_ids)}
+            )
+        
         return [ProductDB(**doc) for doc in inserted]
     
     async def bulk_update(
@@ -148,6 +167,23 @@ class BulkOperationsService:
             metadata={"count": len(updated)}
         )
         
+        # Publish bulk.completed event
+        try:
+            publisher = get_dapr_publisher()
+            await publisher.publish_bulk_operation_completed(
+                operation="update",
+                success_count=len(updated),
+                failure_count=len(updates) - len(updated),
+                total_count=len(updates),
+                executed_by=acting_user.user_id if acting_user else None,
+                correlation_id=correlation_id
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to publish bulk.completed event: {str(e)}",
+                metadata={"operation": "update", "count": len(updated)}
+            )
+        
         return updated
     
     async def bulk_delete(
@@ -193,6 +229,23 @@ class BulkOperationsService:
             correlation_id=correlation_id,
             metadata={"count": deleted}
         )
+        
+        # Publish bulk.completed event
+        try:
+            publisher = get_dapr_publisher()
+            await publisher.publish_bulk_operation_completed(
+                operation="delete",
+                success_count=deleted,
+                failure_count=len(ids) - deleted,
+                total_count=len(ids),
+                executed_by=acting_user.user_id if acting_user else None,
+                correlation_id=correlation_id
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to publish bulk.completed event: {str(e)}",
+                metadata={"operation": "delete", "count": deleted}
+            )
         
         return {"deleted": deleted}
     

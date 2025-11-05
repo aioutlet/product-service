@@ -23,6 +23,7 @@ from src.models.variation import (
     BulkCreateVariationsResponse,
     VariationValidationError
 )
+from src.services.dapr_publisher import get_dapr_publisher
 from src.core.logger import logger
 from src.core.errors import ErrorResponse
 from src.repositories.product_repository import ProductRepository
@@ -148,6 +149,23 @@ class VariationService:
                 }
             )
             
+            # Publish variation.created event
+            try:
+                publisher = get_dapr_publisher()
+                await publisher.publish_variation_created(
+                    parent_id=request.parent_id,
+                    variation_id=child_id,
+                    variation_type=parent.get("variation_config", {}).get("type", "unknown"),
+                    variant_attributes={attr.name: attr.value for attr in request.variant_attributes},
+                    created_by=acting_user,
+                    correlation_id=correlation_id
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to publish variation.created event: {str(e)}",
+                    metadata={"parent_id": request.parent_id, "variation_id": child_id}
+                )
+            
             return child_id
             
         except ErrorResponse:
@@ -261,6 +279,22 @@ class VariationService:
                 correlation_id=correlation_id,
                 metadata={"variation_id": variation_id}
             )
+            
+            # Publish variation.updated event
+            try:
+                publisher = get_dapr_publisher()
+                await publisher.publish_variation_updated(
+                    parent_id=variation.get("parent_id"),
+                    variation_id=variation_id,
+                    changes=update_data,
+                    updated_by=acting_user,
+                    correlation_id=correlation_id
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to publish variation.updated event: {str(e)}",
+                    metadata={"variation_id": variation_id}
+                )
             
             return updated
             

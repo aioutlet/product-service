@@ -275,3 +275,283 @@ class TestDaprPublisher:
             # Verify correlation ID was included
             payload = call_args[1]["json"]
             assert payload["correlationid"] == "custom-correlation-id"
+
+
+class TestBadgeEvents:
+    """Test badge event publishing"""
+    
+    @pytest.fixture
+    def mock_response(self):
+        """Mock HTTP response"""
+        response = MagicMock()
+        response.status_code = 204
+        return response
+    
+    @pytest.fixture
+    def dapr_publisher(self):
+        """Create DaprPublisher instance"""
+        return DaprPublisher()
+    
+    @pytest.mark.asyncio
+    async def test_publish_badge_assigned(self, dapr_publisher, mock_response):
+        """Test badge.assigned event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_badge_assigned(
+                product_id="prod123",
+                badge_type="best_seller",
+                expires_at="2025-12-31T23:59:59Z",
+                assigned_by="user123",
+                automated=False,
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            call_args = mock_client.post.call_args
+            assert "product.badge.assigned" in call_args[0][0]
+            
+            payload = call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.badge.assigned.v1"
+            assert payload["data"]["productId"] == "prod123"
+            assert payload["data"]["badgeType"] == "best_seller"
+            assert payload["data"]["automated"] is False
+    
+    @pytest.mark.asyncio
+    async def test_publish_badge_removed(self, dapr_publisher, mock_response):
+        """Test badge.removed event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_badge_removed(
+                product_id="prod123",
+                badge_type="best_seller",
+                removed_by="user123",
+                reason="expired",
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.badge.removed.v1"
+            assert payload["data"]["reason"] == "expired"
+
+
+class TestVariationEvents:
+    """Test variation event publishing"""
+    
+    @pytest.fixture
+    def mock_response(self):
+        """Mock HTTP response"""
+        response = MagicMock()
+        response.status_code = 204
+        return response
+    
+    @pytest.fixture
+    def dapr_publisher(self):
+        """Create DaprPublisher instance"""
+        return DaprPublisher()
+    
+    @pytest.mark.asyncio
+    async def test_publish_variation_created(self, dapr_publisher, mock_response):
+        """Test variation.created event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_variation_created(
+                parent_id="parent123",
+                variation_id="child456",
+                variation_type="color",
+                variant_attributes={"color": "red", "size": "M"},
+                created_by="user123",
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.variation.created.v1"
+            assert payload["data"]["parentId"] == "parent123"
+            assert payload["data"]["variantAttributes"] == {"color": "red", "size": "M"}
+    
+    @pytest.mark.asyncio
+    async def test_publish_variation_updated(self, dapr_publisher, mock_response):
+        """Test variation.updated event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_variation_updated(
+                parent_id="parent123",
+                variation_id="child456",
+                changes={"price": 29.99},
+                updated_by="user123",
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.variation.updated.v1"
+            assert payload["data"]["changes"] == {"price": 29.99}
+    
+    @pytest.mark.asyncio
+    async def test_publish_variation_deleted(self, dapr_publisher, mock_response):
+        """Test variation.deleted event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_variation_deleted(
+                parent_id="parent123",
+                variation_id="child456",
+                deleted_by="user123",
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.variation.deleted.v1"
+
+
+class TestSizeChartEvents:
+    """Test size chart event publishing"""
+    
+    @pytest.fixture
+    def mock_response(self):
+        """Mock HTTP response"""
+        response = MagicMock()
+        response.status_code = 204
+        return response
+    
+    @pytest.fixture
+    def dapr_publisher(self):
+        """Create DaprPublisher instance"""
+        return DaprPublisher()
+    
+    @pytest.mark.asyncio
+    async def test_publish_sizechart_assigned(self, dapr_publisher, mock_response):
+        """Test sizechart.assigned event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_sizechart_assigned(
+                size_chart_id="sc123",
+                product_ids=["prod1", "prod2"],
+                assigned_by="user123",
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.sizechart.assigned.v1"
+            assert payload["data"]["sizeChartId"] == "sc123"
+            assert payload["data"]["productCount"] == 2
+    
+    @pytest.mark.asyncio
+    async def test_publish_sizechart_unassigned(self, dapr_publisher, mock_response):
+        """Test sizechart.unassigned event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_sizechart_unassigned(
+                size_chart_id="sc123",
+                product_ids=["prod1"],
+                unassigned_by="user123",
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.sizechart.unassigned.v1"
+            assert payload["data"]["productCount"] == 1
+
+
+class TestBulkOperationEvents:
+    """Test bulk operation event publishing"""
+    
+    @pytest.fixture
+    def mock_response(self):
+        """Mock HTTP response"""
+        response = MagicMock()
+        response.status_code = 204
+        return response
+    
+    @pytest.fixture
+    def dapr_publisher(self):
+        """Create DaprPublisher instance"""
+        return DaprPublisher()
+    
+    @pytest.mark.asyncio
+    async def test_publish_bulk_operation_completed(self, dapr_publisher, mock_response):
+        """Test bulk.completed event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_bulk_operation_completed(
+                operation="create",
+                success_count=45,
+                failure_count=5,
+                total_count=50,
+                operation_id="bulk-123",
+                executed_by="user123",
+                details={"skus": ["SKU1"]},
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.bulk.completed.v1"
+            assert payload["data"]["successCount"] == 45
+            assert payload["data"]["totalCount"] == 50
+    
+    @pytest.mark.asyncio
+    async def test_publish_bulk_operation_failed(self, dapr_publisher, mock_response):
+        """Test bulk.failed event"""
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
+            mock_client.__aexit__.return_value = None
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client_class.return_value = mock_client
+            
+            result = await dapr_publisher.publish_bulk_operation_failed(
+                operation="update",
+                error_message="Database connection failed",
+                operation_id="bulk-456",
+                executed_by="user123",
+                correlation_id="corr-123"
+            )
+            
+            assert result is True
+            payload = mock_client.post.call_args[1]["json"]
+            assert payload["type"] == "com.aioutlet.product.bulk.failed.v1"
+            assert payload["data"]["errorMessage"] == "Database connection failed"

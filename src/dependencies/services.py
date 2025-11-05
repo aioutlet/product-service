@@ -7,7 +7,7 @@ Provides service instances with proper dependencies injected.
 from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-from src.core.database import get_product_collection, get_database
+from src.core.database import get_product_collection, get_db
 from src.repositories.product_repository import ProductRepository
 # Lazy imports to avoid circular dependencies - services import from dependencies.auth
 # which imports from dependencies.__init__ which imports this file
@@ -20,7 +20,8 @@ async def get_size_charts_collection() -> AsyncIOMotorCollection:
     Returns:
         Size charts collection from database
     """
-    return get_database()["size_charts"]
+    db = await get_db()
+    return db["size_charts"]
 
 
 async def get_size_chart_repository(
