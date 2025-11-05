@@ -419,11 +419,33 @@ async def create_product(product: ProductCreate, collection, acting_user=None):
 
         # Retrieve and return created product
         doc = await collection.find_one({"_id": result.inserted_id})
+        product_model = product_doc_to_model(doc)
+        
         logger.info(
             f"Created product {result.inserted_id}",
             metadata={"event": "create_product", "product_id": str(result.inserted_id)}
         )
-        return product_doc_to_model(doc)
+        
+        # Publish product.created event to Dapr
+        try:
+            from src.services.dapr_publisher import get_dapr_publisher
+            publisher = get_dapr_publisher()
+            await publisher.publish_product_created(
+                product_data=doc,  # Send the full document
+                correlation_id=None  # Could be passed from request context
+            )
+            logger.info(
+                f"Published product.created event for {result.inserted_id}",
+                metadata={"event": "product_created_event_published", "product_id": str(result.inserted_id)}
+            )
+        except Exception as e:
+            # Don't fail the create operation if event publishing fails
+            logger.error(
+                f"Failed to publish product.created event: {str(e)}",
+                metadata={"event": "product_created_event_error", "product_id": str(result.inserted_id), "error": str(e)}
+            )
+        
+        return product_model
     except PyMongoError as e:
         logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
@@ -516,11 +538,34 @@ async def update_product(
 
         # Retrieve and return updated product
         doc = await collection.find_one({"_id": obj_id})
+        product_model = product_doc_to_model(doc)
+        
         logger.info(
             f"Updated product {product_id}",
             metadata={"event": "update_product", "product_id": product_id}
         )
-        return product_doc_to_model(doc)
+        
+        # Publish product.updated event to Dapr
+        try:
+            from src.services.dapr_publisher import get_dapr_publisher
+            publisher = get_dapr_publisher()
+            await publisher.publish_product_updated(
+                product_data=doc,  # Send the full updated document
+                changes=update_data,  # Send the changes that were made
+                correlation_id=None  # Could be passed from request context
+            )
+            logger.info(
+                f"Published product.updated event for {product_id}",
+                metadata={"event": "product_updated_event_published", "product_id": product_id}
+            )
+        except Exception as e:
+            # Don't fail the update operation if event publishing fails
+            logger.error(
+                f"Failed to publish product.updated event: {str(e)}",
+                metadata={"event": "product_updated_event_error", "product_id": product_id, "error": str(e)}
+            )
+        
+        return product_model
     except PyMongoError as e:
         logger.error(f"MongoDB error: {e}", metadata={"event": "mongodb_error"})
         raise ErrorResponse(
@@ -571,18 +616,12 @@ async def delete_product(product_id, collection, acting_user=None):
             metadata={"event": "soft_delete_product", "product_id": product_id}
         )
 
-        # Publish product.deleted event to message broker
+        # Publish product.deleted event to Dapr
         try:
-            from src.services.message_broker_publisher import get_publisher
-            publisher = get_publisher()
-            await publisher.publish(
-                event_type="product.deleted",
-                data={
-                    "productId": product_id,
-                    "hardDelete": False,  # Soft delete by default
-                    "deletedBy": acting_user.user_id if acting_user else None,
-                    "deletedAt": datetime.now(timezone.utc).isoformat(),
-                },
+            from src.services.dapr_publisher import get_dapr_publisher
+            publisher = get_dapr_publisher()
+            await publisher.publish_product_deleted(
+                product_id=product_id,
                 correlation_id=None  # Could be passed from request context
             )
             logger.info(

@@ -13,9 +13,8 @@ slowapi
 httpx
 aiohttp
 
-# Message Broker
-aio-pika
-aiokafka
+# Dapr SDK for pub/sub
+dapr
 
 # Observability and Monitoring
 opentelemetry-api

@@ -106,21 +106,24 @@ VALIDATION_RULES = {
         'default': 'admin',
     },
     
-    # Message Broker Service Configuration
-    'MESSAGE_BROKER_SERVICE_URL': {
-        'required': True,
-        'validator': is_valid_url,
-        'error_message': 'MESSAGE_BROKER_SERVICE_URL must be a valid URL',
-    },
-    'MESSAGE_BROKER_API_KEY': {
-        'required': True,
-        'validator': lambda v: v and len(v) > 0,
-        'error_message': 'MESSAGE_BROKER_API_KEY must be a non-empty string',
-    },
-    'MESSAGE_BROKER_HEALTH_URL': {
+    # Dapr Configuration
+    'DAPR_HTTP_PORT': {
         'required': False,
-        'validator': lambda v: not v or is_valid_url(v),
-        'error_message': 'MESSAGE_BROKER_HEALTH_URL must be a valid URL if provided',
+        'validator': is_valid_port,
+        'error_message': 'DAPR_HTTP_PORT must be a valid port number',
+        'default': '3500',
+    },
+    'DAPR_PUBSUB_NAME': {
+        'required': False,
+        'validator': lambda v: not v or len(v) > 0,
+        'error_message': 'DAPR_PUBSUB_NAME must be a non-empty string if provided',
+        'default': 'product-pubsub',
+    },
+    'DAPR_APP_ID': {
+        'required': False,
+        'validator': lambda v: not v or len(v) > 0,
+        'error_message': 'DAPR_APP_ID must be a non-empty string if provided',
+        'default': 'product-service',
     },
     
     # Security Configuration

@@ -140,9 +140,9 @@ def get_dependencies() -> Dict[str, str]:
     """
     dependencies = {}
 
-    # Add message broker if configured (primary dependency for product-service)
-    message_broker_health_url = os.getenv('MESSAGE_BROKER_HEALTH_URL')
-    if message_broker_health_url:
-        dependencies['message-broker'] = message_broker_health_url
+    # Add Dapr sidecar health check
+    dapr_port = os.getenv('DAPR_HTTP_PORT', '3500')
+    dapr_health_url = f"http://localhost:{dapr_port}/v1.0/healthz"
+    dependencies['dapr-sidecar'] = dapr_health_url
 
     return dependencies
