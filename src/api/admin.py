@@ -14,6 +14,8 @@ from src.dependencies import get_products_collection
 from src.models.product import ProductCreate, ProductDB
 from src.core.errors import ErrorResponseModel
 from src.services.product_service import ProductService
+from src.services.bulk_operations_service import BulkOperationsService
+from src.services.import_export_service import ImportExportService
 from src.repositories.product_repository import ProductRepository
 from motor.motor_asyncio import AsyncIOMotorCollection
 
@@ -55,7 +57,7 @@ async def bulk_create_products(
     Maximum 100 products per request.
     """
     repo = ProductRepository(collection)
-    service = ProductService(repo)
+    service = BulkOperationsService(repo)
     return await service.bulk_create(products, user)
 
 
@@ -75,8 +77,9 @@ async def bulk_update_products(
     Each update should include 'id' and fields to update.
     """
     repo = ProductRepository(collection)
-    service = ProductService(repo)
-    return await service.bulk_update(updates, user)
+    product_service = ProductService(repo)
+    bulk_service = BulkOperationsService(repo)
+    return await bulk_service.bulk_update(updates, product_service, user)
 
 
 @router.delete(
@@ -95,7 +98,7 @@ async def bulk_delete_products(
     Maximum 100 products per request.
     """
     repo = ProductRepository(collection)
-    service = ProductService(repo)
+    service = BulkOperationsService(repo)
     await service.bulk_delete(product_ids, user)
 
 
@@ -125,11 +128,12 @@ async def import_products(
         raise ErrorResponse("Unsupported file format. Use CSV or JSON.", status_code=400)
     
     # Read file content
-    content = await file.read()
+    content_bytes = await file.read()
+    content = content_bytes.decode("utf-8")
     
     # Import using service
     repo = ProductRepository(collection)
-    service = ProductService(repo)
+    service = ImportExportService(repo)
     return await service.import_products(content, filetype, user)
 
 
@@ -145,7 +149,7 @@ async def export_products(
     Returns a downloadable file.
     """
     repo = ProductRepository(collection)
-    service = ProductService(repo)
+    service = ImportExportService(repo)
     content = await service.export_products(format)
     
     # Determine content type and filename

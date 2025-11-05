@@ -9,7 +9,8 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 
 from src.core.database import get_product_collection
 from src.repositories.product_repository import ProductRepository
-from src.services.product_service import ProductService
+# Lazy imports to avoid circular dependencies - services import from dependencies.auth
+# which imports from dependencies.__init__ which imports this file
 
 
 async def get_product_repository(
@@ -37,7 +38,7 @@ async def get_product_repository(
 
 async def get_product_service(
     repo: ProductRepository = Depends(get_product_repository)
-) -> ProductService:
+):
     """
     FastAPI dependency to get ProductService instance.
     
@@ -55,4 +56,77 @@ async def get_product_service(
     Returns:
         ProductService instance
     """
+    from src.services.product_service import ProductService
     return ProductService(repo)
+
+
+async def get_badge_service(
+    repo: ProductRepository = Depends(get_product_repository)
+):
+    """
+    FastAPI dependency to get BadgeService instance.
+    
+    Usage:
+        @router.post("/badges/assign")
+        async def assign_badge(
+            service: BadgeService = Depends(get_badge_service)
+        ):
+            result = await service.assign_badge(...)
+            ...
+    
+    Args:
+        repo: Product repository from repository dependency
+        
+    Returns:
+        BadgeService instance
+    """
+    from src.services.badge_service import BadgeService
+    return BadgeService(repo)
+
+
+async def get_bulk_operations_service(
+    repo: ProductRepository = Depends(get_product_repository)
+):
+    """
+    FastAPI dependency to get BulkOperationsService instance.
+    
+    Usage:
+        @router.post("/products/bulk-create")
+        async def bulk_create_products(
+            service: BulkOperationsService = Depends(get_bulk_operations_service)
+        ):
+            result = await service.bulk_create(...)
+            ...
+    
+    Args:
+        repo: Product repository from repository dependency
+        
+    Returns:
+        BulkOperationsService instance
+    """
+    from src.services.bulk_operations_service import BulkOperationsService
+    return BulkOperationsService(repo)
+
+
+async def get_import_export_service(
+    repo: ProductRepository = Depends(get_product_repository)
+):
+    """
+    FastAPI dependency to get ImportExportService instance.
+    
+    Usage:
+        @router.post("/products/import")
+        async def import_products(
+            service: ImportExportService = Depends(get_import_export_service)
+        ):
+            result = await service.import_products(...)
+            ...
+    
+    Args:
+        repo: Product repository from repository dependency
+        
+    Returns:
+        ImportExportService instance
+    """
+    from src.services.import_export_service import ImportExportService
+    return ImportExportService(repo)

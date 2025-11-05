@@ -37,7 +37,7 @@ from src.core.errors import (
     http_exception_handler,
 )
 from src.middleware import CorrelationIdMiddleware
-from src.api import products_router, health_router, admin_router, variations_router
+from src.api import products_router, health_router, admin_router, variations_router, badges_router
 from src.dependencies import get_products_collection
 
 # STEP 5: Check dependency health (non-blocking)
@@ -106,6 +106,7 @@ async def startup_event():
 # Include routers
 app.include_router(products_router, prefix="/api")
 app.include_router(variations_router, prefix="/api")
+app.include_router(badges_router, prefix="/api")
 app.include_router(health_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 
