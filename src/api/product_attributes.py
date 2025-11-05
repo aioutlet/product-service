@@ -243,20 +243,29 @@ async def validate_attributes(
 async def faceted_search(
     category: Optional[str] = Query(None, description="Product category"),
     text_query: Optional[str] = Query(None, description="Text search query"),
+    sort_by: Optional[str] = Query(None, description="Field to sort by (e.g., 'price', 'structured_attributes.physical_dimensions.weight')"),
+    sort_order: str = Query("asc", regex="^(asc|desc)$", description="Sort order: 'asc' or 'desc'"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     faceted_search_service: FacetedSearchService = Depends(get_faceted_search_service),
     correlation_id: str = Depends(get_correlation_id)
 ):
     """
-    Perform faceted search with attribute filtering.
+    Perform faceted search with attribute filtering and sorting.
     
     Query parameters:
     - category: Filter by category
     - text_query: Text search
+    - sort_by: Field to sort by (supports nested attributes like 'structured_attributes.physical_dimensions.weight')
+    - sort_order: Sort direction ('asc' or 'desc')
     - page: Page number
     - page_size: Items per page
     - Any attribute path (e.g., attributes.category_specific.fit_type=Regular)
+    
+    Examples:
+    - Sort by price: ?sort_by=price&sort_order=asc
+    - Sort by weight: ?sort_by=structured_attributes.physical_dimensions.weight&sort_order=desc
+    - Sort by rating: ?sort_by=rating&sort_order=desc
     
     Returns:
         Search results with facets and counts
@@ -269,6 +278,8 @@ async def faceted_search(
         text_query=text_query,
         category=category,
         facet_fields=facet_fields,
+        sort_by=sort_by,
+        sort_order=sort_order,
         page=page,
         page_size=page_size,
         correlation_id=correlation_id

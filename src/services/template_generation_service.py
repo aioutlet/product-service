@@ -20,6 +20,8 @@ except ImportError:
     )
 
 from src.models.bulk_import import TemplateConfig, TemplateColumn
+from src.models.standard_schemas import StandardSchemas
+from src.models.attribute_schema import AttributeDataType
 from src.core.logger import logger
 
 
@@ -276,11 +278,98 @@ class TemplateGenerationService:
         """Get column definitions for category"""
         columns = self.COMMON_COLUMNS.copy()
         
-        # Add category-specific columns
+        # Add legacy category-specific columns
         if category in self.CATEGORY_COLUMNS:
             columns.extend(self.CATEGORY_COLUMNS[category])
         
+        # Add structured attribute columns from StandardSchemas
+        attribute_columns = self._generate_attribute_columns(category)
+        columns.extend(attribute_columns)
+        
         return columns
+    
+    def _generate_attribute_columns(self, category: str) -> List[TemplateColumn]:
+        """
+        Generate attribute columns from StandardSchemas for the category.
+        
+        Args:
+            category: Product category
+            
+        Returns:
+            List of TemplateColumn objects for category attributes
+        """
+        # Map category names to StandardSchemas methods
+        schema_map = {
+            "Clothing": StandardSchemas.get_clothing_schema,
+            "Electronics": StandardSchemas.get_electronics_schema,
+            "Home & Furniture": StandardSchemas.get_home_furniture_schema,
+            "Beauty & Personal Care": StandardSchemas.get_beauty_schema
+        }
+        
+        if category not in schema_map:
+            return []
+        
+        # Get schema for category
+        schema = schema_map[category]()
+        
+        columns = []
+        
+        # Process each attribute group
+        for group in schema.attribute_groups:
+            group_prefix = f"ATTR:{group.name}"
+            
+            for attr_def in group.attributes:
+                # Create column name with prefix to distinguish from legacy columns
+                column_name = f"{group_prefix}:{attr_def.display_name}"
+                if attr_def.required:
+                    column_name += "*"
+                
+                # Map attribute data type to template data type
+                data_type_map = {
+                    AttributeDataType.STRING: "string",
+                    AttributeDataType.NUMBER: "number",
+                    AttributeDataType.BOOLEAN: "boolean",
+                    AttributeDataType.LIST: "string",  # Comma-separated
+                    AttributeDataType.ENUM: "string",
+                    AttributeDataType.OBJECT: "string"  # JSON string
+                }
+                
+                template_column = TemplateColumn(
+                    name=column_name,
+                    field=f"structured_attributes.{group.name}.{attr_def.name}",
+                    data_type=data_type_map.get(attr_def.data_type, "string"),
+                    required=attr_def.required,
+                    description=attr_def.description or f"{attr_def.display_name} ({attr_def.data_type.value})",
+                    min_value=attr_def.min_value,
+                    max_value=attr_def.max_value,
+                    max_length=attr_def.max_length,
+                    allowed_values=attr_def.allowed_values,
+                    example_value=self._generate_example_value(attr_def)
+                )
+                
+                columns.append(template_column)
+        
+        return columns
+    
+    def _generate_example_value(self, attr_def) -> Any:
+        """Generate example value for attribute"""
+        # If enum with allowed values, use first value
+        if attr_def.allowed_values:
+            return attr_def.allowed_values[0]
+        
+        # Generate based on data type
+        if attr_def.data_type == AttributeDataType.STRING:
+            return f"Example {attr_def.display_name.lower()}"
+        elif attr_def.data_type == AttributeDataType.NUMBER:
+            if attr_def.min_value is not None:
+                return attr_def.min_value
+            return 0
+        elif attr_def.data_type == AttributeDataType.BOOLEAN:
+            return "Yes"
+        elif attr_def.data_type == AttributeDataType.LIST:
+            return "value1, value2"
+        else:
+            return ""
     
     def _add_headers(self, ws, columns: List[TemplateColumn]):
         """Add header row with column names"""

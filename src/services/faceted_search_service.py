@@ -33,12 +33,14 @@ class FacetedSearchService:
         category: Optional[str] = None,
         attribute_filters: Optional[Dict[str, List[str]]] = None,
         facet_fields: Optional[List[str]] = None,
+        sort_by: Optional[str] = None,
+        sort_order: str = "asc",
         page: int = 1,
         page_size: int = 20,
         correlation_id: Optional[str] = None
     ) -> FacetedSearchResult:
         """
-        Perform faceted search with attribute filtering.
+        Perform faceted search with attribute filtering and sorting.
         
         Args:
             text_query: Optional text search query
@@ -49,6 +51,8 @@ class FacetedSearchService:
                     "attributes.materials_composition.primary_material": ["Cotton"]
                 }
             facet_fields: List of attribute paths to generate facets for
+            sort_by: Field to sort by (supports attribute paths like "structured_attributes.physical_dimensions.weight")
+            sort_order: Sort order, either "asc" or "desc" (default: "asc")
             page: Page number (1-indexed)
             page_size: Items per page
             correlation_id: For logging
@@ -57,7 +61,7 @@ class FacetedSearchService:
             FacetedSearchResult with products and facets
         """
         logger.info(
-            f"Faceted search: query={text_query}, category={category}, filters={attribute_filters}",
+            f"Faceted search: query={text_query}, category={category}, filters={attribute_filters}, sort={sort_by}",
             correlation_id=correlation_id
         )
         
@@ -81,9 +85,22 @@ class FacetedSearchService:
         # Count total matches
         total_count = await self.collection.count_documents(query)
         
-        # Fetch products (paginated)
+        # Build sort criteria
+        sort_criteria = []
+        if sort_by:
+            # Validate sort order
+            if sort_order.lower() not in ["asc", "desc"]:
+                sort_order = "asc"
+            
+            sort_direction = 1 if sort_order.lower() == "asc" else -1
+            sort_criteria.append((sort_by, sort_direction))
+        
+        # Always add _id as secondary sort for consistency
+        sort_criteria.append(("_id", 1))
+        
+        # Fetch products (paginated with sorting)
         skip = (page - 1) * page_size
-        cursor = self.collection.find(query).skip(skip).limit(page_size)
+        cursor = self.collection.find(query).sort(sort_criteria).skip(skip).limit(page_size)
         products = await cursor.to_list(length=page_size)
         
         # Generate facets

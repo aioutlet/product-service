@@ -27,6 +27,8 @@ from src.models.bulk_import import (
     ValidationSeverity
 )
 from src.models.product import ProductCreate
+from src.models.attribute_schema import ProductAttributes
+from src.services.attribute_validation_service import AttributeValidationService
 from src.repositories.product_repository import ProductRepository
 from src.services.dapr_publisher import get_dapr_publisher
 from src.core.logger import logger
@@ -182,6 +184,7 @@ class ImportProcessingService:
                 
                 # Parse row
                 product_data = {}
+                structured_attrs = {}  # For structured_attributes
                 row_errors = []
                 row_warnings = []
                 
@@ -192,7 +195,37 @@ class ImportProcessingService:
                     # Clean header (remove * for required fields)
                     field_name = header.replace('*', '').strip()
                     
-                    # Map header to field
+                    # Check if this is a structured attribute column (starts with ATTR:)
+                    if field_name.startswith('ATTR:'):
+                        # Parse structured attribute: "ATTR:group_name:Display Name"
+                        parts = field_name.split(':', 2)
+                        if len(parts) == 3:
+                            _, group_name, attr_display = parts
+                            
+                            # Convert group name and attribute display to field names
+                            # e.g., "ATTR:Materials & Composition:Primary Material" -> structured_attrs['materials_composition']['primary_material']
+                            group_field = group_name.lower().replace(' & ', '_').replace(' ', '_')
+                            attr_field = attr_display.lower().replace(' ', '_')
+                            
+                            if group_field not in structured_attrs:
+                                structured_attrs[group_field] = {}
+                            
+                            # Parse value based on type
+                            if value is not None and str(value).strip():
+                                # Handle boolean values
+                                if str(value).strip().lower() in ['yes', 'no', 'true', 'false']:
+                                    structured_attrs[group_field][attr_field] = str(value).strip().lower() in ['yes', 'true']
+                                # Handle numeric values
+                                elif isinstance(value, (int, float)):
+                                    structured_attrs[group_field][attr_field] = value
+                                # Handle lists (comma-separated)
+                                elif ',' in str(value):
+                                    structured_attrs[group_field][attr_field] = [v.strip() for v in str(value).split(',')]
+                                else:
+                                    structured_attrs[group_field][attr_field] = str(value).strip()
+                        continue
+                    
+                    # Map header to field for regular columns
                     field = self._map_header_to_field(field_name)
                     
                     # Validate and convert value
@@ -214,6 +247,40 @@ class ImportProcessingService:
                             product_data[parts[0]][parts[1]] = validated_value
                         else:
                             product_data[field] = validated_value
+                
+                # Add structured attributes if any were found
+                if structured_attrs:
+                    # Convert to ProductAttributes and validate
+                    try:
+                        attrs_obj = ProductAttributes(**structured_attrs)
+                        product_data['structured_attributes'] = attrs_obj.model_dump()
+                        
+                        # Validate attributes if category is known
+                        if 'category' in product_data:
+                            validation_service = AttributeValidationService()
+                            validation_result = validation_service.validate_attributes(
+                                attrs_obj,
+                                product_data['category'],
+                                correlation_id=correlation_id
+                            )
+                            
+                            if not validation_result.is_valid:
+                                for error in validation_result.errors:
+                                    row_errors.append(ValidationError(
+                                        row_number=row_idx,
+                                        field_name=error.field_path,
+                                        error_code="INVALID_ATTRIBUTE",
+                                        error_message=error.message,
+                                        current_value=str(error.invalid_value) if error.invalid_value else None
+                                    ))
+                    except Exception as e:
+                        row_warnings.append(ValidationError(
+                            row_number=row_idx,
+                            field_name="structured_attributes",
+                            error_code="ATTRIBUTE_PARSE_ERROR",
+                            error_message=f"Failed to parse attributes: {str(e)}",
+                            severity=ValidationSeverity.WARNING
+                        ))
                 
                 # Check for duplicate SKU in file
                 sku = product_data.get('sku')
