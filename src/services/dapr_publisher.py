@@ -159,6 +159,107 @@ class DaprPublisher:
                 }
             )
             return False
+    
+    # ===== Product-Specific Event Methods =====
+    
+    async def publish_product_created(
+        self,
+        product: Dict[str, Any],
+        acting_user: Optional[str] = None,
+        correlation_id: Optional[str] = None
+    ) -> bool:
+        """
+        Publish product.created event
+        
+        Args:
+            product: The created product data (full product document)
+            acting_user: User ID who created the product
+            correlation_id: Optional correlation ID for distributed tracing
+            
+        Returns:
+            bool: True if published successfully, False otherwise
+        """
+        event_data = {
+            "product": product,
+            "actingUser": acting_user,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "action": "created"
+        }
+        
+        return await self.publish(
+            topic="product.created",
+            data=event_data,
+            event_type="com.aioutlet.product.created.v1",
+            correlation_id=correlation_id
+        )
+    
+    async def publish_product_updated(
+        self,
+        product: Dict[str, Any],
+        changes: Dict[str, Any],
+        acting_user: Optional[str] = None,
+        correlation_id: Optional[str] = None
+    ) -> bool:
+        """
+        Publish product.updated event
+        
+        Args:
+            product: The updated product data (full product document after update)
+            changes: Dictionary of changed fields (e.g., {"price": {"old": 99.99, "new": 89.99}})
+            acting_user: User ID who updated the product
+            correlation_id: Optional correlation ID for distributed tracing
+            
+        Returns:
+            bool: True if published successfully, False otherwise
+        """
+        event_data = {
+            "product": product,
+            "changes": changes,
+            "actingUser": acting_user,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "action": "updated"
+        }
+        
+        return await self.publish(
+            topic="product.updated",
+            data=event_data,
+            event_type="com.aioutlet.product.updated.v1",
+            correlation_id=correlation_id
+        )
+    
+    async def publish_product_deleted(
+        self,
+        product_id: str,
+        sku: str,
+        acting_user: Optional[str] = None,
+        correlation_id: Optional[str] = None
+    ) -> bool:
+        """
+        Publish product.deleted event
+        
+        Args:
+            product_id: The MongoDB ObjectId of the deleted product
+            sku: The SKU of the deleted product
+            acting_user: User ID who deleted the product
+            correlation_id: Optional correlation ID for distributed tracing
+            
+        Returns:
+            bool: True if published successfully, False otherwise
+        """
+        event_data = {
+            "productId": product_id,
+            "sku": sku,
+            "actingUser": acting_user,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "action": "deleted"
+        }
+        
+        return await self.publish(
+            topic="product.deleted",
+            data=event_data,
+            event_type="com.aioutlet.product.deleted.v1",
+            correlation_id=correlation_id
+        )
 
 
 # Singleton instance

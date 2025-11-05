@@ -240,6 +240,9 @@ class ProductService:
                 }
             )
             
+            # Publish product.created event
+            await self._publish_product_created(product_id, product_dict, correlation_id)
+            
             return product_id
         
         except ErrorResponse:
@@ -389,10 +392,12 @@ class ProductService:
             # Validate product ID
             obj_id = validate_object_id(product_id)
             
-            # Check if product exists
+            # Check if product exists and get SKU for event
             doc = await collection.find_one({"_id": obj_id})
             if not doc:
                 raise ErrorResponse("Product not found", status_code=404)
+            
+            product_sku = doc.get("sku", "UNKNOWN")
             
             # Perform soft delete
             await collection.update_one(
@@ -403,11 +408,11 @@ class ProductService:
             logger.info(
                 f"Soft deleted product {product_id}",
                 correlation_id=correlation_id,
-                metadata={"product_id": product_id}
+                metadata={"product_id": product_id, "sku": product_sku}
             )
             
-            # Publish event
-            await self._publish_product_deleted(product_id, acting_user)
+            # Publish event with SKU
+            await self._publish_product_deleted(product_id, product_sku, acting_user, correlation_id)
             
         except PyMongoError as e:
             logger.error(f"MongoDB error: {e}", correlation_id=correlation_id)
@@ -664,6 +669,26 @@ class ProductService:
         
         return sanitized
     
+    async def _publish_product_created(
+        self,
+        product_id: str,
+        product_data: dict,
+        correlation_id: Optional[str] = None
+    ):
+        """Publish product.created event using Dapr."""
+        try:
+            from src.services.dapr_publisher import get_dapr_publisher
+            publisher = get_dapr_publisher()
+            
+            # Use the new convenience method
+            await publisher.publish_product_created(
+                product=product_data,
+                acting_user=None,  # TODO: Pass acting_user when available
+                correlation_id=correlation_id
+            )
+        except Exception as e:
+            logger.error(f"Failed to publish product.created event: {str(e)}")
+    
     async def _publish_product_updated(
         self,
         product_id: str,
@@ -671,20 +696,17 @@ class ProductService:
         acting_user: Optional[CurrentUser],
         update_data: dict
     ):
-        """Publish product.updated event."""
+        """Publish product.updated event using Dapr."""
         try:
             from src.services.dapr_publisher import get_dapr_publisher
             publisher = get_dapr_publisher()
-            await publisher.publish(
-                topic="product.updated",
-                event_type="com.aioutlet.product.updated.v1",
-                data={
-                    "productId": product_id,
-                    "changes": changes,
-                    "updatedBy": acting_user.user_id if acting_user else None,
-                    "updatedAt": update_data["updated_at"].isoformat()
-                },
-                correlation_id=None
+            
+            # Use the new convenience method
+            await publisher.publish_product_updated(
+                product=update_data,
+                changes=changes,
+                acting_user=acting_user.user_id if acting_user else None,
+                correlation_id=None  # TODO: Pass correlation_id
             )
         except Exception as e:
             logger.error(f"Failed to publish product.updated event: {str(e)}")
@@ -692,22 +714,21 @@ class ProductService:
     async def _publish_product_deleted(
         self,
         product_id: str,
-        acting_user: Optional[CurrentUser]
+        sku: str,
+        acting_user: Optional[CurrentUser],
+        correlation_id: Optional[str] = None
     ):
-        """Publish product.deleted event."""
+        """Publish product.deleted event using Dapr."""
         try:
             from src.services.dapr_publisher import get_dapr_publisher
             publisher = get_dapr_publisher()
-            await publisher.publish(
-                topic="product.deleted",
-                event_type="com.aioutlet.product.deleted.v1",
-                data={
-                    "productId": product_id,
-                    "hardDelete": False,
-                    "deletedBy": acting_user.user_id if acting_user else None,
-                    "deletedAt": datetime.now(timezone.utc).isoformat()
-                },
-                correlation_id=None
+            
+            # Use the new convenience method
+            await publisher.publish_product_deleted(
+                product_id=product_id,
+                sku=sku,
+                acting_user=acting_user.user_id if acting_user else None,
+                correlation_id=correlation_id
             )
         except Exception as e:
             logger.error(f"Failed to publish product.deleted event: {str(e)}")

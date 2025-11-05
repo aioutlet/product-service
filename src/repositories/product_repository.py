@@ -48,8 +48,10 @@ class ProductRepository(BaseRepository):
         """
         Search products with text and filters.
         
+        Uses MongoDB text search index for better performance and relevance scoring.
+        
         Args:
-            search_text: Text to search in name, description, tags, brand
+            search_text: Text to search in name, description, tags, searchKeywords
             department: Department filter
             category: Category filter
             subcategory: Subcategory filter
@@ -67,15 +69,9 @@ class ProductRepository(BaseRepository):
             # Build query for active products only
             query = {"is_active": True}
             
-            # Text search with regex
+            # MongoDB text search using text index (faster and supports relevance scoring)
             if search_text:
-                search_pattern = {"$regex": search_text.strip(), "$options": "i"}
-                query["$or"] = [
-                    {"name": search_pattern},
-                    {"description": search_pattern},
-                    {"tags": search_pattern},
-                    {"brand": search_pattern}
-                ]
+                query["$text"] = {"$search": search_text.strip()}
             
             # Hierarchical taxonomy filters
             if department:
@@ -114,6 +110,9 @@ class ProductRepository(BaseRepository):
             )
             
             # Execute query with pagination
+            # When using $text search, we can sort by relevance score { "score": { "$meta": "textScore" } }
+            # For now, keeping default sorting. To add relevance sorting:
+            # sort = [("score", {"$meta": "textScore"})] if search_text else None
             products = await self.find_many(query, skip=skip, limit=limit, correlation_id=correlation_id)
             total_count = await self.count(query, correlation_id=correlation_id)
             

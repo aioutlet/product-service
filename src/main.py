@@ -93,6 +93,12 @@ async def startup_event():
         }
     )
     
+    # Create database indexes
+    from src.core.database import get_db
+    from src.core.indexes import create_indexes
+    db = await get_db()
+    await create_indexes(db)
+    
     # Check dependencies
     await check_dependencies_on_startup()
 
