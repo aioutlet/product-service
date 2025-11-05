@@ -11,6 +11,7 @@ from .variations import router as variations_router
 from .badges import router as badges_router
 from .health import router as health_router
 from .admin import router as admin_router
+from .restrictions import router as restrictions_router
 
 __all__ = [
     "products_router",
@@ -18,4 +19,5 @@ __all__ = [
     "badges_router",
     "health_router",
     "admin_router",
+    "restrictions_router",
 ]

@@ -1,7 +1,9 @@
-"""Product models matching the PRD schema."""
+"""Product model and related schemas"""
 from datetime import datetime, UTC
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
+
+from src.models.restrictions import ProductRestrictions
 
 def utc_now():
     return datetime.now(UTC)
@@ -31,6 +33,7 @@ class SEOMetadata(BaseModel):
     slug: Optional[str] = None
 
 class Restrictions(BaseModel):
+    """Legacy restrictions model - deprecated, use ProductRestrictions instead"""
     age_restricted: bool = False
     shipping_restrictions: List[str] = Field(default_factory=list)
     hazardous_material: bool = False

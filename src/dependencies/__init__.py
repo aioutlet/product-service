@@ -18,7 +18,8 @@ from src.dependencies.services import (
     get_product_service,
     get_size_chart_repository,
     get_size_chart_service,
-    get_size_charts_collection
+    get_size_charts_collection,
+    get_restrictions_service
 )
 from src.utils.correlation_id import get_correlation_id
 
@@ -41,5 +42,6 @@ __all__ = [
     "get_size_chart_repository",
     "get_size_chart_service",
     "get_size_charts_collection",
+    "get_restrictions_service",
     "get_correlation_id"
 ]

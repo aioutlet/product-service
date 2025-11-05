@@ -189,3 +189,28 @@ async def get_import_export_service(
     """
     from src.services.import_export_service import ImportExportService
     return ImportExportService(repo)
+
+
+async def get_restrictions_service(
+    repo: ProductRepository = Depends(get_product_repository)
+):
+    """
+    FastAPI dependency to get RestrictionsService instance.
+    
+    Usage:
+        @router.put("/restrictions/{product_id}")
+        async def update_restrictions(
+            product_id: str,
+            service: RestrictionsService = Depends(get_restrictions_service)
+        ):
+            result = await service.update_restrictions(...)
+            ...
+    
+    Args:
+        repo: Product repository from repository dependency
+        
+    Returns:
+        RestrictionsService instance
+    """
+    from src.services.restrictions_service import RestrictionsService
+    return RestrictionsService(repo)
