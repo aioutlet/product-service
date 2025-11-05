@@ -7,10 +7,68 @@ Provides service instances with proper dependencies injected.
 from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-from src.core.database import get_product_collection
+from src.core.database import get_product_collection, get_database
 from src.repositories.product_repository import ProductRepository
 # Lazy imports to avoid circular dependencies - services import from dependencies.auth
 # which imports from dependencies.__init__ which imports this file
+
+
+async def get_size_charts_collection() -> AsyncIOMotorCollection:
+    """
+    FastAPI dependency to get size_charts collection.
+    
+    Returns:
+        Size charts collection from database
+    """
+    return get_database()["size_charts"]
+
+
+async def get_size_chart_repository(
+    collection: AsyncIOMotorCollection = Depends(get_size_charts_collection)
+):
+    """
+    FastAPI dependency to get SizeChartRepository instance.
+    
+    Usage:
+        @router.get("/size-charts")
+        async def list_size_charts(
+            repo: SizeChartRepository = Depends(get_size_chart_repository)
+        ):
+            charts = await repo.list_all()
+            ...
+    
+    Args:
+        collection: Size charts collection from database dependency
+        
+    Returns:
+        SizeChartRepository instance
+    """
+    from src.repositories.size_chart_repository import SizeChartRepository
+    return SizeChartRepository(collection)
+
+
+async def get_size_chart_service(
+    repo = Depends(get_size_chart_repository)
+):
+    """
+    FastAPI dependency to get SizeChartService instance.
+    
+    Usage:
+        @router.post("/size-charts")
+        async def create_size_chart(
+            service: SizeChartService = Depends(get_size_chart_service)
+        ):
+            chart_id = await service.create_size_chart(...)
+            ...
+    
+    Args:
+        repo: Size chart repository from repository dependency
+        
+    Returns:
+        SizeChartService instance
+    """
+    from src.services.size_chart_service import SizeChartService
+    return SizeChartService(repo)
 
 
 async def get_product_repository(

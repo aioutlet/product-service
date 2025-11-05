@@ -13,7 +13,14 @@ from src.dependencies.auth import (
     require_admin,
     CurrentUser
 )
-from src.dependencies.services import get_product_repository, get_product_service
+from src.dependencies.services import (
+    get_product_repository,
+    get_product_service,
+    get_size_chart_repository,
+    get_size_chart_service,
+    get_size_charts_collection
+)
+from src.utils.correlation_id import get_correlation_id
 
 # Alias for consistency with other services
 get_database = get_db
@@ -31,4 +38,8 @@ __all__ = [
     "CurrentUser",
     "get_product_repository",
     "get_product_service",
+    "get_size_chart_repository",
+    "get_size_chart_service",
+    "get_size_charts_collection",
+    "get_correlation_id"
 ]
