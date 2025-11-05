@@ -12,6 +12,7 @@ pytest-cov
 slowapi
 httpx
 aiohttp
+openpyxl
 
 # Observability and Monitoring
 opentelemetry-api
