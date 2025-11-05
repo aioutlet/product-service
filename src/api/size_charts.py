@@ -20,6 +20,7 @@ from src.dependencies import (
     get_current_user,
     CurrentUser
 )
+from src.dependencies.auth import require_admin
 
 
 router = APIRouter(prefix="/api/size-charts", tags=["size-charts"])
@@ -30,7 +31,8 @@ router = APIRouter(prefix="/api/size-charts", tags=["size-charts"])
     response_model=dict,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new size chart",
-    description="Create a new size chart. Requires admin role."
+    description="Create a new size chart. Requires admin role.",
+    dependencies=[Depends(require_admin)]
 )
 async def create_size_chart(
     request: CreateSizeChartRequest,
@@ -52,14 +54,6 @@ async def create_size_chart(
     Returns:
         Created size chart ID
     """
-    # Check admin role
-    if "admin" not in current_user.roles:
-        from src.core.errors import ErrorResponse
-        raise ErrorResponse(
-            "Admin role required to create size charts",
-            status_code=403
-        )
-    
     size_chart_id = await service.create_size_chart(
         request,
         current_user.user_id,
@@ -197,7 +191,8 @@ async def get_size_chart(
     "/{size_chart_id}",
     response_model=SizeChartResponse,
     summary="Update a size chart",
-    description="Update an existing size chart. Requires admin role."
+    description="Update an existing size chart. Requires admin role.",
+    dependencies=[Depends(require_admin)]
 )
 async def update_size_chart(
     size_chart_id: str,
@@ -221,14 +216,6 @@ async def update_size_chart(
     Returns:
         Updated size chart
     """
-    # Check admin role
-    if "admin" not in current_user.roles:
-        from src.core.errors import ErrorResponse
-        raise ErrorResponse(
-            "Admin role required to update size charts",
-            status_code=403
-        )
-    
     return await service.update_size_chart(
         size_chart_id,
         request,
@@ -241,7 +228,8 @@ async def update_size_chart(
     "/{size_chart_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a size chart",
-    description="Delete a size chart. By default performs soft delete. Requires admin role."
+    description="Delete a size chart. By default performs soft delete. Requires admin role.",
+    dependencies=[Depends(require_admin)]
 )
 async def delete_size_chart(
     size_chart_id: str,
@@ -262,14 +250,6 @@ async def delete_size_chart(
         service: Size chart service
         correlation_id: Request correlation ID
     """
-    # Check admin role
-    if "admin" not in current_user.roles:
-        from src.core.errors import ErrorResponse
-        raise ErrorResponse(
-            "Admin role required to delete size charts",
-            status_code=403
-        )
-    
     await service.delete_size_chart(
         size_chart_id,
         soft_delete,
