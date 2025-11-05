@@ -1,0 +1,26 @@
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: product-created-subscription
+spec:
+  pubsubname: product-pubsub
+  topic: product.created
+  route: /events/product-created
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: product-updated-subscription
+spec:
+  pubsubname: product-pubsub
+  topic: product.updated
+  route: /events/product-updated
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: product-deleted-subscription
+spec:
+  pubsubname: product-pubsub
+  topic: product.deleted
+  route: /events/product-deleted

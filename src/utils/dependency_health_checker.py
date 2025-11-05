@@ -140,9 +140,8 @@ def get_dependencies() -> Dict[str, str]:
     """
     dependencies = {}
 
-    # Add message broker if configured (primary dependency for product-service)
-    message_broker_health_url = os.getenv('MESSAGE_BROKER_HEALTH_URL')
-    if message_broker_health_url:
-        dependencies['message-broker'] = message_broker_health_url
-
+    # With Dapr integration, external service dependencies are handled via Dapr sidecar
+    # No need to check message broker health directly
+    # Future: Could add Dapr sidecar health check at http://localhost:{DAPR_HTTP_PORT}/v1.0/healthz
+    
     return dependencies

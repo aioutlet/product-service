@@ -116,9 +116,9 @@ Product Service is the **source of truth** for product catalog data in the AIOut
 ┌─────────────────────────────────────────────────────────────┐
 │                      API Layer (HTTP)                        │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐            │
-│  │  Routers   │  │ Middlewares│  │ Dependencies│            │
-│  │ (FastAPI)  │  │(Auth, Log) │  │(Dependency  │            │
-│  │            │  │            │  │ Injection)  │            │
+│  │   Routes   │  │ Middleware │  │Dependencies│            │
+│  │ (FastAPI)  │  │(Auth, Log) │  │(Dependency │            │
+│  │            │  │            │  │ Injection) │            │
 │  └─────┬──────┘  └─────┬──────┘  └─────┬──────┘            │
 └────────┼────────────────┼────────────────┼───────────────────┘
          │                │                │
@@ -151,25 +151,25 @@ Product Service is the **source of truth** for product catalog data in the AIOut
 
 ### Layer Responsibilities
 
-#### 1. API Layer (`app/api/`, `app/middleware/`, `app/dependencies/`)
+#### 1. API Layer (`src/api/`, `src/middleware/`, `src/dependencies/`)
 
-- **Routers**: Define FastAPI route endpoints and HTTP methods
+- **Routes**: Define FastAPI endpoint handlers with proper HTTP methods
 - **Dependencies**: FastAPI dependency injection for auth, database, services
 - **Middleware**: Authentication, authorization, logging, error handling, CORS
 
-#### 2. Service Layer (`app/services/`)
+#### 2. Service Layer (`src/services/`)
 
 - **Business Logic**: Product creation rules, validation, workflows
 - **Domain Events**: Trigger event publishing on state changes
 - **Orchestration**: Coordinate multiple repositories/external calls
 
-#### 3. Repository Layer (`app/repositories/`)
+#### 3. Repository Layer (`src/repositories/`)
 
 - **Data Access**: CRUD operations on MongoDB using Motor (async)
 - **Query Building**: Complex queries, aggregations, pagination
 - **Transactions**: Multi-document operations (where needed)
 
-#### 4. Event Layer (`app/events/`)
+#### 4. Event Layer (`src/events/`)
 
 - **Event Publishers**: Publish domain events via Dapr
 - **Event Consumers**: Subscribe and handle events from other services
@@ -181,18 +181,27 @@ Product Service is the **source of truth** for product catalog data in the AIOut
 
 ```
 product-service/
-├── app/
-│   ├── api/                      # API routes and endpoints
-│   │   ├── v1/
-│   │   │   ├── __init__.py
-│   │   │   ├── products.py            # Product CRUD endpoints
-│   │   │   ├── variations.py          # Variation endpoints
-│   │   │   ├── search.py              # Search/filter endpoints
-│   │   │   ├── admin.py               # Admin-only endpoints
-│   │   │   └── health.py              # Health check endpoints
-│   │   └── __init__.py
+├── src/                          # Main application package
+│   ├── api/                      # FastAPI route handlers (endpoints)
+│   │   ├── __init__.py
+│   │   ├── products.py                # Product CRUD endpoints
+│   │   ├── variations.py              # Variation endpoints
+│   │   ├── search.py                  # Search/filter endpoints
+│   │   ├── admin.py                   # Admin-only endpoints
+│   │   └── health.py                  # Health check endpoints
 │   │
-│   ├── services/                 # Business logic
+│   ├── schemas/                  # Pydantic request/response models
+│   │   ├── __init__.py
+│   │   ├── product.py                 # ProductResponse, ProductListResponse
+│   │   ├── requests.py                # CreateProductRequest, UpdateProductRequest
+│   │   └── common.py                  # PaginationParams, ErrorResponse
+│   │
+│   ├── models/                   # Database models (MongoDB documents)
+│   │   ├── __init__.py
+│   │   ├── product.py                 # Product database model
+│   │   └── variation.py               # Variation database model
+│   │
+│   ├── services/                 # Business logic layer
 │   │   ├── __init__.py
 │   │   ├── product_service.py         # Product domain logic
 │   │   ├── variation_service.py       # Variation logic
@@ -202,22 +211,16 @@ product-service/
 │   │
 │   ├── repositories/             # Data access layer
 │   │   ├── __init__.py
-│   │   ├── product_repository.py      # MongoDB queries
-│   │   ├── base_repository.py         # Shared CRUD operations
+│   │   ├── base_repository.py         # Generic CRUD operations
+│   │   ├── product_repository.py      # Product-specific queries
 │   │   └── query_builder.py           # Complex query helper
 │   │
-│   ├── models/                   # Pydantic models & MongoDB schemas
-│   │   ├── __init__.py
-│   │   ├── product.py                 # Product Pydantic model
-│   │   ├── variation.py               # Variation model
-│   │   └── database.py                # MongoDB document schemas
-│   │
-│   ├── events/                   # Event-driven components
+│   ├── events/                   # Event-driven architecture
 │   │   ├── __init__.py
 │   │   ├── publishers/
 │   │   │   ├── __init__.py
-│   │   │   ├── product_publisher.py   # Publish product events
-│   │   │   └── base_publisher.py      # Base publisher class
+│   │   │   ├── base_publisher.py      # Base Dapr publisher class
+│   │   │   └── product_publisher.py   # Publish product events (Dapr)
 │   │   ├── consumers/
 │   │   │   ├── __init__.py
 │   │   │   ├── review_consumer.py     # Consume review events
@@ -226,42 +229,42 @@ product-service/
 │   │   │   └── qa_consumer.py         # Consume Q&A events
 │   │   └── schemas/
 │   │       ├── __init__.py
-│   │       ├── product_events.py      # Product event Pydantic models
+│   │       ├── product_events.py      # Product event models (CloudEvents)
 │   │       ├── review_events.py       # Review event models
 │   │       └── inventory_events.py    # Inventory event models
 │   │
-│   ├── middleware/               # FastAPI middleware
-│   │   ├── __init__.py
-│   │   ├── auth.py                    # JWT validation
-│   │   ├── rbac.py                    # Role-based access control
-│   │   ├── correlation_id.py          # Request tracing
-│   │   ├── logging.py                 # Request/response logging
-│   │   └── error_handler.py           # Global error handler
-│   │
-│   ├── schemas/                  # Request/Response schemas (Pydantic)
-│   │   ├── __init__.py
-│   │   ├── product_request.py         # Create/Update request models
-│   │   ├── product_response.py        # Response models
-│   │   └── common.py                  # Shared schemas (pagination, etc.)
-│   │
 │   ├── dependencies/             # FastAPI dependency injection
 │   │   ├── __init__.py
-│   │   ├── database.py                # Database connection dependency
-│   │   ├── auth.py                    # Authentication dependency
-│   │   └── services.py                # Service layer dependencies
+│   │   ├── auth.py                    # get_current_user, require_admin
+│   │   ├── database.py                # get_database dependency
+│   │   └── services.py                # get_product_service, etc.
 │   │
-│   ├── core/                     # Core configuration
+│   ├── middleware/               # FastAPI middleware
 │   │   ├── __init__.py
-│   │   ├── config.py                  # Settings (Pydantic Settings)
-│   │   ├── database.py                # MongoDB connection
-│   │   ├── dapr_client.py             # Dapr client setup
-│   │   └── logger.py                  # Logging configuration
+│   │   ├── auth.py                    # JWT validation middleware
+│   │   ├── correlation_id.py          # Request tracing (X-Correlation-ID)
+│   │   ├── logging.py                 # Request/response logging
+│   │   └── error_handler.py           # Global exception handler
+│   │
+│   ├── core/                     # Core configuration and setup
+│   │   ├── __init__.py
+│   │   ├── config.py                  # Settings (Pydantic BaseSettings)
+│   │   ├── database.py                # MongoDB connection & session
+│   │   ├── security.py                # JWT validation, password hashing
+│   │   ├── logging.py                 # Structured logging configuration
+│   │   └── events.py                  # Dapr client initialization
+│   │
+│   ├── validators/               # Custom validation logic
+│   │   ├── __init__.py
+│   │   ├── product_validators.py      # Product-specific validators
+│   │   └── config_validator.py        # Environment config validation
 │   │
 │   ├── utils/                    # Utility functions
 │   │   ├── __init__.py
 │   │   ├── errors.py                  # Custom exception classes
-│   │   ├── pagination.py              # Pagination helper
-│   │   └── slug.py                    # URL slug generation
+│   │   ├── pagination.py              # Pagination helpers
+│   │   ├── correlation_id.py          # Correlation ID utilities
+│   │   └── dependency_health_checker.py # Health check utilities
 │   │
 │   ├── __init__.py
 │   └── main.py                   # FastAPI app setup & entry point
@@ -324,7 +327,7 @@ class BaseRepository(Generic[T]):
     async def find_by_id(self, id: str) -> Optional[Dict[str, Any]]:
         return await self.collection.find_one({"_id": ObjectId(id)})
 
-    async def create(self, data: Dict[str, Any]) -> Dict[str, Any]]:
+    async def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
         result = await self.collection.insert_one(data)
         data["_id"] = result.inserted_id
         return data
@@ -342,6 +345,8 @@ class BaseRepository(Generic[T]):
 
 
 # Product Repository (domain-specific)
+from src.repositories.base_repository import BaseRepository
+
 class ProductRepository(BaseRepository):
     async def find_by_sku(self, sku: str) -> Optional[Dict[str, Any]]:
         return await self.collection.find_one({"sku": sku})
@@ -362,11 +367,11 @@ class ProductRepository(BaseRepository):
 **Implementation**:
 
 ```python
-from app.repositories.product_repository import ProductRepository
-from app.events.publishers.product_publisher import ProductEventPublisher
-from app.core.logger import logger
-from app.utils.errors import DuplicateSkuError
-from app.models.product import Product
+from src.repositories.product_repository import ProductRepository
+from src.events.publishers.product_publisher import ProductEventPublisher
+from src.core.logging import logger
+from src.utils.errors import DuplicateSkuError
+from src.models.product import Product
 
 class ProductService:
     def __init__(
@@ -412,7 +417,7 @@ class ProductService:
 # Using FastAPI's dependency injection
 from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.core.database import get_database
+from src.core.database import get_database
 
 def get_product_repository(db: AsyncIOMotorDatabase = Depends(get_database)) -> ProductRepository:
     return ProductRepository(db["products"])
@@ -423,10 +428,10 @@ def get_product_service(
     event_publisher = ProductEventPublisher()
     return ProductService(repo, event_publisher)
 
-# Use in router
+# Use in route handlers
 from fastapi import APIRouter, Depends
-from app.services.product_service import ProductService
-from app.dependencies.services import get_product_service
+from src.services.product_service import ProductService
+from src.dependencies.services import get_product_service
 
 router = APIRouter()
 
@@ -448,9 +453,9 @@ async def create_product(
 ```python
 # Middleware applied at app level
 from fastapi import FastAPI
-from app.middleware.correlation_id import CorrelationIdMiddleware
-from app.middleware.logging import LoggingMiddleware
-from app.middleware.error_handler import ErrorHandlerMiddleware
+from src.middleware.correlation_id import CorrelationIdMiddleware
+from src.middleware.logging import LoggingMiddleware
+from src.middleware.error_handler import ErrorHandlerMiddleware
 
 app = FastAPI()
 
@@ -460,7 +465,7 @@ app.add_middleware(LoggingMiddleware)
 app.add_middleware(CorrelationIdMiddleware)
 
 # Dependency-based middleware for routes
-from app.dependencies.auth import get_current_user, require_admin
+from src.dependencies.auth import get_current_user, require_admin
 
 @router.post("/products", dependencies=[Depends(require_admin)])
 async def create_product(
@@ -482,8 +487,8 @@ async def create_product(
 from dapr.clients import DaprClient
 from uuid import uuid4
 from datetime import datetime
-from app.models.product import Product
-from app.core.context import get_correlation_id
+from src.models.product import Product
+from src.core.context import get_correlation_id
 
 class ProductEventPublisher:
     def __init__(self):
@@ -744,7 +749,7 @@ async def publish_product_created_event(product: dict) -> None:
 ```python
 # FastAPI endpoints for Dapr subscriptions
 from fastapi import FastAPI, Request
-from app.services.product_service import ProductService
+from src.services.product_service import ProductService
 
 app = FastAPI()
 
@@ -1051,11 +1056,11 @@ Response: 200 OK { "status": "processing", "progress": 45 }
 
 ```python
 from fastapi import APIRouter, Depends, Query
-from typing import Optional
-from app.dependencies.auth import get_current_user, require_admin
-from app.services.product_service import ProductService
-from app.schemas.product_request import CreateProductRequest, UpdateProductRequest
-from app.schemas.product_response import ProductResponse
+from typing import Optional, List
+from src.dependencies.auth import get_current_user, require_admin
+from src.services.product_service import ProductService
+from src.schemas.requests import CreateProductRequest, UpdateProductRequest
+from src.schemas.product import ProductResponse
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -1160,8 +1165,8 @@ class ValidationError(AppError):
 ```python
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.core.logger import logger
-from app.core.context import get_correlation_id
+from src.core.logging import logger
+from src.core.context import get_correlation_id
 from datetime import datetime
 
 app = FastAPI()

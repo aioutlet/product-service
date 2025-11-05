@@ -1,19 +1,17 @@
 """
-Inventory Service Client
+Inventory Service Client (Dapr Service Invocation)
 
 This module provides a client to interact with the inventory-service
-for stock-related operations. This follows the microservices pattern
-where the product-service queries the inventory-service for stock information.
+using Dapr service invocation. Dapr handles service discovery, retries,
+circuit breaking, and distributed tracing automatically.
 """
 
 from typing import List, Optional
 
-import httpx
 from pydantic import BaseModel
 
-from src.core.logger import get_logger
-
-logger = get_logger(__name__)
+from src.core.logger import logger
+from .dapr_service_client import get_dapr_client
 
 
 class StockCheckItem(BaseModel):
@@ -45,25 +43,32 @@ class InventoryItem(BaseModel):
 
 class InventoryServiceClient:
     """
-    Client for communicating with the inventory-service.
+    Client for communicating with the inventory-service via Dapr service invocation.
 
     This client provides methods to check stock availability,
     get inventory information, and other inventory-related operations.
+    
+    Benefits of using Dapr service invocation:
+    - No need to know inventory service URL
+    - Automatic service discovery
+    - Built-in retries and circuit breaking
+    - Distributed tracing propagation
+    - mTLS for secure communication
     """
 
-    def __init__(self, base_url: str = "http://localhost:8080"):
+    def __init__(self, app_id: str = "inventory-service"):
         """
-        Initialize the inventory service client.
+        Initialize the inventory service client with Dapr.
 
         Args:
-            base_url: Base URL of the inventory service
+            app_id: Dapr app ID of the inventory service (default: inventory-service)
         """
-        self.base_url = base_url.rstrip("/")
-        self.client = httpx.AsyncClient()
+        self.app_id = app_id
+        self.dapr_client = get_dapr_client()
 
     async def check_stock(self, items: List[StockCheckItem]) -> StockCheckResponse:
         """
-        Check stock availability for multiple items.
+        Check stock availability for multiple items via Dapr.
 
         Args:
             items: List of items to check stock for
@@ -72,23 +77,25 @@ class InventoryServiceClient:
             StockCheckResponse: Stock availability information
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the Dapr invocation fails
         """
         try:
-            response = await self.client.post(
-                f"{self.base_url}/stock/check",
-                json={"items": [item.model_dump() for item in items]},
+            data = await self.dapr_client.invoke_post(
+                app_id=self.app_id,
+                method="stock/check",
+                data={"items": [item.model_dump() for item in items]}
             )
-            response.raise_for_status()
-            data = response.json()
             return StockCheckResponse(**data)
-        except httpx.HTTPError as e:
-            logger.error(f"Failed to check stock with inventory service: {e}")
+        except Exception as e:
+            logger.error(
+                f"Failed to check stock with inventory service via Dapr: {e}",
+                metadata={"appId": self.app_id, "error": str(e)}
+            )
             raise
 
     async def get_inventory_by_sku(self, sku: str) -> Optional[InventoryItem]:
         """
-        Get inventory information for a specific SKU.
+        Get inventory information for a specific SKU via Dapr.
 
         Args:
             sku: Product SKU
@@ -97,24 +104,28 @@ class InventoryServiceClient:
             InventoryItem: Inventory information or None if not found
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the Dapr invocation fails
         """
         try:
-            response = await self.client.get(f"{self.base_url}/inventory/sku/{sku}")
-            if response.status_code == 404:
+            data = await self.dapr_client.invoke_get(
+                app_id=self.app_id,
+                method=f"inventory/sku/{sku}"
+            )
+            if data is None:
                 return None
-            response.raise_for_status()
-            data = response.json()
             return InventoryItem(**data)
-        except httpx.HTTPError as e:
-            logger.error(f"Failed to get inventory for SKU {sku}: {e}")
+        except Exception as e:
+            logger.error(
+                f"Failed to get inventory for SKU {sku} via Dapr: {e}",
+                metadata={"appId": self.app_id, "sku": sku, "error": str(e)}
+            )
             raise
 
     async def get_inventory_by_product_id(
         self, product_id: str
     ) -> Optional[InventoryItem]:
         """
-        Get inventory information for a specific product ID.
+        Get inventory information for a specific product ID via Dapr.
 
         Args:
             product_id: Product ID (MongoDB ObjectId)
@@ -123,24 +134,26 @@ class InventoryServiceClient:
             InventoryItem: Inventory information or None if not found
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the Dapr invocation fails
         """
         try:
-            response = await self.client.get(
-                f"{self.base_url}/inventory/product/{product_id}"
+            data = await self.dapr_client.invoke_get(
+                app_id=self.app_id,
+                method=f"inventory/product/{product_id}"
             )
-            if response.status_code == 404:
+            if data is None:
                 return None
-            response.raise_for_status()
-            data = response.json()
             return InventoryItem(**data)
-        except httpx.HTTPError as e:
-            logger.error(f"Failed to get inventory for product {product_id}: {e}")
+        except Exception as e:
+            logger.error(
+                f"Failed to get inventory for product {product_id} via Dapr: {e}",
+                metadata={"appId": self.app_id, "productId": product_id, "error": str(e)}
+            )
             raise
 
     async def get_multiple_inventory(self, skus: List[str]) -> List[InventoryItem]:
         """
-        Get inventory information for multiple SKUs.
+        Get inventory information for multiple SKUs via Dapr.
 
         Args:
             skus: List of product SKUs
@@ -149,7 +162,7 @@ class InventoryServiceClient:
             List[InventoryItem]: List of inventory items
 
         Raises:
-            httpx.HTTPError: If the request fails
+            Exception: If the Dapr invocation fails
         """
         try:
             # Use the stock check endpoint which supports multiple SKUs
@@ -165,13 +178,16 @@ class InventoryServiceClient:
                         inventory_items.append(inventory)
 
             return inventory_items
-        except httpx.HTTPError as e:
-            logger.error(f"Failed to get multiple inventory items: {e}")
+        except Exception as e:
+            logger.error(
+                f"Failed to get multiple inventory items via Dapr: {e}",
+                metadata={"appId": self.app_id, "skuCount": len(skus), "error": str(e)}
+            )
             raise
 
     async def is_sku_available(self, sku: str, quantity: int = 1) -> bool:
         """
-        Check if a specific quantity is available for a SKU.
+        Check if a specific quantity is available for a SKU via Dapr.
 
         Args:
             sku: Product SKU
@@ -188,13 +204,17 @@ class InventoryServiceClient:
             has_items = len(response.items) > 0
             item_available = response.items[0].available if has_items else False
             return has_response and has_items and item_available
-        except httpx.HTTPError:
-            logger.warning(f"Could not check availability for SKU {sku}")
+        except Exception:
+            logger.warning(
+                f"Could not check availability for SKU {sku} via Dapr",
+                metadata={"appId": self.app_id, "sku": sku}
+            )
             return False
 
     async def close(self):
-        """Close the HTTP client."""
-        await self.client.aclose()
+        """Close the Dapr service client."""
+        # Dapr client cleanup is handled by the singleton get_dapr_client()
+        pass
 
 
 # Global client instance

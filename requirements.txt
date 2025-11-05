@@ -13,10 +13,6 @@ slowapi
 httpx
 aiohttp
 
-# Message Broker
-aio-pika
-aiokafka
-
 # Observability and Monitoring
 opentelemetry-api
 opentelemetry-sdk

@@ -1,16 +1,30 @@
 """
-Standardized logger configuration for Python FastAPI services
-Supports both development and production environments with correlation ID integration
+Centralized logging configuration for Product Service.
+
+This module consolidates logging functionality from both core/logger.py and observability/logger.py
+to provide a unified logging interface with:
+- Structured logging with correlation IDs
+- Multiple log levels and formats
+- Performance tracking
+- Business and security event logging
+- OpenTelemetry integration
 """
 
 import json
 import logging
 import os
 import sys
+import time
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
-from src.utils.correlation_id import get_correlation_id
+# Import correlation ID utilities
+try:
+    from src.utils.correlation_id import get_correlation_id
+except ImportError:
+    # Fallback if correlation_id not available
+    def get_correlation_id() -> Optional[str]:
+        return None
 
 # Environment-based configuration
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
@@ -23,364 +37,253 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG" if IS_DEVELOPMENT else "INFO").upper(
 LOG_FORMAT = os.getenv("LOG_FORMAT", "json" if IS_PRODUCTION else "console")
 LOG_TO_FILE = os.getenv("LOG_TO_FILE", "false").lower() == "true"
 LOG_TO_CONSOLE = os.getenv("LOG_TO_CONSOLE", "true").lower() == "true"
-LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", f"{SERVICE_NAME}.log")
+LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", f"logs/{SERVICE_NAME}.log")
 
 
-class ColorFormatter(logging.Formatter):
-    """Colored formatter for development console output"""
-
-    COLORS = {
-        "DEBUG": "\033[94m",  # Blue
-        "INFO": "\033[92m",  # Green
-        "WARNING": "\033[93m",  # Yellow
-        "ERROR": "\033[91m",  # Red
-        "CRITICAL": "\033[95m",  # Magenta
-    }
-    RESET = "\033[0m"
-
-    def format(self, record):
-        # Build the base message with standard fields
-        timestamp = datetime.fromtimestamp(record.created).isoformat()
-        correlation_id = getattr(record, "correlationId", None) or get_correlation_id()
-        corr_id_str = f"[{correlation_id}]" if correlation_id else "[no-correlation]"
-
-        # Build metadata string
-        meta_fields = []
-        if hasattr(record, "userId") and record.userId:
-            meta_fields.append(f"userId={record.userId}")
-        if hasattr(record, "operation") and record.operation:
-            meta_fields.append(f"operation={record.operation}")
-        if hasattr(record, "duration") and record.duration:
-            meta_fields.append(f"duration={record.duration}ms")
-
-        # Add extra metadata
-        for key, value in record.__dict__.items():
-            if key not in [
-                "name",
-                "msg",
-                "args",
-                "levelname",
-                "levelno",
-                "pathname",
-                "filename",
-                "module",
-                "lineno",
-                "funcName",
-                "created",
-                "msecs",
-                "relativeCreated",
-                "thread",
-                "threadName",
-                "processName",
-                "process",
-                "getMessage",
-                "exc_info",
-                "exc_text",
-                "stack_info",
-                "message",
-                "correlationId",
-                "userId",
-                "operation",
-                "duration",
-            ]:
-                if value is not None:
-                    json_val = (
-                        json.dumps(value) if isinstance(value, (dict, list)) else value
-                    )
-                    meta_fields.append(f"{key}={json_val}")
-
-        meta_str = f" | {', '.join(meta_fields)}" if meta_fields else ""
-
-        base_msg = (
-            f"[{timestamp}] [{record.levelname}] {SERVICE_NAME} "
-            f"{corr_id_str}: {record.getMessage()}{meta_str}"
-        )
-
-        # Apply color if in development and terminal supports it
-        if IS_DEVELOPMENT and sys.stdout.isatty() and record.levelname in self.COLORS:
-            color = self.COLORS[record.levelname]
-            base_msg = f"{color}{base_msg}{self.RESET}"
-
-        return base_msg
-
-
-class JsonFormatter(logging.Formatter):
-    """JSON formatter for production logging"""
-
-    def format(self, record):
-        correlation_id = getattr(record, "correlationId", None) or get_correlation_id()
-
-        log_record = {
-            "timestamp": datetime.fromtimestamp(record.created).isoformat(),
-            "level": record.levelname,
-            "service": SERVICE_NAME,
-            "correlationId": correlation_id,
-            "message": record.getMessage(),
-        }
-
-        # Add extra fields from the record
-        for key, value in record.__dict__.items():
-            if (
-                key
-                not in [
-                    "name",
-                    "msg",
-                    "args",
-                    "levelname",
-                    "levelno",
-                    "pathname",
-                    "filename",
-                    "module",
-                    "lineno",
-                    "funcName",
-                    "created",
-                    "msecs",
-                    "relativeCreated",
-                    "thread",
-                    "threadName",
-                    "processName",
-                    "process",
-                    "getMessage",
-                    "exc_info",
-                    "exc_text",
-                    "stack_info",
-                    "message",
-                    "message",
-                ]
-                and value is not None
-            ):
-                log_record[key] = value
-
-        return json.dumps(log_record, default=str)
-
-
-class StandardLogger:
-    """Enhanced logger with correlation ID and metadata support"""
-
+class StructuredLogger:
+    """
+    Enhanced logger with structured logging, correlation IDs, and tracing support.
+    Consolidates functionality from both legacy loggers.
+    """
+    
     def __init__(self):
-        self.logger = logging.getLogger(SERVICE_NAME)
-        self.logger.setLevel(LOG_LEVEL)
-
-        # Clear any existing handlers
-        self.logger.handlers.clear()
-
-        # Add console handler
-        if LOG_TO_CONSOLE and not IS_TEST:
-            console_handler = logging.StreamHandler()
+        self.service_name = SERVICE_NAME
+        self.environment = ENVIRONMENT
+        self._setup_logging()
+    
+    def _setup_logging(self):
+        """Configure Python logging with handlers"""
+        # Clear existing handlers
+        logging.getLogger().handlers.clear()
+        
+        # Set log level
+        logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
+        
+        # Console handler
+        if LOG_TO_CONSOLE:
+            console_handler = logging.StreamHandler(sys.stdout)
+            console_handler.setLevel(getattr(logging, LOG_LEVEL))
+            
             if LOG_FORMAT == "json":
-                console_handler.setFormatter(JsonFormatter())
+                console_handler.setFormatter(JSONFormatter())
             else:
-                console_handler.setFormatter(ColorFormatter())
-            self.logger.addHandler(console_handler)
-
-        # Add file handler
+                console_handler.setFormatter(ConsoleFormatter())
+            
+            logging.getLogger().addHandler(console_handler)
+        
+        # File handler
         if LOG_TO_FILE:
+            # Ensure log directory exists
+            os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
+            
             file_handler = logging.FileHandler(LOG_FILE_PATH)
-            file_handler.setFormatter(JsonFormatter())
-            self.logger.addHandler(file_handler)
-
-        # Log initialization
-        self._log(
-            "info",
-            "Logger initialized",
-            metadata={
-                "logLevel": LOG_LEVEL,
-                "logFormat": LOG_FORMAT,
-                "logToFile": LOG_TO_FILE,
-                "logToConsole": LOG_TO_CONSOLE,
-                "environment": ENVIRONMENT,
-            },
-        )
-
+            file_handler.setLevel(getattr(logging, LOG_LEVEL))
+            file_handler.setFormatter(JSONFormatter())  # Always JSON for files
+            
+            logging.getLogger().addHandler(file_handler)
+    
+    def _build_log_entry(
+        self,
+        level: str,
+        message: str,
+        correlation_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Build structured log entry"""
+        entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "level": level.upper(),
+            "service": self.service_name,
+            "environment": self.environment,
+            "message": message,
+            "correlationId": correlation_id or get_correlation_id(),
+        }
+        
+        if user_id:
+            entry["userId"] = user_id
+        
+        if metadata:
+            entry["metadata"] = metadata
+        
+        # Add any additional kwargs
+        entry.update(kwargs)
+        
+        return entry
+    
     def _log(
         self,
         level: str,
         message: str,
-        request=None,
+        correlation_id: Optional[str] = None,
+        user_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
     ):
-        """Internal logging method with standard fields"""
-        if metadata is None:
-            metadata = {}
-
-        # Build log data
-        log_data = {
-            "correlationId": metadata.get("correlationId") or get_correlation_id(),
-            "userId": metadata.get("userId"),
-            "operation": metadata.get("operation"),
-            "duration": metadata.get("duration"),
-            **metadata,
-        }
-
-        # Remove None values
-        log_data = {k: v for k, v in log_data.items() if v is not None}
-
-        # Create log record with extra data
-        getattr(self.logger, level.lower())(message, extra=log_data)
-
-    def info(
-        self, message: str, request=None, metadata: Optional[Dict[str, Any]] = None
-    ):
-        """Info level logging"""
-        self._log("info", message, request, metadata)
-
+        """Internal logging method"""
+        log_entry = self._build_log_entry(
+            level, message, correlation_id, user_id, metadata, **kwargs
+        )
+        
+        # Use Python logging
+        log_method = getattr(logging.getLogger(), level.lower())
+        
+        if LOG_FORMAT == "json":
+            log_method(json.dumps(log_entry))
+        else:
+            # Don't pass 'message' in extra to avoid conflict with LogRecord
+            extra_data = {k: v for k, v in log_entry.items() if k != 'message'}
+            log_method(message, extra=extra_data)
+    
     def debug(
-        self, message: str, request=None, metadata: Optional[Dict[str, Any]] = None
+        self,
+        message: str,
+        correlation_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
     ):
         """Debug level logging"""
-        self._log("debug", message, request, metadata)
-
+        self._log("DEBUG", message, correlation_id, user_id, metadata, **kwargs)
+    
+    def info(
+        self,
+        message: str,
+        correlation_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
+        """Info level logging"""
+        self._log("INFO", message, correlation_id, user_id, metadata, **kwargs)
+    
     def warning(
-        self, message: str, request=None, metadata: Optional[Dict[str, Any]] = None
+        self,
+        message: str,
+        correlation_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
     ):
         """Warning level logging"""
-        self._log("warning", message, request, metadata)
-
+        self._log("WARNING", message, correlation_id, user_id, metadata, **kwargs)
+    
     def error(
-        self, message: str, request=None, metadata: Optional[Dict[str, Any]] = None
+        self,
+        message: str,
+        correlation_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        error: Optional[Union[str, Exception]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
     ):
         """Error level logging"""
         if metadata is None:
             metadata = {}
-
-        # Handle exception objects
-        if "error" in metadata and isinstance(metadata["error"], Exception):
-            metadata["error"] = {
-                "type": type(metadata["error"]).__name__,
-                "message": str(metadata["error"]),
-                "args": metadata["error"].args,
-            }
-
-        self._log("error", message, request, metadata)
-
-    def fatal(
-        self, message: str, request=None, metadata: Optional[Dict[str, Any]] = None
-    ):
-        """Fatal level logging (maps to critical)"""
-        if metadata is None:
-            metadata = {}
-        metadata["level"] = "FATAL"
-        self._log("critical", message, request, metadata)
-
-    def operation_start(
-        self, operation: str, request=None, metadata: Optional[Dict[str, Any]] = None
-    ) -> float:
-        """Log operation start and return start time"""
-        import time
-
-        start_time = time.time()
-        if metadata is None:
-            metadata = {}
-        metadata.update({"operation": operation, "operationStart": True, **metadata})
-        self.debug(f"Starting operation: {operation}", request, metadata)
-        return start_time
-
-    def operation_complete(
+        
+        if error:
+            if isinstance(error, Exception):
+                metadata["error"] = {
+                    "type": type(error).__name__,
+                    "message": str(error),
+                }
+            else:
+                metadata["error"] = {"message": str(error)}
+        
+        self._log("ERROR", message, correlation_id, user_id, metadata, **kwargs)
+    
+    def critical(
         self,
-        operation: str,
-        start_time: float,
-        request=None,
+        message: str,
+        correlation_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        error: Optional[Union[str, Exception]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> float:
-        """Log operation completion and return duration"""
-        import time
-
-        duration = int((time.time() - start_time) * 1000)  # Convert to milliseconds
-        if metadata is None:
-            metadata = {}
-        metadata.update(
-            {
-                "operation": operation,
-                "duration": duration,
-                "operationComplete": True,
-                **metadata,
-            }
-        )
-        self.info(f"Completed operation: {operation}", request, metadata)
-        return duration
-
-    def operation_failed(
-        self,
-        operation: str,
-        start_time: float,
-        error,
-        request=None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> float:
-        """Log operation failure and return duration"""
-        import time
-
-        duration = int((time.time() - start_time) * 1000)  # Convert to milliseconds
-        if metadata is None:
-            metadata = {}
-        metadata.update(
-            {
-                "operation": operation,
-                "duration": duration,
-                "error": error,
-                "operationFailed": True,
-                **metadata,
-            }
-        )
-        self.error(f"Failed operation: {operation}", request, metadata)
-        return duration
-
-    def business(
-        self, event: str, request=None, metadata: Optional[Dict[str, Any]] = None
+        **kwargs
     ):
-        """Log business events"""
+        """Critical level logging"""
         if metadata is None:
             metadata = {}
-        metadata.update({"businessEvent": event, **metadata})
-        self.info(f"Business event: {event}", request, metadata)
-
-    def security(
-        self, event: str, request=None, metadata: Optional[Dict[str, Any]] = None
-    ):
-        """Log security events"""
-        if metadata is None:
-            metadata = {}
-        metadata.update({"securityEvent": event, **metadata})
-        self.warning(f"Security event: {event}", request, metadata)
-
+        
+        if error:
+            if isinstance(error, Exception):
+                metadata["error"] = {
+                    "type": type(error).__name__,
+                    "message": str(error),
+                }
+            else:
+                metadata["error"] = {"message": str(error)}
+        
+        self._log("CRITICAL", message, correlation_id, user_id, metadata, **kwargs)
+    
     def performance(
         self,
         operation: str,
-        duration: int,
-        request=None,
+        duration_ms: int,
+        threshold_ms: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
     ):
         """Log performance metrics"""
         if metadata is None:
             metadata = {}
-        metadata.update(
-            {
-                "operation": operation,
-                "duration": duration,
-                "performance": True,
-                **metadata,
-            }
-        )
-        level = "warning" if duration > 1000 else "info"
-        self._log(level, f"Performance: {operation}", request, metadata)
+        
+        metadata.update({
+            "operation": operation,
+            "durationMs": duration_ms,
+            "thresholdMs": threshold_ms,
+        })
+        
+        level = "WARNING" if threshold_ms and duration_ms > threshold_ms else "INFO"
+        self._log(level, f"Operation completed: {operation}", metadata=metadata, **kwargs)
 
 
-# Create and export the standard logger instance
-logger = StandardLogger()
+class JSONFormatter(logging.Formatter):
+    """JSON formatter for structured logging"""
+    
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "level": record.levelname,
+            "service": SERVICE_NAME,
+            "message": record.getMessage(),
+        }
+        
+        # Add extra fields
+        for key, value in record.__dict__.items():
+            if key not in ['name', 'msg', 'args', 'created', 'filename', 'funcName',
+                          'levelname', 'levelno', 'lineno', 'module', 'msecs',
+                          'message', 'pathname', 'process', 'processName',
+                          'relativeCreated', 'thread', 'threadName']:
+                log_data[key] = value
+        
+        return json.dumps(log_data)
 
 
-# Legacy compatibility - export individual functions
-def info(message: str, metadata: Optional[Dict[str, Any]] = None):
-    logger.info(message, metadata=metadata)
+class ConsoleFormatter(logging.Formatter):
+    """Colored console formatter for development"""
+    
+    COLORS = {
+        'DEBUG': '\033[36m',      # Cyan
+        'INFO': '\033[32m',       # Green
+        'WARNING': '\033[33m',    # Yellow
+        'ERROR': '\033[31m',      # Red
+        'CRITICAL': '\033[35m',   # Magenta
+        'RESET': '\033[0m'
+    }
+    
+    def format(self, record):
+        color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+        reset = self.COLORS['RESET']
+        
+        timestamp = datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
+        
+        return f"{color}[{timestamp}] {record.levelname}{reset} - {record.getMessage()}"
 
 
-def debug(message: str, metadata: Optional[Dict[str, Any]] = None):
-    logger.debug(message, metadata=metadata)
+# Create and export the logger instance
+logger = StructuredLogger()
 
-
-def warning(message: str, metadata: Optional[Dict[str, Any]] = None):
-    logger.warning(message, metadata=metadata)
-
-
-def error(message: str, metadata: Optional[Dict[str, Any]] = None):
-    logger.error(message, metadata=metadata)
+# Backward compatibility: export Python logger
+py_logger = logging.getLogger(SERVICE_NAME)

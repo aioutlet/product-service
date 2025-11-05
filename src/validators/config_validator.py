@@ -3,13 +3,20 @@ Configuration Validator
 Validates all required environment variables at application startup
 Fails fast if any configuration is missing or invalid
 
-NOTE: This module MUST NOT import logger, as the logger depends on validated config.
-Uses print statements for validation messages.
+NOTE: This module uses print() for validation messages because it runs BEFORE
+logger initialization. The logger depends on validated config values.
 """
 
 import os
 import sys
+from datetime import datetime
 from urllib.parse import urlparse
+
+
+def _log(message: str):
+    """Print log message with timestamp in consistent format"""
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f"[{timestamp}] INFO - {message}")
 
 
 def is_valid_url(url: str) -> bool:
@@ -106,21 +113,30 @@ VALIDATION_RULES = {
         'default': 'admin',
     },
     
-    # Message Broker Service Configuration
-    'MESSAGE_BROKER_SERVICE_URL': {
-        'required': True,
-        'validator': is_valid_url,
-        'error_message': 'MESSAGE_BROKER_SERVICE_URL must be a valid URL',
-    },
-    'MESSAGE_BROKER_API_KEY': {
-        'required': True,
-        'validator': lambda v: v and len(v) > 0,
-        'error_message': 'MESSAGE_BROKER_API_KEY must be a non-empty string',
-    },
-    'MESSAGE_BROKER_HEALTH_URL': {
+    # Dapr Configuration
+    'DAPR_HTTP_PORT': {
         'required': False,
-        'validator': lambda v: not v or is_valid_url(v),
-        'error_message': 'MESSAGE_BROKER_HEALTH_URL must be a valid URL if provided',
+        'validator': is_valid_port,
+        'error_message': 'DAPR_HTTP_PORT must be a valid port number',
+        'default': '3500',
+    },
+    'DAPR_GRPC_PORT': {
+        'required': False,
+        'validator': is_valid_port,
+        'error_message': 'DAPR_GRPC_PORT must be a valid port number',
+        'default': '50001',
+    },
+    'DAPR_PUBSUB_NAME': {
+        'required': False,
+        'validator': lambda v: not v or len(v) > 0,
+        'error_message': 'DAPR_PUBSUB_NAME must be a non-empty string',
+        'default': 'product-pubsub',
+    },
+    'DAPR_APP_ID': {
+        'required': False,
+        'validator': lambda v: not v or len(v) > 0,
+        'error_message': 'DAPR_APP_ID must be a non-empty string',
+        'default': 'product-service',
     },
     
     # Security Configuration
@@ -179,17 +195,7 @@ VALIDATION_RULES = {
     },
     
     # Observability Configuration
-    'ENABLE_TRACING': {
-        'required': False,
-        'validator': is_valid_boolean,
-        'error_message': 'ENABLE_TRACING must be true or false',
-        'default': 'false',
-    },
-    'OTEL_EXPORTER_OTLP_ENDPOINT': {
-        'required': False,
-        'validator': lambda v: not v or is_valid_url(v),
-        'error_message': 'OTEL_EXPORTER_OTLP_ENDPOINT must be a valid URL',
-    },
+    # Note: Distributed tracing is handled automatically by Dapr sidecar
     'CORRELATION_ID_HEADER': {
         'required': False,
         'validator': lambda v: not v or (len(v) > 0 and all(c.islower() or c == '-' for c in v)),
@@ -207,7 +213,7 @@ def validate_config():
     errors = []
     warnings = []
 
-    print('[CONFIG] Validating environment configuration...')
+    _log('[CONFIG] Validating environment configuration...')
 
     # Validate each rule
     for key, rule in VALIDATION_RULES.items():
@@ -236,18 +242,19 @@ def validate_config():
     # Log warnings
     if warnings:
         for warning in warnings:
-            print(warning)
+            _log(warning)
 
     # If there are errors, log them and exit
     if errors:
-        print('[CONFIG] ❌ Configuration validation failed:')
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(f'[{timestamp}] ERROR - [CONFIG] Configuration validation failed:', file=sys.stderr)
         for error in errors:
-            print(error, file=sys.stderr)
-        print('\n💡 Please check your .env file and ensure all required variables are set correctly.', 
+            print(f'[{timestamp}] ERROR - {error}', file=sys.stderr)
+        print(f'[{timestamp}] ERROR - 💡 Please check your .env file and ensure all required variables are set correctly.', 
               file=sys.stderr)
         sys.exit(1)
 
-    print('[CONFIG] ✅ All required environment variables are valid')
+    _log('[CONFIG] ✅ All required environment variables are valid')
 
 
 def get_config(key: str, default=None):

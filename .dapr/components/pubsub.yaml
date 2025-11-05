@@ -1,0 +1,38 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: product-pubsub
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    # RabbitMQ connection settings - using new format
+    - name: connectionString
+      value: 'amqp://admin:admin123@127.0.0.1:5672'
+    - name: protocol
+      value: 'amqp'
+    - name: hostname
+      value: '127.0.0.1'
+    - name: username
+      value: 'admin'
+    - name: password
+      value: 'admin123'
+    - name: durable
+      value: 'true'
+    - name: deletedWhenUnused
+      value: 'false'
+    - name: autoAck
+      value: 'false'
+    - name: deliveryMode
+      value: '2' # Persistent messages
+    - name: requeueInFailure
+      value: 'true'
+    - name: prefetchCount
+      value: '10'
+    - name: reconnectWait
+      value: '5'
+    - name: concurrency
+      value: 'parallel'
+    # Exchange configuration
+    - name: exchangeKind
+      value: 'topic'

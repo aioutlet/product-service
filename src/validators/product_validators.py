@@ -1,4 +1,25 @@
+from bson.errors import InvalidId
+from bson.objectid import ObjectId
 from pydantic import field_validator
+
+
+def validate_object_id(value: str) -> ObjectId:
+    """
+    Validate and convert a string to MongoDB ObjectId.
+    
+    Args:
+        value: String representation of ObjectId
+        
+    Returns:
+        ObjectId: Valid MongoDB ObjectId
+        
+    Raises:
+        ValueError: If the value is not a valid ObjectId format
+    """
+    try:
+        return ObjectId(value)
+    except (InvalidId, TypeError):
+        raise ValueError("Invalid ObjectId format.")
 
 
 class ProductValidatorMixin:
