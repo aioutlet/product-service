@@ -3,12 +3,16 @@ Correlation ID utilities for distributed tracing
 Shared across API and Consumer components
 """
 
+import os
 import uuid
 from contextvars import ContextVar
 from typing import Optional, Dict
 
 # Context variable to store correlation ID across async operations
 correlation_id_context: ContextVar[str] = ContextVar("correlation_id", default="")
+
+# Get correlation ID header name from environment
+CORRELATION_ID_HEADER = os.getenv("CORRELATION_ID_HEADER", "x-correlation-id")
 
 
 def get_correlation_id() -> str:
@@ -61,7 +65,7 @@ def create_headers_with_correlation_id(
         dict: Headers dictionary with correlation ID
     """
     headers = {
-        "X-Correlation-ID": get_correlation_id(),
+        CORRELATION_ID_HEADER: get_correlation_id(),
         "Content-Type": "application/json",
     }
 
@@ -82,12 +86,12 @@ def extract_correlation_id_from_headers(headers: Dict[str, str]) -> str:
     Returns:
         str: Correlation ID from headers or newly generated
     """
-    # Try different header variations (case-insensitive)
-    correlation_id = (
-        headers.get("x-correlation-id")
-        or headers.get("X-Correlation-ID")
-        or headers.get("X-CORRELATION-ID")
-    )
+    # Get correlation ID using configured header name (case-insensitive lookup)
+    correlation_id = None
+    for key, value in headers.items():
+        if key.lower() == CORRELATION_ID_HEADER.lower():
+            correlation_id = value
+            break
     
     if not correlation_id:
         correlation_id = create_correlation_id()

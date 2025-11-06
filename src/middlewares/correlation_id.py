@@ -3,6 +3,7 @@ from src.utils.correlation_id import (
     extract_correlation_id_from_headers,
     set_correlation_id,
     create_correlation_id,
+    CORRELATION_ID_HEADER,
 )
 
 
@@ -24,7 +25,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         # Process the request
         response = await call_next(request)
 
-        # Add correlation ID to response headers
-        response.headers["X-Correlation-ID"] = correlation_id
+        # Add correlation ID to response headers using configured header name
+        response.headers[CORRELATION_ID_HEADER] = correlation_id
 
         return response
