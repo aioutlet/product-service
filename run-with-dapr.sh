@@ -23,24 +23,16 @@ if ! command -v dapr &> /dev/null; then
     exit 1
 fi
 
-# Check if Redis is running (for pub/sub)
-echo "🔍 Checking Redis availability..."
-if ! redis-cli ping > /dev/null 2>&1; then
-    echo "❌ Redis is not running!"
-    echo "Please start Redis: redis-server"
-    echo "Or use Docker: docker run -d --name redis -p 6379:6379 redis:alpine"
-    exit 1
-fi
-echo "✅ Redis is running"
+echo "🔍 Checking dependencies..."
 
-# Check if MongoDB is running
-echo "🔍 Checking MongoDB availability..."
-if ! mongosh --eval "db.runCommand('ping')" > /dev/null 2>&1; then
-    echo "❌ MongoDB is not running!"
-    echo "Please start MongoDB or check your connection settings"
+# Check if RabbitMQ is available
+if ! docker ps --filter "name=rabbitmq-message-broker" --format "table {{.Names}}" | grep -q rabbitmq-message-broker; then
+    echo "⚠️ RabbitMQ container is not running!"
+    echo "Please start RabbitMQ: docker-compose -f scripts/docker-compose/docker-compose.yml up -d rabbitmq"
     exit 1
+else
+    echo "✅ RabbitMQ container is running"
 fi
-echo "✅ MongoDB is running"
 
 echo ""
 echo "🏁 Starting Product Service with Dapr sidecar..."
@@ -52,6 +44,5 @@ dapr run \
   --app-port $DAPR_APP_PORT \
   --dapr-http-port $DAPR_HTTP_PORT \
   --dapr-grpc-port $DAPR_GRPC_PORT \
-  --components-path .dapr/components \
-  --config .dapr/config.yaml \
+  --resources-path .dapr/components \
   -- python -m uvicorn src.main:app --host 0.0.0.0 --port $DAPR_APP_PORT --reload

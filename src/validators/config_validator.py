@@ -224,7 +224,7 @@ def validate_config():
         # Skip validation if value is not set and not required
         if not value and not rule['required']:
             if 'default' in rule:
-                warnings.append(f"⚠️  {key} not set, using default: {rule['default']}")
+                warnings.append(f"WARNING: {key} not set, using default: {rule['default']}")
                 os.environ[key] = rule['default']
             continue
 
@@ -250,7 +250,7 @@ def validate_config():
               file=sys.stderr)
         sys.exit(1)
 
-    print('[CONFIG] ✅ All required environment variables are valid')
+    print('[CONFIG] All required environment variables are valid')
 
 
 def get_config(key: str, default=None):

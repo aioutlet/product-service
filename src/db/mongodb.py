@@ -4,32 +4,40 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from src.core.errors import ErrorResponse
 from src.core.logger import logger
+from src.services.dapr_secret_manager import get_database_config
 
 
 async def get_db():
-    # Construct MongoDB connection string from environment variables
-    mongo_host = os.getenv("MONGODB_HOST", "localhost")
-    mongo_port = os.getenv("MONGODB_PORT", "27017")
-    mongo_username = os.getenv("MONGO_INITDB_ROOT_USERNAME")
-    mongo_password = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
-    mongo_database = os.getenv("MONGO_INITDB_DATABASE")
-    mongo_auth_source = os.getenv("MONGODB_AUTH_SOURCE", "admin")
+    # Get database configuration from Dapr secret manager
+    try:
+        db_config = get_database_config()
+    except Exception as e:
+        logger.warning(f"Failed to get database config from Dapr secrets, falling back to environment variables: {e}")
+        # Fallback to environment variables
+        db_config = {
+            'host': os.getenv("MONGODB_HOST", "localhost"),
+            'port': int(os.getenv("MONGODB_PORT", "27017")),
+            'username': os.getenv("MONGO_INITDB_ROOT_USERNAME"),
+            'password': os.getenv("MONGO_INITDB_ROOT_PASSWORD"),
+            'database': os.getenv("MONGO_INITDB_DATABASE"),
+            'auth_source': os.getenv("MONGODB_AUTH_SOURCE", "admin")
+        }
     
     # Construct MongoDB URI
-    if mongo_username and mongo_password:
-        MONGODB_URI = f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/{mongo_database}?authSource={mongo_auth_source}"
+    if db_config['username'] and db_config['password']:
+        MONGODB_URI = f"mongodb://{db_config['username']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['database']}?authSource={db_config['auth_source']}"
     else:
-        MONGODB_URI = f"mongodb://{mongo_host}:{mongo_port}/{mongo_database}"
+        MONGODB_URI = f"mongodb://{db_config['host']}:{db_config['port']}/{db_config['database']}"
     
-    MONGODB_DB_NAME = mongo_database or os.getenv("DATABASE_NAME") or os.getenv("MONGODB_DB_NAME")
+    MONGODB_DB_NAME = db_config['database'] or os.getenv("DATABASE_NAME") or os.getenv("MONGODB_DB_NAME")
     
     logger.debug(
         "Attempting to connect to MongoDB",
-        metadata={"event": "mongodb_connect_attempt", "uri": f"{mongo_host}:{mongo_port}", "db_name": MONGODB_DB_NAME}
+        metadata={"event": "mongodb_connect_attempt", "uri": f"{db_config['host']}:{db_config['port']}", "db_name": MONGODB_DB_NAME}
     )
     
     # Validate required environment variables
-    if not mongo_host:
+    if not db_config['host']:
         logger.error(
             "MONGODB_HOST must be set in the environment or .env file",
             metadata={"event": "mongodb_env_error"}

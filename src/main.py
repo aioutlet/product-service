@@ -59,7 +59,7 @@ async def check_dependencies_on_startup():
         try:
             await check_dependency_health(dependencies)
         except Exception as error:
-            print(f'[DEPS] ⚠️ Dependency health check failed: {str(error)}')
+            print(f'[DEPS] WARNING: Dependency health check failed: {str(error)}')
     else:
         print('[DEPS] 📝 No dependencies configured for health checking')
 
@@ -86,7 +86,7 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
 
 @app.on_event("startup")
 async def startup_event():
-    """Run dependency health checks after FastAPI starts"""
+    """Run dependency health checks and test database connection after FastAPI starts"""
     await check_dependencies_on_startup()
 
 

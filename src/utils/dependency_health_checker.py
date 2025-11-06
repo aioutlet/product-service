@@ -80,7 +80,7 @@ async def check_service_health(service_name: str, health_url: str, timeout: int 
                     print(f'[DEPS] ✅ {service_name} is healthy')
                     return {'service': service_name, 'status': 'healthy', 'url': health_url}
                 else:
-                    print(f'[DEPS] ⚠️ {service_name} returned status {response.status}')
+                    print(f'[DEPS] WARNING: {service_name} returned status {response.status}')
                     return {
                         'service': service_name,
                         'status': 'unhealthy',
@@ -107,7 +107,7 @@ async def check_dependency_health(dependencies: Dict[str, str], timeout: int = 5
     Returns:
         List of health check results
     """
-    print('[DEPS] 🔍 Checking dependency health...')
+    print('[DEPS] Checking dependency health...')
 
     # Check database health first
     db_health = await check_database_health()
@@ -125,7 +125,7 @@ async def check_dependency_health(dependencies: Dict[str, str], timeout: int = 5
     if healthy_services == total_services:
         print(f'[DEPS] 🎉 All {total_services} dependencies are healthy')
     else:
-        print(f'[DEPS] ⚠️ {healthy_services}/{total_services} dependencies are healthy')
+        print(f'[DEPS] WARNING: {healthy_services}/{total_services} dependencies are healthy')
 
     return health_checks
 
@@ -140,10 +140,12 @@ def get_dependencies() -> Dict[str, str]:
     """
     dependencies = {}
 
-    # Add Dapr sidecar health check
-    dapr_port = os.getenv('DAPR_HTTP_PORT', '3500')
-    dapr_health_url = f"http://localhost:{dapr_port}/v1.0/healthz"
-    dependencies['dapr-sidecar'] = dapr_health_url
+    # Add Dapr sidecar health check only if running with Dapr
+    # Check if we're running in Dapr mode by looking for DAPR_HTTP_PORT in environment
+    dapr_port = os.getenv('DAPR_HTTP_PORT')
+    if dapr_port:
+        dapr_health_url = f"http://localhost:{dapr_port}/v1.0/healthz"
+        dependencies['dapr-sidecar'] = dapr_health_url
 
     # Add other services via Dapr (these will be checked when Dapr is available)
     # The actual service health can be checked via Dapr service invocation
