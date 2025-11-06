@@ -1,6 +1,6 @@
 """
 Dependency Health Checker
-Checks the health of external service dependencies at startup
+Checks the health of business dependencies at startup
 Logs health status but does not block application startup
 """
 
@@ -100,104 +100,21 @@ async def check_database_health() -> dict:
         return {'service': 'database', 'status': 'unhealthy', 'error': str(error)}
 
 
-async def check_service_health(service_name: str, health_url: str, timeout: int = 5) -> dict:
+async def check_dependency_health() -> List[dict]:
     """
-    Check health of an external service via HTTP
-    """
-    try:
-        import aiohttp
-        
-        logger.info(
-            "Checking external service health",
-            metadata={
-                "operation": "health_check",
-                "service": service_name,
-                "url": health_url
-            }
-        )
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                health_url,
-                timeout=aiohttp.ClientTimeout(total=timeout),
-                headers={'Accept': 'application/json'}
-            ) as response:
-                if response.status == 200:
-                    logger.info(
-                        "External service is healthy",
-                        operation="health_check",
-                        service=service_name,
-                        status="healthy"
-                    )
-                    return {'service': service_name, 'status': 'healthy', 'url': health_url}
-                else:
-                    logger.warning(
-                        "External service returned non-200 status",
-                        metadata={
-                            "operation": "health_check",
-                            "service": service_name,
-                            "status": "unhealthy",
-                            "status_code": response.status
-                        }
-                    )
-                    return {
-                        'service': service_name,
-                        'status': 'unhealthy',
-                        'url': health_url,
-                        'statusCode': response.status
-                    }
-
-    except asyncio.TimeoutError:
-        logger.warning(
-            "External service health check timed out",
-            metadata={
-                "operation": "health_check",
-                "service": service_name,
-                "status": "timeout",
-                "timeout_seconds": timeout
-            }
-        )
-        return {'service': service_name, 'status': 'timeout', 'error': 'timeout'}
-    except Exception as error:
-        logger.error(
-            "External service is not reachable",
-            metadata={
-                "operation": "health_check",
-                "service": service_name,
-                "status": "unreachable",
-                "error": str(error)
-            }
-        )
-        return {'service': service_name, 'status': 'unreachable', 'error': str(error)}
-
-
-async def check_dependency_health(dependencies: Dict[str, str], timeout: int = 5) -> List[dict]:
-    """
-    Check health of service dependencies without blocking startup
-    
-    Args:
-        dependencies: Dict with service names as keys and health URLs as values
-        timeout: Timeout for each health check in seconds
+    Check health of business dependencies without blocking startup
+    Currently only checks database - the primary business dependency
     
     Returns:
         List of health check results
     """
     logger.info(
         "Starting dependency health checks",
-        metadata={
-            "operation": "health_check",
-            "dependency_count": len(dependencies)
-        }
+        metadata={"operation": "health_check"}
     )
 
-    # Check database health first
-    db_health = await check_database_health()
-    health_checks = [db_health]
-
-    # Add external service health checks
-    for service_name, health_url in dependencies.items():
-        result = await check_service_health(service_name, health_url, timeout)
-        health_checks.append(result)
+    # Check database health - our primary business dependency
+    health_checks = [await check_database_health()]
 
     # Summary logging
     healthy_services = sum(1 for check in health_checks if check.get('status') == 'healthy')
@@ -206,10 +123,12 @@ async def check_dependency_health(dependencies: Dict[str, str], timeout: int = 5
     if healthy_services == total_services:
         logger.info(
             "All dependencies are healthy",
-            operation="health_check",
-            healthy_count=healthy_services,
-            total_count=total_services,
-            status="all_healthy"
+            metadata={
+                "operation": "health_check",
+                "healthy_count": healthy_services,
+                "total_count": total_services,
+                "status": "all_healthy"
+            }
         )
     else:
         logger.warning(
@@ -223,32 +142,3 @@ async def check_dependency_health(dependencies: Dict[str, str], timeout: int = 5
         )
 
     return health_checks
-
-
-def get_dependencies() -> Dict[str, str]:
-    """
-    Get dependency URLs from environment variables
-    Uses standardized _HEALTH_URL variables for complete health endpoint URLs
-    
-    Returns:
-        Dict with service names as keys and health URLs as values
-    """
-    dependencies = {}
-
-    # Add Dapr sidecar health check only if running with Dapr
-    # Check if we're running in Dapr mode by looking for DAPR_HTTP_PORT in environment
-    dapr_port = os.getenv('DAPR_HTTP_PORT')
-    if dapr_port:
-        # In Kubernetes/AKS, Dapr sidecar is always on localhost (same pod)
-        # In development, it's also localhost
-        # Allow override via DAPR_HOST for special cases (e.g., Docker Compose)
-        dapr_host = os.getenv('DAPR_HOST', 'localhost')
-        dapr_health_url = f"http://{dapr_host}:{dapr_port}/v1.0/healthz"
-        dependencies['dapr-sidecar'] = dapr_health_url
-
-    # Add other services via Dapr (these will be checked when Dapr is available)
-    # The actual service health can be checked via Dapr service invocation
-    # dependencies['user-service-via-dapr'] = f"http://localhost:{dapr_port}/v1.0/invoke/user-service/method/health"
-    # dependencies['inventory-service-via-dapr'] = f"http://localhost:{dapr_port}/v1.0/invoke/inventory-service/method/health"
-
-    return dependencies
