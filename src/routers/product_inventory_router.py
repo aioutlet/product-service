@@ -11,11 +11,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from src.controllers.product_controller import get_all_products, get_product_by_id
-from src.core.logger import get_logger
+from src.core.logger import logger
 from src.db.mongodb import get_database
 from src.services.inventory_client import InventoryItem, get_inventory_client
 
-logger = get_logger(__name__)
+
 
 router = APIRouter(prefix="/products", tags=["products-with-inventory"])
 

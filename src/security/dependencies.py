@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 
-from src.observability.logging import logger
+from src.core.logger import logger
 
 # JWT Configuration from environment
 JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret_key")

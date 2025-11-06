@@ -8,25 +8,22 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 # Industry-standard initialization pattern:
 # 1. Load environment variables
 # 2. Validate configuration (blocking - must pass)
-# 3. Initialize tracing and observability
+# 3. Initialize observability (handled by Dapr)
 # 4. Check dependency health (non-blocking - log only)
 # 5. Start application
 
 # STEP 1: Load environment variables
-print('Step 1: Loading environment variables...')
 from dotenv import load_dotenv
 load_dotenv()
 
 # STEP 2: Validate configuration (BLOCKING - must pass)
-print('Step 2: Validating configuration...')
 from src.validators.config_validator import validate_config
 validate_config()
 
-# STEP 3: Initialize tracing (must be after config validation, before other imports)
-print('Step 3: Initializing observability...')
-import src.tracing_init  # This must be before other imports to ensure OpenTelemetry SDK is initialized
+# STEP 3: Initialize observability (must be after config validation, before other imports)
+    # Observability is now handled by Dapr automatically
 
-import logging
+
 import asyncio
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -41,7 +38,7 @@ from src.core.errors import (
     http_exception_handler,
 )
 from src.middlewares import CorrelationIdMiddleware
-from src.observability.logging import logger
+from src.core.logger import logger
 from src.routers import home_router, product_router
 from src.db.mongodb import get_product_collection
 
@@ -50,18 +47,33 @@ async def check_dependencies_on_startup():
     """Check dependencies after application starts"""
     from src.utils.dependency_health_checker import check_dependency_health, get_dependencies
     
-    print('Step 4: Checking dependency health...')
+    logger.info("Starting dependency health checks", metadata={"operation": "startup"})
     dependencies = get_dependencies()
     dependency_count = len(dependencies)
 
     if dependency_count > 0:
-        print(f'[DEPS] Found {dependency_count} dependencies to check')
+        logger.info(
+            "Found dependencies to check",
+            metadata={
+                "operation": "startup",
+                "dependency_count": dependency_count
+            }
+        )
         try:
             await check_dependency_health(dependencies)
         except Exception as error:
-            print(f'[DEPS] WARNING: Dependency health check failed: {str(error)}')
+            logger.warning(
+                "Dependency health check failed",
+                metadata={
+                    "operation": "startup",
+                    "error": str(error)
+                }
+            )
     else:
-        print('[DEPS] 📝 No dependencies configured for health checking')
+        logger.info(
+            "No dependencies configured for health checking",
+            metadata={"operation": "startup"}
+        )
 
 app = FastAPI()
 

@@ -8,6 +8,7 @@ import asyncio
 import os
 from typing import Dict, List
 from motor.motor_asyncio import AsyncIOMotorClient
+from src.core.logger import logger
 
 
 async def check_database_health() -> dict:
@@ -23,17 +24,36 @@ async def check_database_health() -> dict:
         mongo_database = os.getenv('MONGO_INITDB_DATABASE')
         mongo_auth_source = os.getenv('MONGODB_AUTH_SOURCE', 'admin')
 
-        print(f'[DB] Checking database health at {mongo_host}:{mongo_port}')
+        logger.info(
+            "Checking database health",
+            metadata={
+                "operation": "health_check",
+                "database_host": mongo_host,
+                "database_port": mongo_port
+            }
+        )
 
         # Create MongoDB connection URI
         if mongo_username and mongo_password:
             mongo_uri = f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}/{mongo_database}?authSource={mongo_auth_source}"
             # Hide password in logs
             safe_uri = mongo_uri.replace(f':{mongo_password}@', ':***@')
-            print(f'[DB] Using MongoDB URI: {safe_uri}')
+            logger.debug(
+                "Using MongoDB URI with authentication",
+                metadata={
+                    "operation": "health_check", 
+                    "uri": safe_uri
+                }
+            )
         else:
             mongo_uri = f"mongodb://{mongo_host}:{mongo_port}/{mongo_database}"
-            print(f'[DB] Using MongoDB URI: {mongo_uri}')
+            logger.debug(
+                "Using MongoDB URI without authentication",
+                metadata={
+                    "operation": "health_check",
+                    "uri": mongo_uri
+                }
+            )
 
         # Create a separate client for health checking with timeout
         client = AsyncIOMotorClient(
@@ -49,15 +69,34 @@ async def check_database_health() -> dict:
             timeout=6.0
         )
 
-        print('[DB] ✅ Database connection is healthy')
+        logger.info(
+            "Database connection is healthy",
+            metadata={
+                "operation": "health_check",
+                "status": "healthy"
+            }
+        )
         client.close()
         return {'service': 'database', 'status': 'healthy'}
 
     except asyncio.TimeoutError:
-        print('[DB] ❌ Database health check timed out')
+        logger.error(
+            "Database health check timed out",
+            metadata={
+                "operation": "health_check",
+                "status": "timeout"
+            }
+        )
         return {'service': 'database', 'status': 'timeout', 'error': 'Connection timeout'}
     except Exception as error:
-        print(f'[DB] ❌ Database health check failed: {str(error)}')
+        logger.error(
+            "Database health check failed",
+            metadata={
+                "operation": "health_check",
+                "status": "unhealthy",
+                "error": str(error)
+            }
+        )
         return {'service': 'database', 'status': 'unhealthy', 'error': str(error)}
 
 
@@ -68,7 +107,14 @@ async def check_service_health(service_name: str, health_url: str, timeout: int 
     try:
         import aiohttp
         
-        print(f'[DEPS] Checking {service_name} health at {health_url}')
+        logger.info(
+            "Checking external service health",
+            metadata={
+                "operation": "health_check",
+                "service": service_name,
+                "url": health_url
+            }
+        )
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -77,10 +123,23 @@ async def check_service_health(service_name: str, health_url: str, timeout: int 
                 headers={'Accept': 'application/json'}
             ) as response:
                 if response.status == 200:
-                    print(f'[DEPS] ✅ {service_name} is healthy')
+                    logger.info(
+                        "External service is healthy",
+                        operation="health_check",
+                        service=service_name,
+                        status="healthy"
+                    )
                     return {'service': service_name, 'status': 'healthy', 'url': health_url}
                 else:
-                    print(f'[DEPS] WARNING: {service_name} returned status {response.status}')
+                    logger.warning(
+                        "External service returned non-200 status",
+                        metadata={
+                            "operation": "health_check",
+                            "service": service_name,
+                            "status": "unhealthy",
+                            "status_code": response.status
+                        }
+                    )
                     return {
                         'service': service_name,
                         'status': 'unhealthy',
@@ -89,10 +148,26 @@ async def check_service_health(service_name: str, health_url: str, timeout: int 
                     }
 
     except asyncio.TimeoutError:
-        print(f'[DEPS] ⏰ {service_name} health check timed out after {timeout}s')
+        logger.warning(
+            "External service health check timed out",
+            metadata={
+                "operation": "health_check",
+                "service": service_name,
+                "status": "timeout",
+                "timeout_seconds": timeout
+            }
+        )
         return {'service': service_name, 'status': 'timeout', 'error': 'timeout'}
     except Exception as error:
-        print(f'[DEPS] ❌ {service_name} is not reachable: {str(error)}')
+        logger.error(
+            "External service is not reachable",
+            metadata={
+                "operation": "health_check",
+                "service": service_name,
+                "status": "unreachable",
+                "error": str(error)
+            }
+        )
         return {'service': service_name, 'status': 'unreachable', 'error': str(error)}
 
 
@@ -107,7 +182,13 @@ async def check_dependency_health(dependencies: Dict[str, str], timeout: int = 5
     Returns:
         List of health check results
     """
-    print('[DEPS] Checking dependency health...')
+    logger.info(
+        "Starting dependency health checks",
+        metadata={
+            "operation": "health_check",
+            "dependency_count": len(dependencies)
+        }
+    )
 
     # Check database health first
     db_health = await check_database_health()
@@ -123,9 +204,23 @@ async def check_dependency_health(dependencies: Dict[str, str], timeout: int = 5
     total_services = len(health_checks)
 
     if healthy_services == total_services:
-        print(f'[DEPS] 🎉 All {total_services} dependencies are healthy')
+        logger.info(
+            "All dependencies are healthy",
+            operation="health_check",
+            healthy_count=healthy_services,
+            total_count=total_services,
+            status="all_healthy"
+        )
     else:
-        print(f'[DEPS] WARNING: {healthy_services}/{total_services} dependencies are healthy')
+        logger.warning(
+            "Some dependencies are unhealthy",
+            metadata={
+                "operation": "health_check",
+                "healthy_count": healthy_services,
+                "total_count": total_services,
+                "status": "partial_healthy"
+            }
+        )
 
     return health_checks
 
@@ -144,7 +239,11 @@ def get_dependencies() -> Dict[str, str]:
     # Check if we're running in Dapr mode by looking for DAPR_HTTP_PORT in environment
     dapr_port = os.getenv('DAPR_HTTP_PORT')
     if dapr_port:
-        dapr_health_url = f"http://localhost:{dapr_port}/v1.0/healthz"
+        # In Kubernetes/AKS, Dapr sidecar is always on localhost (same pod)
+        # In development, it's also localhost
+        # Allow override via DAPR_HOST for special cases (e.g., Docker Compose)
+        dapr_host = os.getenv('DAPR_HOST', 'localhost')
+        dapr_health_url = f"http://{dapr_host}:{dapr_port}/v1.0/healthz"
         dependencies['dapr-sidecar'] = dapr_health_url
 
     # Add other services via Dapr (these will be checked when Dapr is available)

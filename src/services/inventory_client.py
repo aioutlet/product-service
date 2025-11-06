@@ -9,10 +9,10 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from src.core.logger import get_logger
+from src.core.logger import logger
 from src.services.dapr_service_client import get_dapr_service_client
 
-logger = get_logger(__name__)
+
 
 
 class StockCheckItem(BaseModel):
