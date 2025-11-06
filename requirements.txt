@@ -1,27 +1,37 @@
-fastapi
-uvicorn
-motor
-python-dotenv
-pydantic
-python-jose
+# Core FastAPI dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+motor>=3.3.0
+python-dotenv>=1.0.0
+pydantic>=2.4.0
+pydantic-settings>=2.0.0
+
+# Authentication and validation
+python-jose[cryptography]
 python-multipart
-pytest
-pytest-asyncio
-pytest-mock
-pytest-cov
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
+httpx>=0.25.0
+
+# Rate limiting
 slowapi
-httpx
-aiohttp
+
+# HTTP client
+aiohttp>=3.9.0
 
 # Dapr SDK for pub/sub
-dapr
+dapr>=1.12.0
 
 # Observability and Monitoring
-opentelemetry-api
-opentelemetry-sdk
-opentelemetry-exporter-otlp-proto-http
-opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-httpx
-opentelemetry-instrumentation-pymongo
-opentelemetry-instrumentation-redis
-opentelemetry-instrumentation-logging
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-exporter-otlp-proto-http>=1.20.0
+opentelemetry-instrumentation-fastapi>=0.41b0
+opentelemetry-instrumentation-httpx>=0.41b0
+opentelemetry-instrumentation-pymongo>=0.41b0
+opentelemetry-instrumentation-redis>=0.41b0
+opentelemetry-instrumentation-logging>=0.41b0
