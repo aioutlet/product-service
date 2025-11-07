@@ -136,7 +136,7 @@ async def check_database_health() -> Dict[str, Any]:
         await db.client.admin.command('ping')
         
         # Check if we can access our specific database
-        database = db.database if db.database is not None else db.client[config.mongodb_database]
+        database = db.database
         collections = await database.list_collection_names()
         
         response_time_ms = (time.time() - check_start) * 1000
@@ -146,7 +146,6 @@ async def check_database_health() -> Dict[str, Any]:
             metadata={
                 "response_time_ms": response_time_ms,
                 "collections_count": len(collections),
-                "database": config.mongodb_database,
                 "event": "health_check_database_success"
             }
         )
@@ -155,7 +154,6 @@ async def check_database_health() -> Dict[str, Any]:
             "name": "database",
             "status": "healthy",
             "response_time_ms": round(response_time_ms, 2),
-            "database": config.mongodb_database,
             "collections_count": len(collections),
             "timestamp": datetime.now().isoformat(),
         }
@@ -169,7 +167,6 @@ async def check_database_health() -> Dict[str, Any]:
             metadata={
                 "response_time_ms": response_time_ms,
                 "error": error_msg,
-                "database_url": config.mongodb_host,
                 "event": "health_check_database_failed"
             }
         )

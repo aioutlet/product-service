@@ -116,9 +116,6 @@ def get_service_info(request: Request):
         "environment": config.environment,
         "uptime_seconds": round(time.time() - start_time, 2),
         "configuration": {
-            "mongodb_host": config.mongodb_host,
-            "mongodb_port": config.mongodb_port,
-            "mongodb_database": config.mongodb_database,
             "dapr_http_port": config.dapr_http_port,
             "dapr_grpc_port": config.dapr_grpc_port,
             "log_level": config.log_level,

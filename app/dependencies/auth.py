@@ -10,6 +10,18 @@ from fastapi import Header, HTTPException, status
 from app.core.config import config
 from app.core.logger import logger
 from app.models.user import User
+from app.services.dapr_secret_manager import get_jwt_config
+
+# Cache JWT config to avoid repeated Dapr calls
+_jwt_config_cache = None
+
+
+async def get_cached_jwt_config():
+    """Get JWT config with caching"""
+    global _jwt_config_cache
+    if _jwt_config_cache is None:
+        _jwt_config_cache = await get_jwt_config()
+    return _jwt_config_cache
 
 
 class AuthError(Exception):
@@ -20,7 +32,7 @@ class AuthError(Exception):
         super().__init__(message)
 
 
-def decode_jwt(token: str) -> dict:
+async def decode_jwt(token: str) -> dict:
     """
     Decode and validate JWT token
     
@@ -34,10 +46,11 @@ def decode_jwt(token: str) -> dict:
         AuthError: If token is invalid or expired
     """
     try:
+        jwt_config = await get_cached_jwt_config()
         payload = jwt.decode(
             token,
-            config.jwt_secret,
-            algorithms=[config.jwt_algorithm]
+            jwt_config['secret'],
+            algorithms=[jwt_config['algorithm']]
         )
         return payload
     except jwt.ExpiredSignatureError:
@@ -80,7 +93,7 @@ async def get_current_user(
     
     try:
         # Decode token
-        payload = decode_jwt(token)
+        payload = await decode_jwt(token)
         
         # Extract user information (compatible with auth-service token structure)
         user_id = payload.get("id") or payload.get("user_id") or payload.get("sub")
