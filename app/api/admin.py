@@ -21,7 +21,7 @@ router = APIRouter()
     summary="Get Product Statistics",
     description="Get comprehensive product statistics for admin dashboard"
 )
-async def get_product_stats(
+async def get_stats(
     service: ProductService = Depends(get_product_service),
     user: User = Depends(require_admin)  # Admin only
 ):
