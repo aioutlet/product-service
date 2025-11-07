@@ -178,11 +178,11 @@ def get_database_config() -> Dict[str, Any]:
         Dictionary with database connection parameters
     """
     return {
-        'host': secret_manager.get_secret('MONGODB_HOST') or config.mongodb_host,
-        'port': int(secret_manager.get_secret('MONGODB_PORT') or config.mongodb_port),
-        'username': secret_manager.get_secret('MONGODB_USERNAME') or config.mongodb_username,
-        'password': secret_manager.get_secret('MONGODB_PASSWORD') or config.mongodb_password,
-        'database': secret_manager.get_secret('MONGODB_DATABASE') or config.mongodb_database,
+        'host': secret_manager.get_secret('MONGODB_HOST') or 'localhost',
+        'port': int(secret_manager.get_secret('MONGODB_PORT') or '27019'),
+        'username': secret_manager.get_secret('MONGODB_USERNAME'),
+        'password': secret_manager.get_secret('MONGODB_PASSWORD'),
+        'database': secret_manager.get_secret('MONGODB_DATABASE') or 'productdb',
     }
 
 
@@ -194,7 +194,7 @@ def get_jwt_config() -> Dict[str, Any]:
         Dictionary with JWT configuration parameters
     """
     return {
-        'secret': secret_manager.get_secret('JWT_SECRET') or config.jwt_secret,
-        'algorithm': secret_manager.get_secret('JWT_ALGORITHM') or config.jwt_algorithm,
-        'expiration': int(secret_manager.get_secret('JWT_EXPIRATION') or config.jwt_expiration)
+        'secret': secret_manager.get_secret('JWT_SECRET') or 'your_jwt_secret_key',
+        'algorithm': secret_manager.get_secret('JWT_ALGORITHM') or 'HS256',
+        'expiration': int(secret_manager.get_secret('JWT_EXPIRATION') or '3600')
     }

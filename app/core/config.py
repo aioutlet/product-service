@@ -1,6 +1,9 @@
 """
 Core configuration and settings for the Product Service
 Following FastAPI best practices for configuration management
+
+Note: For sensitive secrets (database credentials, JWT secrets), use:
+- from app.services.dapr_secret_manager import get_database_config, get_jwt_config
 """
 
 import os
@@ -22,20 +25,6 @@ class Config(BaseSettings):
     port: int = Field(default=8003, env="PORT")
     host: str = Field(default="0.0.0.0", env="HOST")
     
-    # Database configuration
-    mongodb_host: str = Field(default="localhost", env="MONGODB_HOST")
-    mongodb_port: int = Field(default=27019, env="MONGODB_PORT")
-    mongodb_username: Optional[str] = Field(default=None, env="MONGODB_USERNAME")
-    mongodb_password: Optional[str] = Field(default=None, env="MONGODB_PASSWORD")
-    mongodb_database: str = Field(default="productdb", env="MONGODB_DATABASE")
-    
-    @property
-    def mongodb_url(self) -> str:
-        """Construct MongoDB connection URL"""
-        if self.mongodb_username and self.mongodb_password:
-            return f"mongodb://{self.mongodb_username}:{self.mongodb_password}@{self.mongodb_host}:{self.mongodb_port}/{self.mongodb_database}"
-        return f"mongodb://{self.mongodb_host}:{self.mongodb_port}/{self.mongodb_database}"
-    
     # Logging configuration
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
     log_format: str = Field(default="console", env="LOG_FORMAT")
@@ -48,11 +37,6 @@ class Config(BaseSettings):
     # Dapr configuration
     dapr_http_port: int = Field(default=3500, env="DAPR_HTTP_PORT")
     dapr_grpc_port: int = Field(default=50001, env="DAPR_GRPC_PORT")
-    
-    # JWT Authentication configuration
-    jwt_secret: str = Field(default="your_jwt_secret_key", env="JWT_SECRET")
-    jwt_algorithm: str = Field(default="HS256", env="JWT_ALGORITHM")
-    jwt_expiration: int = Field(default=3600, env="JWT_EXPIRATION")  # seconds
     
     class ConfigDict:
         env_file = ".env"

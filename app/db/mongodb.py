@@ -8,6 +8,7 @@ from typing import Optional
 from app.core.config import config
 from app.core.errors import ErrorResponse
 from app.core.logger import logger
+from app.services.dapr_secret_manager import get_database_config
 
 
 class Database:
@@ -25,19 +26,34 @@ async def connect_to_mongo():
     logger.info("Connecting to MongoDB...")
     
     try:
-        db.client = AsyncIOMotorClient(config.mongodb_url)
-        db.database = db.client[config.mongodb_database]
+        # Get database configuration from Dapr Secret Manager
+        db_config = await get_database_config()
+        
+        # Build MongoDB URL
+        username = db_config.get('username', '')
+        password = db_config.get('password', '')
+        host = db_config.get('host', 'localhost')
+        port = db_config.get('port', '27019')
+        database = db_config.get('database', 'productdb')
+        
+        if username and password:
+            mongodb_url = f"mongodb://{username}:{password}@{host}:{port}/{database}?authSource=admin"
+        else:
+            mongodb_url = f"mongodb://{host}:{port}/{database}"
+        
+        db.client = AsyncIOMotorClient(mongodb_url)
+        db.database = db.client[database]
         
         # Test connection
         await db.client.admin.command('ping')
         
         logger.info(
-            f"Successfully connected to MongoDB database '{config.mongodb_database}'",
+            f"Successfully connected to MongoDB database '{database}'",
             metadata={
                 "event": "mongodb_connected", 
-                "database": config.mongodb_database,
-                "host": config.mongodb_host,
-                "port": config.mongodb_port
+                "database": database,
+                "host": host,
+                "port": port
             }
         )
     except Exception as e:
