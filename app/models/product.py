@@ -20,6 +20,29 @@ class ProductHistoryEntry(BaseModel):
     changes: Dict[str, str]  # field: new_value
 
 
+class RatingDistribution(BaseModel):
+    """Model for rating distribution breakdown"""
+    five_star: int = Field(default=0, alias="5")
+    four_star: int = Field(default=0, alias="4")
+    three_star: int = Field(default=0, alias="3")
+    two_star: int = Field(default=0, alias="2")
+    one_star: int = Field(default=0, alias="1")
+    
+    class Config:
+        populate_by_name = True
+
+
+class ReviewAggregates(BaseModel):
+    """Model for aggregated review statistics"""
+    average_rating: float = Field(default=0.0, ge=0.0, le=5.0)
+    total_review_count: int = Field(default=0, ge=0)
+    verified_review_count: int = Field(default=0, ge=0)
+    rating_distribution: RatingDistribution = Field(default_factory=RatingDistribution)
+    recent_reviews: List[str] = Field(default_factory=list, max_length=5)
+    last_review_date: Optional[datetime] = None
+    last_updated: datetime = Field(default_factory=utc_now)
+
+
 class ProductBase(BaseModel):
     """Base Product model with all common fields"""
     
@@ -46,6 +69,9 @@ class ProductBase(BaseModel):
     
     # Product specifications
     specifications: Dict[str, str] = {}
+    
+    # Review aggregates
+    review_aggregates: ReviewAggregates = Field(default_factory=ReviewAggregates)
     
     # Audit trail
     created_by: str = "system"

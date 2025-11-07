@@ -13,7 +13,7 @@ from app.core.config import config
 from app.core.errors import error_response_handler, http_exception_handler, ErrorResponse
 from app.core.logger import logger
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
-from app.api import products, health, operational, admin, home
+from app.api import products, health, operational, admin, home, events
 from app.middleware import CorrelationIdMiddleware
 
 
@@ -65,6 +65,7 @@ app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(operational.router, prefix="/api", tags=["operational"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(events.router)  # Dapr pub/sub event subscriptions
 
 
 if __name__ == "__main__":
