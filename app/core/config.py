@@ -16,8 +16,8 @@ class Config(BaseSettings):
     """Application configuration with environment variable support"""
     
     # Service information
-    service_name: str = Field(default="product-service", env="SERVICE_NAME")
-    service_version: str = Field(default="1.0.0", env="SERVICE_VERSION")
+    service_name: str = Field(default="product-service", env="NAME")
+    service_version: str = Field(default="1.0.0", env="VERSION")
     api_version: str = Field(default="1.0.0", env="API_VERSION")
     environment: str = Field(default="development", env="ENVIRONMENT")
     

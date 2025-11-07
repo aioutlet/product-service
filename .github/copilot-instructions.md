@@ -89,7 +89,7 @@ class DaprPublisher:
         self.dapr_http_port = os.getenv('DAPR_HTTP_PORT', '3500')
         self.dapr_grpc_port = os.getenv('DAPR_GRPC_PORT', '50001')
         self.pubsub_name = 'aioutlet-pubsub'
-        self.service_name = os.getenv('SERVICE_NAME', 'product-service')
+        self.service_name = os.getenv('NAME', 'product-service')
 
     async def publish(
         self,
@@ -656,7 +656,7 @@ JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\n...
 JWT_ALGORITHM=RS256
 
 # Service (Section 2.7.5)
-SERVICE_NAME=product-service
+NAME=product-service
 ENVIRONMENT=production
 LOG_LEVEL=info
 ```
@@ -835,7 +835,7 @@ All API endpoints have comprehensive request/response examples in the PRD:
 
 ```bash
 # Service Configuration
-SERVICE_NAME=product-service
+NAME=product-service
 PORT=8081
 
 # Dapr Configuration

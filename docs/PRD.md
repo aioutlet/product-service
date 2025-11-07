@@ -1486,17 +1486,17 @@ This section documents all environment variables required to run the Product Ser
 
 #### 2.7.5 Service Configuration
 
-| Variable          | Description                            | Example                                               | Required | Default           |
-| ----------------- | -------------------------------------- | ----------------------------------------------------- | -------- | ----------------- |
-| `SERVICE_NAME`    | Service name for logging/metrics       | `product-service`                                     | No       | `product-service` |
-| `SERVICE_VERSION` | Service version                        | `1.0.0`                                               | No       | `1.0.0`           |
-| `SERVICE_PORT`    | HTTP server port                       | `8003`                                                | No       | `8003`            |
-| `SERVICE_HOST`    | Host to bind to                        | `0.0.0.0`                                             | No       | `0.0.0.0`         |
-| `ENVIRONMENT`     | Deployment environment                 | `production`                                          | Yes      | `development`     |
-| `LOG_LEVEL`       | Logging level                          | `info`                                                | No       | `info`            |
-| `ENABLE_SWAGGER`  | Enable Swagger UI documentation        | `true`                                                | No       | `false`           |
-| `ENABLE_CORS`     | Enable CORS                            | `true`                                                | No       | `true`            |
-| `CORS_ORIGINS`    | Allowed CORS origins (comma-separated) | `https://www.aioutlet.com,https://admin.aioutlet.com` | No       | `*`               |
+| Variable         | Description                            | Example                                               | Required | Default           |
+| ---------------- | -------------------------------------- | ----------------------------------------------------- | -------- | ----------------- |
+| `NAME`           | Service name for logging/metrics       | `product-service`                                     | No       | `product-service` |
+| `VERSION`        | Service version                        | `1.0.0`                                               | No       | `1.0.0`           |
+| `SERVICE_PORT`   | HTTP server port                       | `8003`                                                | No       | `8003`            |
+| `SERVICE_HOST`   | Host to bind to                        | `0.0.0.0`                                             | No       | `0.0.0.0`         |
+| `ENVIRONMENT`    | Deployment environment                 | `production`                                          | Yes      | `development`     |
+| `LOG_LEVEL`      | Logging level                          | `info`                                                | No       | `info`            |
+| `ENABLE_SWAGGER` | Enable Swagger UI documentation        | `true`                                                | No       | `false`           |
+| `ENABLE_CORS`    | Enable CORS                            | `true`                                                | No       | `true`            |
+| `CORS_ORIGINS`   | Allowed CORS origins (comma-separated) | `https://www.aioutlet.com,https://admin.aioutlet.com` | No       | `*`               |
 
 #### 2.7.6 Performance & Caching
 
@@ -1579,8 +1579,8 @@ JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0B...\n-----END PUB
 JWT_ALGORITHM=RS256
 
 # Service
-SERVICE_NAME=product-service
-SERVICE_VERSION=1.0.0
+NAME=product-service
+VERSION=1.0.0
 SERVICE_PORT=8003
 ENVIRONMENT=development
 LOG_LEVEL=debug
@@ -1627,8 +1627,8 @@ JWT_ISSUER=aioutlet-auth-service
 JWT_AUDIENCE=aioutlet-api
 
 # Service
-SERVICE_NAME=product-service
-SERVICE_VERSION=1.0.0
+NAME=product-service
+VERSION=1.0.0
 SERVICE_PORT=8003
 ENVIRONMENT=production
 LOG_LEVEL=info
@@ -1668,8 +1668,8 @@ metadata:
   name: product-service-config
   namespace: aioutlet
 data:
-  SERVICE_NAME: 'product-service'
-  SERVICE_VERSION: '1.0.0'
+  NAME: 'product-service'
+  VERSION: '1.0.0'
   SERVICE_PORT: '8003'
   ENVIRONMENT: 'production'
   LOG_LEVEL: 'info'
