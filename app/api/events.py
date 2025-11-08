@@ -20,21 +20,24 @@ async def get_subscriptions():
     Returns the topics this service wants to subscribe to.
     """
     subscriptions = [
-        # Review service events
+        # Review service events - all published to review-events topic
         {
-            "pubsubname": "product-pubsub",
-            "topic": "review.created",
-            "route": "/dapr/events/review.created"
+            "pubsubname": "review-pubsub",
+            "topic": "review-events",
+            "route": "/dapr/events/review.created",
+            "match": "event.type == 'review.created'"
         },
         {
-            "pubsubname": "product-pubsub",
-            "topic": "review.updated",
-            "route": "/dapr/events/review.updated"
+            "pubsubname": "review-pubsub",
+            "topic": "review-events",
+            "route": "/dapr/events/review.updated",
+            "match": "event.type == 'review.updated'"
         },
         {
-            "pubsubname": "product-pubsub",
-            "topic": "review.deleted",
-            "route": "/dapr/events/review.deleted"
+            "pubsubname": "review-pubsub",
+            "topic": "review-events",
+            "route": "/dapr/events/review.deleted",
+            "match": "event.type == 'review.deleted'"
         },
         # Inventory service events (commented out until inventory service is ready)
         # {

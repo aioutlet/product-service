@@ -8,30 +8,36 @@ from datetime import datetime
 
 from app.core.logger import logger
 from app.repositories.product import ProductRepository
+from app.repositories.processed_events import ProcessedEventRepository
 
 
 class ReviewEventConsumer:
     """
     Consumer for handling review-related events.
     Updates product review aggregates when reviews are created, updated, or deleted.
+    Implements idempotency to prevent duplicate event processing.
     """
     
     def __init__(self):
         self.db = None
         self.product_repo = None
+        self.processed_events_repo = None
     
     async def initialize(self):
-        """Initialize database connection and repository"""
+        """Initialize database connection and repositories"""
         if not self.db:
             # Lazy import to avoid circular dependency
             from app.db.mongodb import get_database
             self.db = await get_database()
             self.product_repo = ProductRepository(self.db)
+            self.processed_events_repo = ProcessedEventRepository(self.db)
+            await self.processed_events_repo.ensure_indexes()
     
     async def handle_review_created(self, event_data: Dict[str, Any]) -> Dict[str, str]:
         """
         Handle review.created event.
         Updates product review aggregates with new review data.
+        Implements idempotency to prevent duplicate processing.
         
         Args:
             event_data: CloudEvents formatted event data
@@ -42,15 +48,28 @@ class ReviewEventConsumer:
         try:
             await self.initialize()
             
-            # Extract event metadata
-            correlation_id = event_data.get("correlationId", "no-correlation")
+            # Extract event ID for idempotency
+            event_id = event_data.get("id")
+            if not event_id:
+                logger.warning("Event missing ID field, cannot ensure idempotency")
+                return {"status": "error", "message": "Missing event ID"}
+            
+            # Check if already processed (idempotency)
+            if await self.processed_events_repo.is_processed(event_id):
+                logger.info(f"Event {event_id} already processed, skipping", 
+                           metadata={"eventId": event_id, "eventType": "review.created"})
+                return {"status": "success", "message": "Already processed"}
+            
+            # Extract event metadata and data
+            metadata = event_data.get("metadata", {})
+            correlation_id = metadata.get("correlationId", "no-correlation")
             data = event_data.get("data", {})
             
-            # Extract review data
+            # Extract review data (camelCase from Node.js)
             product_id = data.get("productId")
             review_id = data.get("reviewId")
             rating = data.get("rating")
-            verified = data.get("verified", False)
+            verified = data.get("isVerifiedPurchase", False)
             created_at = data.get("createdAt")
             
             if not product_id or not review_id or rating is None:
@@ -137,6 +156,18 @@ class ReviewEventConsumer:
                 {"review_aggregates": updated_aggregates}
             )
             
+            # Mark event as processed (idempotency)
+            await self.processed_events_repo.mark_processed(
+                event_id=event_id,
+                event_type="review.created",
+                product_id=product_id,
+                metadata={
+                    "reviewId": review_id,
+                    "rating": rating,
+                    "correlationId": correlation_id
+                }
+            )
+            
             logger.info(
                 f"Updated review aggregates for product {product_id}",
                 metadata={
@@ -144,7 +175,8 @@ class ReviewEventConsumer:
                     "productId": product_id,
                     "reviewId": review_id,
                     "newAverageRating": new_average,
-                    "newTotalCount": new_total_count
+                    "newTotalCount": new_total_count,
+                    "eventId": event_id
                 }
             )
             
@@ -167,6 +199,7 @@ class ReviewEventConsumer:
         """
         Handle review.updated event.
         Recalculates review aggregates when a review rating changes.
+        Implements idempotency to prevent duplicate processing.
         
         Args:
             event_data: CloudEvents formatted event data
@@ -177,7 +210,17 @@ class ReviewEventConsumer:
         try:
             await self.initialize()
             
-            correlation_id = event_data.get("correlationId", "no-correlation")
+            # Check idempotency
+            event_id = event_data.get("id")
+            if not event_id:
+                return {"status": "error", "message": "Missing event ID"}
+            
+            if await self.processed_events_repo.is_processed(event_id):
+                logger.info(f"Event {event_id} already processed, skipping")
+                return {"status": "success", "message": "Already processed"}
+            
+            metadata = event_data.get("metadata", {})
+            correlation_id = metadata.get("correlationId", "no-correlation")
             data = event_data.get("data", {})
             
             product_id = data.get("productId")
@@ -245,12 +288,26 @@ class ReviewEventConsumer:
                 {"review_aggregates": updated_aggregates}
             )
             
+            # Mark event as processed
+            await self.processed_events_repo.mark_processed(
+                event_id=event_id,
+                event_type="review.updated",
+                product_id=product_id,
+                metadata={
+                    "reviewId": review_id,
+                    "oldRating": old_rating,
+                    "newRating": new_rating,
+                    "correlationId": correlation_id
+                }
+            )
+            
             logger.info(
                 f"Updated review aggregates for product {product_id} (review updated)",
                 metadata={
                     "correlationId": correlation_id,
                     "productId": product_id,
-                    "newAverageRating": new_average
+                    "newAverageRating": new_average,
+                    "eventId": event_id
                 }
             )
             
@@ -270,6 +327,7 @@ class ReviewEventConsumer:
         """
         Handle review.deleted event.
         Updates aggregates when a review is removed.
+        Implements idempotency to prevent duplicate processing.
         
         Args:
             event_data: CloudEvents formatted event data
@@ -280,13 +338,23 @@ class ReviewEventConsumer:
         try:
             await self.initialize()
             
-            correlation_id = event_data.get("correlationId", "no-correlation")
+            # Check idempotency
+            event_id = event_data.get("id")
+            if not event_id:
+                return {"status": "error", "message": "Missing event ID"}
+            
+            if await self.processed_events_repo.is_processed(event_id):
+                logger.info(f"Event {event_id} already processed, skipping")
+                return {"status": "success", "message": "Already processed"}
+            
+            metadata = event_data.get("metadata", {})
+            correlation_id = metadata.get("correlationId", "no-correlation")
             data = event_data.get("data", {})
             
             product_id = data.get("productId")
             review_id = data.get("reviewId")
             rating = data.get("rating")
-            verified = data.get("verified", False)
+            verified = data.get("isVerifiedPurchase", False)
             
             if not product_id or rating is None:
                 return {"status": "error", "message": "Missing required fields"}
@@ -352,13 +420,26 @@ class ReviewEventConsumer:
                 {"review_aggregates": updated_aggregates}
             )
             
+            # Mark event as processed
+            await self.processed_events_repo.mark_processed(
+                event_id=event_id,
+                event_type="review.deleted",
+                product_id=product_id,
+                metadata={
+                    "reviewId": review_id,
+                    "rating": rating,
+                    "correlationId": correlation_id
+                }
+            )
+            
             logger.info(
                 f"Updated review aggregates for product {product_id} (review deleted)",
                 metadata={
                     "correlationId": correlation_id,
                     "productId": product_id,
                     "newAverageRating": new_average,
-                    "newTotalCount": new_total_count
+                    "newTotalCount": new_total_count,
+                    "eventId": event_id
                 }
             )
             
