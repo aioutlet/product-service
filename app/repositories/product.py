@@ -39,6 +39,11 @@ class ProductRepository:
                 if "updated_at" in entry and not isinstance(entry["updated_at"], datetime):
                     entry["updated_at"] = datetime.now(timezone.utc)
         
+        # Ensure review_aggregates is not None - create default if missing
+        if doc.get("review_aggregates") is None:
+            from app.models.product import ReviewAggregates
+            doc["review_aggregates"] = ReviewAggregates().model_dump()
+        
         return ProductResponse(**doc)
     
     async def create(self, product_data: ProductCreate, created_by: str = "system") -> ProductResponse:
@@ -373,6 +378,119 @@ class ProductRepository:
             
         except PyMongoError as e:
             logger.error(f"MongoDB error getting trending products: {e}")
+            raise ErrorResponse("Database error during trending products retrieval", status_code=503)
+    
+    async def get_trending_products_with_scores(self, limit: int = 4) -> List[Dict]:
+        """
+        Get trending products with pre-calculated trending scores.
+        
+        Algorithm:
+        - Base score = average_rating × total_review_count
+        - Recency boost = 1.5x for products created in last 30 days
+        - Minimum 3 reviews required (with fallbacks)
+        """
+        try:
+            from datetime import datetime, timedelta, timezone
+            
+            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+            
+            # Fetch candidate products (3x limit for filtering)
+            candidate_limit = limit * 3
+            
+            pipeline = [
+                {"$match": {"is_active": True}},
+                # Add trending score calculation
+                {"$addFields": {
+                    "base_score": {
+                        "$multiply": [
+                            {"$ifNull": ["$review_aggregates.average_rating", 0]},
+                            {"$ifNull": ["$review_aggregates.total_review_count", 0]}
+                        ]
+                    },
+                    "is_recent": {
+                        "$gte": ["$created_at", thirty_days_ago]
+                    }
+                }},
+                {"$addFields": {
+                    "trending_score": {
+                        "$cond": {
+                            "if": "$is_recent",
+                            "then": {"$multiply": ["$base_score", 1.5]},
+                            "else": "$base_score"
+                        }
+                    }
+                }},
+                # Priority filter: Products with 3+ reviews
+                {"$match": {"review_aggregates.total_review_count": {"$gte": 3}}},
+                {"$sort": {"trending_score": -1}},
+                {"$limit": limit}
+            ]
+            
+            docs = await self.collection.aggregate(pipeline).to_list(length=limit)
+            
+            # If not enough results, fallback to products with any reviews
+            if len(docs) < limit:
+                fallback_pipeline = [
+                    {"$match": {"is_active": True}},
+                    {"$addFields": {
+                        "base_score": {
+                            "$multiply": [
+                                {"$ifNull": ["$review_aggregates.average_rating", 0]},
+                                {"$ifNull": ["$review_aggregates.total_review_count", 0]}
+                            ]
+                        },
+                        "is_recent": {"$gte": ["$created_at", thirty_days_ago]}
+                    }},
+                    {"$addFields": {
+                        "trending_score": {
+                            "$cond": {
+                                "if": "$is_recent",
+                                "then": {"$multiply": ["$base_score", 1.5]},
+                                "else": "$base_score"
+                            }
+                        }
+                    }},
+                    {"$match": {"review_aggregates.total_review_count": {"$gt": 0}}},
+                    {"$sort": {"trending_score": -1}},
+                    {"$limit": candidate_limit}
+                ]
+                docs = await self.collection.aggregate(fallback_pipeline).to_list(length=candidate_limit)
+            
+            # Final fallback: Use recently created products
+            if len(docs) < limit:
+                cursor = self.collection.find({"is_active": True}).sort("created_at", -1).limit(limit)
+                basic_docs = await cursor.to_list(length=limit)
+                # Add default scores
+                for doc in basic_docs:
+                    doc["trending_score"] = 0
+                    # Safely check if recent - handle both timezone-aware and naive datetimes
+                    created_at = doc.get("created_at")
+                    if created_at:
+                        # Ensure timezone awareness for comparison
+                        if created_at.tzinfo is None:
+                            created_at = created_at.replace(tzinfo=timezone.utc)
+                        doc["is_recent"] = created_at >= thirty_days_ago
+                    else:
+                        doc["is_recent"] = False
+                docs = basic_docs
+            
+            # Convert to response format with trending data
+            products = []
+            for doc in docs[:limit]:
+                # Convert _id to id string
+                if "_id" in doc:
+                    doc["id"] = str(doc.pop("_id"))
+                
+                # Add trending metadata
+                doc["trending_score"] = doc.get("trending_score", 0)
+                doc["is_recent"] = doc.get("is_recent", False)
+                
+                products.append(doc)
+            
+            return products
+            
+        except PyMongoError as e:
+            logger.error(f"MongoDB error getting trending products with scores: {e}")
             raise ErrorResponse("Database error during trending products retrieval", status_code=503)
     
     async def get_stats(self) -> Dict[str, int]:

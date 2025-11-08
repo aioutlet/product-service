@@ -2,6 +2,7 @@
 Product service containing business logic layer
 """
 
+import asyncio
 from typing import List, Optional, Dict, Any
 
 from app.core.errors import ErrorResponse
@@ -179,7 +180,7 @@ class ProductService:
                            max_price: float = None,
                            tags: List[str] = None,
                            skip: int = 0,
-                           limit: int = 20) -> ProductSearchResponse:
+                           limit: int = 20) -> Dict[str, Any]:
         """List products with filters"""
         products, total_count = await self.repository.list_products(
             department, category, subcategory,
@@ -207,12 +208,15 @@ class ProductService:
             }
         )
         
-        return ProductSearchResponse(
-            products=products,
-            total_count=total_count,
-            current_page=current_page,
-            total_pages=total_pages
-        )
+        # Convert ProductResponse objects to dicts for JSON serialization
+        products_dict = [p.model_dump(mode='json') for p in products]
+        
+        return {
+            "products": products_dict,
+            "total_count": total_count,
+            "current_page": current_page,
+            "total_pages": total_pages
+        }
     
     async def get_trending_categories(self, limit: int = 5) -> List[Dict[str, Any]]:
         """Get trending categories"""
@@ -249,6 +253,67 @@ class ProductService:
         )
         
         return ProductStatsResponse(**stats)
+    
+    async def get_storefront_data(
+        self, 
+        products_limit: int = 4, 
+        categories_limit: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Get combined storefront data in a single call.
+        Returns trending products and categories optimized for homepage.
+        
+        Products include:
+        - Full product details with review_aggregates
+        - Trending score (pre-calculated)
+        - Recency indicator
+        
+        Categories include:
+        - Name, product count, ratings
+        - Trending score
+        """
+        try:
+            logger.info(
+                "Fetching storefront data",
+                metadata={
+                    "event": "get_storefront_data",
+                    "products_limit": products_limit,
+                    "categories_limit": categories_limit
+                }
+            )
+            
+            # Fetch both in parallel
+            products, categories = await asyncio.gather(
+                self.repository.get_trending_products_with_scores(products_limit),
+                self.repository.get_trending_categories(categories_limit)
+            )
+            
+            logger.info(
+                "Storefront data fetched successfully",
+                metadata={
+                    "event": "storefront_data_fetched",
+                    "products_count": len(products) if products else 0,
+                    "categories_count": len(categories) if categories else 0
+                }
+            )
+            
+            return {
+                "trending_products": products or [],
+                "trending_categories": categories or []
+            }
+        except Exception as e:
+            logger.error(
+                f"Error fetching storefront data: {str(e)}",
+                metadata={
+                    "event": "get_storefront_data_error",
+                    "error": str(e),
+                    "error_type": type(e).__name__
+                }
+            )
+            raise ErrorResponse(
+                f"Failed to fetch storefront data: {str(e)}", 
+                status_code=500
+            )
     
     async def check_product_exists(self, product_id: str) -> Dict[str, bool]:
         """Check if product exists (for inter-service communication)"""

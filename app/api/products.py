@@ -18,7 +18,8 @@ from app.schemas.product import (
     ProductSearchResponse,
     ProductStatsResponse
 )
-from app.core.errors import ErrorResponseModel
+from app.core.errors import ErrorResponseModel, ErrorResponse
+from app.core.logger import logger
 
 router = APIRouter()
 
@@ -43,6 +44,32 @@ async def check_product_exists(
 
 
 # Product discovery endpoints
+@router.get(
+    "/storefront-data",
+    response_model=dict,
+    responses={503: {"model": ErrorResponseModel}},
+    tags=["storefront"]
+)
+async def get_storefront_data(
+    products_limit: int = Query(4, ge=1, le=20, description="Max trending products to return"),
+    categories_limit: int = Query(5, ge=1, le=20, description="Max trending categories to return"),
+    service: ProductService = Depends(get_product_service),
+):
+    """
+    Get combined storefront data in a single optimized call.
+    
+    Returns:
+    - trending_products: Products with review_aggregates and trending scores
+    - trending_categories: Categories with product counts and ratings
+    
+    This endpoint replaces separate calls to /trending and /trending-categories,
+    reducing round trips and improving storefront performance.
+    
+    Supports both Dapr and direct HTTP calls.
+    """
+    return await service.get_storefront_data(products_limit, categories_limit)
+
+
 @router.get(
     "/trending-categories",
     response_model=list[dict],
@@ -125,7 +152,6 @@ async def search_products(
 
 @router.get(
     "/",
-    response_model=ProductSearchResponse,
     responses={404: {"model": ErrorResponseModel}},
 )
 async def list_products(
