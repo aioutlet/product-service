@@ -180,9 +180,9 @@ def get_database_config() -> Dict[str, Any]:
     return {
         'host': secret_manager.get_secret('MONGODB_HOST') or 'localhost',
         'port': int(secret_manager.get_secret('MONGODB_PORT') or '27019'),
-        'username': secret_manager.get_secret('MONGODB_USERNAME'),
-        'password': secret_manager.get_secret('MONGODB_PASSWORD'),
-        'database': secret_manager.get_secret('MONGODB_DATABASE') or 'productdb',
+        'username': secret_manager.get_secret('MONGO_INITDB_ROOT_USERNAME'),
+        'password': secret_manager.get_secret('MONGO_INITDB_ROOT_PASSWORD'),
+        'database': secret_manager.get_secret('MONGO_INITDB_DATABASE') or 'productdb',
     }
 
 

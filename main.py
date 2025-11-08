@@ -3,6 +3,10 @@ FastAPI Application - Product Service
 Following FastAPI best practices with proper separation of concerns
 """
 
+# Load environment variables from .env file FIRST before any other imports
+from dotenv import load_dotenv
+load_dotenv()
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -61,9 +65,9 @@ app.add_middleware(CorrelationIdMiddleware)
 
 # Include API routers
 app.include_router(home.router, tags=["home"])
-app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(operational.router, prefix="/api", tags=["operational"])
+app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(events.router)  # Dapr pub/sub event subscriptions
 

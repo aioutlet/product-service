@@ -5,7 +5,7 @@ Provides JWT token validation and user extraction
 
 from typing import Optional
 import jwt
-from fastapi import Header, HTTPException, status
+from fastapi import Header, HTTPException, status, Depends
 
 from app.core.config import config
 from app.core.logger import logger
@@ -16,11 +16,11 @@ from app.services.dapr_secret_manager import get_jwt_config
 _jwt_config_cache = None
 
 
-async def get_cached_jwt_config():
+def get_cached_jwt_config():
     """Get JWT config with caching"""
     global _jwt_config_cache
     if _jwt_config_cache is None:
-        _jwt_config_cache = await get_jwt_config()
+        _jwt_config_cache = get_jwt_config()
     return _jwt_config_cache
 
 
@@ -46,11 +46,12 @@ async def decode_jwt(token: str) -> dict:
         AuthError: If token is invalid or expired
     """
     try:
-        jwt_config = await get_cached_jwt_config()
+        jwt_config = get_cached_jwt_config()
         payload = jwt.decode(
             token,
             jwt_config['secret'],
-            algorithms=[jwt_config['algorithm']]
+            algorithms=[jwt_config['algorithm']],
+            audience='aioutlet-platform'  # Verify audience matches auth-service
         )
         return payload
     except jwt.ExpiredSignatureError:
@@ -73,57 +74,40 @@ async def get_current_user(
             # user is authenticated
             pass
     """
-    if not authorization:
-        logger.warning("Authentication required: No token provided")
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Extract token from "Bearer <token>" format
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header format. Expected 'Bearer <token>'",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Unauthorized: No token found in Authorization header",
         )
     
     token = authorization.split(" ")[1]
     
     try:
-        # Decode token
+        # Verify token
         payload = await decode_jwt(token)
         
-        # Extract user information (compatible with auth-service token structure)
-        user_id = payload.get("id") or payload.get("user_id") or payload.get("sub")
+        # Extract user information from JWT (trust the JWT claims)
+        user_id = payload.get("sub") or payload.get("id")
         email = payload.get("email")
         roles = payload.get("roles", [])
         
         if not user_id:
-            logger.warning("Invalid token: Missing user ID")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: Missing user identifier",
             )
         
-        user = User(id=user_id, email=email, roles=roles)
-        logger.debug(f"Authentication successful for user: {user_id}")
-        
-        return user
+        return User(id=user_id, email=email, roles=roles)
         
     except AuthError as e:
-        logger.warning(f"Authentication failed: {e.message}")
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.message,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=e.status_code, detail=e.message)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Authentication error: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal authentication error",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: Invalid or expired token"
         )
 
 
@@ -150,16 +134,15 @@ async def get_current_user_optional(
         return None
 
 
-async def require_admin(user: User = Header(..., alias="user")) -> User:
+async def require_admin(user: User = Depends(get_current_user)) -> User:
     """
     Dependency to require admin role.
-    Must be used with get_current_user.
+    Automatically gets the current user via JWT and checks for admin role.
     
     Usage:
         @router.delete("/{id}")
         async def delete_item(
-            user: User = Depends(get_current_user),
-            _: User = Depends(require_admin)
+            user: User = Depends(require_admin)
         ):
             # user is authenticated and has admin role
             pass
@@ -168,6 +151,7 @@ async def require_admin(user: User = Header(..., alias="user")) -> User:
         logger.warning(f"Admin access denied for user: {user.id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required",
+            detail="Forbidden: Admin privileges required",
         )
+    
     return user

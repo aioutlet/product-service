@@ -26,8 +26,8 @@ async def connect_to_mongo():
     logger.info("Connecting to MongoDB...")
     
     try:
-        # Get database configuration from Dapr Secret Manager
-        db_config = await get_database_config()
+        # Get database configuration from Dapr Secret Manager (not async)
+        db_config = get_database_config()
         
         # Build MongoDB URL
         username = db_config.get('username', '')
@@ -70,13 +70,13 @@ async def connect_to_mongo():
 async def close_mongo_connection():
     """Close database connection"""
     logger.info("Closing connection to MongoDB...")
-    if db.client:
+    if db.client is not None:
         db.client.close()
 
 
 async def get_database():
     """Get database instance"""
-    if not db.database:
+    if db.database is None:
         await connect_to_mongo()
     return db.database
 

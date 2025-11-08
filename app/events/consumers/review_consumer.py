@@ -8,7 +8,6 @@ from datetime import datetime
 
 from app.core.logger import logger
 from app.repositories.product import ProductRepository
-from app.db.mongodb import get_database
 
 
 class ReviewEventConsumer:
@@ -24,6 +23,8 @@ class ReviewEventConsumer:
     async def initialize(self):
         """Initialize database connection and repository"""
         if not self.db:
+            # Lazy import to avoid circular dependency
+            from app.db.mongodb import get_database
             self.db = await get_database()
             self.product_repo = ProductRepository(self.db)
     

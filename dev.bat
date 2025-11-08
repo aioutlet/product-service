@@ -1,4 +1,6 @@
 @echo off
+setlocal enabledelayedexpansion
+
 :loop
 echo.
 echo ============================================
@@ -15,11 +17,20 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8003 ^| findstr LISTENING') 
 )
 
 echo Starting service on port 8003...
-python -m uvicorn src.main:app --reload --port 8003
+echo Press Ctrl+C to stop the service
+echo.
+python -m uvicorn main:app --reload --port 8003
+
+REM Check the exit code - if Ctrl+C was pressed, exit
+if errorlevel 1 (
+    echo.
+    echo Service stopped.
+    exit /b
+)
 
 echo.
 echo ============================================
-echo Service stopped. Press any key to restart or Ctrl+C to exit.
+echo Service stopped. Press any key to restart or Ctrl+C twice to exit.
 echo ============================================
 pause > nul
 goto loop

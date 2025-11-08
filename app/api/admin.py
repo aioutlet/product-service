@@ -3,7 +3,7 @@ Admin API endpoints
 Administrative operations and dashboard statistics
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 
 from app.core.logger import logger
 from app.dependencies.product import get_product_service
@@ -23,7 +23,7 @@ router = APIRouter()
 )
 async def get_stats(
     service: ProductService = Depends(get_product_service),
-    user: User = Depends(require_admin)  # Admin only
+    authorization: str = Header(None)
 ):
     """
     Get product statistics for admin dashboard.
@@ -35,27 +35,41 @@ async def get_stats(
     - lowStock: Products with low stock (placeholder)
     - outOfStock: Out of stock products (placeholder)
     """
-    logger.info(
-        "Admin requesting product statistics",
-        metadata={
-            "event": "admin_stats_request",
-            "user_id": user.id,
-            "user_email": user.email
-        }
-    )
+    # Manual auth check to avoid Python 3.13 dependency issue
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required")
     
-    stats = await service.get_admin_stats()
-    
-    logger.info(
-        "Product statistics retrieved",
-        metadata={
-            "event": "admin_stats_retrieved",
-            "total_products": stats.total,
-            "active_products": stats.active
-        }
-    )
-    
-    return stats
+    try:
+        from app.dependencies.auth import decode_jwt
+        token = authorization.replace("Bearer ", "")
+        payload = await decode_jwt(token)
+        
+        roles = payload.get("roles", [])
+        is_admin = "admin" in roles or "Admin" in roles
+        
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Admin access required")
+            
+        user_id = payload.get("id") or payload.get("user_id") or payload.get("sub")
+        
+        logger.info("Getting product statistics from service", metadata={"user_id": user_id})
+        stats = await service.get_admin_stats()
+        
+        logger.info(
+            "Product statistics retrieved",
+            metadata={
+                "event": "admin_stats_retrieved",
+                "total_products": stats.total,
+                "active_products": stats.active
+            }
+        )
+        
+        return stats
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Authentication error: {str(e)}")
+        raise HTTPException(status_code=401, detail="Invalid authentication")
 
 
 @router.get(
