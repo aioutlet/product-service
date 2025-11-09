@@ -10,7 +10,7 @@ from fastapi import Header, HTTPException, status, Depends
 from app.core.config import config
 from app.core.logger import logger
 from app.models.user import User
-from app.services.dapr_secret_manager import get_jwt_config
+from app.clients.dapr_secret_client import get_jwt_config
 
 # Cache JWT config to avoid repeated Dapr calls
 _jwt_config_cache = None

@@ -8,7 +8,7 @@ from typing import Optional
 from app.core.config import config
 from app.core.errors import ErrorResponse
 from app.core.logger import logger
-from app.services.dapr_secret_manager import get_database_config
+from app.clients.dapr_secret_client import get_database_config
 
 
 class Database:

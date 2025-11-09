@@ -8,7 +8,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from app.core.logger import logger
-from app.services.dapr_service_client import get_dapr_service_client
+from app.clients.dapr_service_client import get_dapr_service_client
 
 
 class StockCheckItem(BaseModel):
