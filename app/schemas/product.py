@@ -80,5 +80,3 @@ class ProductStatsResponse(BaseModel):
     """Response schema for admin product statistics"""
     total: int
     active: int
-    lowStock: int
-    outOfStock: int

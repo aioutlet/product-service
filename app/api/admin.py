@@ -30,10 +30,10 @@ async def get_stats(
     Requires admin role.
     
     Returns:
-    - total: Total number of products
+    - total: Total number of products in catalog
     - active: Number of active products
-    - lowStock: Products with low stock (placeholder)
-    - outOfStock: Out of stock products (placeholder)
+    
+    Note: Stock information (lowStock, outOfStock) is provided by inventory service
     """
     # Manual auth check to avoid Python 3.13 dependency issue
     if not authorization or not authorization.startswith("Bearer "):

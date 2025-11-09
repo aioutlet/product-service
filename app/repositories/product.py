@@ -499,12 +499,11 @@ class ProductRepository:
             total = await self.collection.count_documents({})
             active = await self.collection.count_documents({"is_active": True})
             
-            # Note: Product service doesn't manage stock - that's in inventory service
+            # Product service only manages catalog data
+            # Stock management is handled by inventory service
             return {
                 "total": total,
-                "active": active,
-                "lowStock": 0,
-                "outOfStock": 0
+                "active": active
             }
             
         except PyMongoError as e:
