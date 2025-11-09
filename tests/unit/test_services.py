@@ -17,9 +17,12 @@ class TestProductService:
         self.service = ProductService(repository=self.mock_repository)
 
     @pytest.mark.asyncio
-    async def test_create_product_success(self):
+    @patch('app.services.product.event_publisher')
+    async def test_create_product_success(self, mock_publisher):
         """Test successful product creation"""
         # Arrange
+        mock_publisher.publish_product_created = AsyncMock()
+        
         product_data = ProductCreate(
             name="Test Product",
             price=29.99,
@@ -46,6 +49,7 @@ class TestProductService:
         assert result == created_product
         self.mock_repository.check_sku_exists.assert_called_once_with("TEST-001")
         self.mock_repository.create.assert_called_once()
+        mock_publisher.publish_product_created.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_create_product_duplicate_sku(self):
@@ -69,9 +73,12 @@ class TestProductService:
         self.mock_repository.create.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_update_product_success(self):
+    @patch('app.services.product.event_publisher')
+    async def test_update_product_success(self, mock_publisher):
         """Test successful product update"""
         # Arrange
+        mock_publisher.publish_product_updated = AsyncMock()
+        
         product_id = "507f1f77bcf86cd799439011"
         update_data = ProductUpdate(name="Updated Product", price=39.99)
         
@@ -91,6 +98,7 @@ class TestProductService:
         # Assert
         assert result == updated_product
         self.mock_repository.update.assert_called_once_with(product_id, update_data, "admin")
+        mock_publisher.publish_product_updated.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_update_product_not_found(self):
@@ -109,9 +117,12 @@ class TestProductService:
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_delete_product_success(self):
+    @patch('app.services.product.event_publisher')
+    async def test_delete_product_success(self, mock_publisher):
         """Test successful product deletion"""
         # Arrange
+        mock_publisher.publish_product_deleted = AsyncMock()
+        
         product_id = "507f1f77bcf86cd799439011"
         self.mock_repository.delete.return_value = True
 
@@ -121,6 +132,7 @@ class TestProductService:
         # Assert
         assert result is None  # delete_product returns None
         self.mock_repository.delete.assert_called_once_with(product_id)
+        mock_publisher.publish_product_deleted.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_product_not_found(self):
@@ -218,8 +230,8 @@ class TestProductService:
         result = await self.service.list_products(skip=0, limit=10)
 
         # Assert
-        assert result.products == products
-        assert result.total_count == 2
+        assert result["total_count"] == 2
+        assert len(result["products"]) == 2
         self.mock_repository.list_products.assert_called_once_with(
             None, None, None, None, None, None, 0, 10
         )
