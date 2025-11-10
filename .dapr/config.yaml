@@ -5,6 +5,10 @@ metadata:
 spec:
   tracing:
     samplingRate: '1'
+    otel:
+      endpointAddress: 'http://localhost:4318'
+      isSecure: false
+      protocol: 'http'
   features:
     - name: SchedulerReminders
       enabled: false
