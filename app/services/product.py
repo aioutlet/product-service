@@ -10,7 +10,7 @@ from app.core.logger import logger
 from app.repositories.product import ProductRepository
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductSearchResponse, ProductStatsResponse
 from app.events import event_publisher
-from app.middleware.correlation_id import get_correlation_id
+from app.middleware.trace_context import get_trace_id
 
 
 class ProductService:
@@ -43,7 +43,7 @@ class ProductService:
             product_id=product.id,
             product_data=product.model_dump(),
             created_by=created_by,
-            correlation_id=get_correlation_id()
+            correlation_id=get_trace_id()
         )
         
         return product
@@ -87,7 +87,7 @@ class ProductService:
             product_id=product_id,
             product_data=product.model_dump(),
             updated_by=updated_by or "system",
-            correlation_id=get_correlation_id()
+            correlation_id=get_trace_id()
         )
         
         return product
@@ -107,7 +107,7 @@ class ProductService:
         await event_publisher.publish_product_deleted(
             product_id=product_id,
             deleted_by=deleted_by,
-            correlation_id=get_correlation_id()
+            correlation_id=get_trace_id()
         )
     
     async def reactivate_product(self, product_id: str, updated_by: str = None) -> ProductResponse:

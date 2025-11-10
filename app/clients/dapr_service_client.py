@@ -14,7 +14,7 @@ except ImportError:
 
 from app.core.logger import logger
 from app.core.config import config
-from app.middleware.correlation_id import get_correlation_id
+from app.middleware.trace_context import get_trace_id
 
 
 class DaprServiceClient:
@@ -52,10 +52,10 @@ class DaprServiceClient:
             "dapr-app-id": self.service_name
         }
         
-        # Add correlation ID for distributed tracing
-        correlation_id = get_correlation_id()
-        if correlation_id:
-            headers[config.correlation_id_header] = correlation_id
+        # Add trace ID for distributed tracing
+        trace_id = get_trace_id()
+        if trace_id:
+            headers["traceparent"] = f"00-{trace_id}-{trace_id[:16]}-01"
             
         # Add any additional headers
         if additional_headers:
@@ -108,7 +108,7 @@ class DaprServiceClient:
                     "app_id": app_id,
                     "method": method_name,
                     "http_verb": http_verb,
-                    "correlation_id": request_headers.get(config.correlation_id_header)
+                    "trace_id": request_headers.get("traceparent")
                 }
             )
             

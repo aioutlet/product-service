@@ -15,7 +15,7 @@ except ImportError:
 
 from app.core.config import config
 from app.core.logger import logger
-from app.middleware.correlation_id import get_correlation_id
+from app.middleware.trace_context import get_trace_id
 
 
 class DaprEventPublisher:
@@ -52,9 +52,9 @@ class DaprEventPublisher:
             )
             return False
         
-        # Get correlation ID from context if not provided
+        # Get trace ID from context if not provided
         if not correlation_id:
-            correlation_id = get_correlation_id()
+            correlation_id = get_trace_id()
         
         # Construct event payload
         event_payload = {
