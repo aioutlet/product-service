@@ -12,13 +12,13 @@ from typing import Any, Dict, Optional
 
 from app.core.config import config
 
-# Import correlation ID utility from middleware
+# Import trace ID utility from middleware
 try:
-    from app.middleware.correlation_id import get_correlation_id
+    from app.middleware.trace_context import get_trace_id
 except ImportError:
     # Fallback if middleware not available yet
-    def get_correlation_id() -> Optional[str]:
-        """Get correlation ID from context - placeholder for now"""
+    def get_trace_id() -> Optional[str]:
+        """Get trace ID from context - placeholder for now"""
         return None
 
 # Environment-based configuration
@@ -42,8 +42,8 @@ class ColorFormatter(logging.Formatter):
     def format(self, record):
         # Build the base message with standard fields
         timestamp = datetime.fromtimestamp(record.created).isoformat()
-        correlation_id = getattr(record, "correlationId", None) or get_correlation_id()
-        corr_id_str = f"[{correlation_id}]" if correlation_id else "[no-correlation]"
+        trace_id = getattr(record, "traceId", None) or get_trace_id()
+        trace_id_str = f"[{trace_id[:16]}]" if trace_id else "[no-trace]"
 
         # Build metadata string
         meta_fields = []
@@ -73,7 +73,7 @@ class ColorFormatter(logging.Formatter):
 
         base_msg = (
             f"[{timestamp}] [{record.levelname}] {config.service_name} "
-            f"{corr_id_str}: {record.getMessage()}{meta_str}"
+            f"{trace_id_str}: {record.getMessage()}{meta_str}"
         )
 
         # Apply color if in development and terminal supports it
@@ -88,13 +88,13 @@ class JsonFormatter(logging.Formatter):
     """JSON formatter for production logging"""
 
     def format(self, record):
-        correlation_id = getattr(record, "correlationId", None) or get_correlation_id()
+        trace_id = getattr(record, "traceId", None) or get_trace_id()
 
         log_record = {
             "timestamp": datetime.fromtimestamp(record.created).isoformat(),
             "level": record.levelname,
             "service": config.service_name,
-            "correlationId": correlation_id,
+            "traceId": trace_id,
             "message": record.getMessage(),
         }
 
@@ -135,7 +135,13 @@ class StandardLogger:
 
         # Add file handler
         if config.log_to_file:
-            file_handler = logging.FileHandler(f"{config.service_name}.log")
+            log_file_path = config.log_file_path
+            # Ensure log directory exists
+            log_dir = os.path.dirname(log_file_path)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            
+            file_handler = logging.FileHandler(log_file_path)
             file_handler.setFormatter(JsonFormatter())
             self.logger.addHandler(file_handler)
 
@@ -165,7 +171,7 @@ class StandardLogger:
 
         # Build log data
         log_data = {
-            "correlationId": metadata.get("correlationId") or get_correlation_id(),
+            "traceId": metadata.get("traceId") or get_trace_id(),
             "userId": metadata.get("userId"),
             "operation": metadata.get("operation"),
             "duration": metadata.get("duration"),

@@ -16,9 +16,13 @@ from fastapi.responses import JSONResponse
 from app.core.config import config
 from app.core.errors import error_response_handler, http_exception_handler, ErrorResponse
 from app.core.logger import logger
+from app.core.telemetry import init_telemetry, instrument_app
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
 from app.api import products, health, operational, admin, home, events
-from app.middleware import CorrelationIdMiddleware
+from app.middleware import TraceContextMiddleware
+
+# Initialize OpenTelemetry tracing BEFORE creating FastAPI app
+init_telemetry()
 
 
 @asynccontextmanager
@@ -53,6 +57,9 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Instrument app with OpenTelemetry for automatic tracing
+instrument_app(app)
+
 # Configure error handlers
 app.add_exception_handler(ErrorResponse, error_response_handler)
 app.add_exception_handler(RequestValidationError, lambda request, exc: JSONResponse(
@@ -60,8 +67,8 @@ app.add_exception_handler(RequestValidationError, lambda request, exc: JSONRespo
     content={"error": "Validation error", "details": exc.errors()}
 ))
 
-# Add middleware
-app.add_middleware(CorrelationIdMiddleware)
+# Add W3C Trace Context middleware
+app.add_middleware(TraceContextMiddleware)
 
 # Include API routers
 app.include_router(home.router, tags=["home"])

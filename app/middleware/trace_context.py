@@ -1,7 +1,7 @@
 """
-Correlation ID Middleware for request tracing
-Ensures every request has a unique correlation ID for distributed tracing
-Supports W3C Trace Context standard (traceparent header)
+W3C Trace Context Middleware
+Implements W3C Trace Context standard for distributed tracing
+Extracts/generates traceparent header and propagates trace context
 """
 
 import uuid
@@ -12,20 +12,25 @@ from typing import Optional, Tuple
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.core.config import config
-
-# Context variable to store correlation ID for the current request
-correlation_id_ctx: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
-
-
-def get_correlation_id() -> Optional[str]:
-    """Get the correlation ID from the current context"""
-    return correlation_id_ctx.get()
+# Context variables to store trace context for the current request
+trace_id_ctx: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
+span_id_ctx: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
 
 
-def set_correlation_id(correlation_id: str) -> None:
-    """Set the correlation ID in the current context"""
-    correlation_id_ctx.set(correlation_id)
+def get_trace_id() -> Optional[str]:
+    """Get the trace ID from the current context"""
+    return trace_id_ctx.get()
+
+
+def get_span_id() -> Optional[str]:
+    """Get the span ID from the current context"""
+    return span_id_ctx.get()
+
+
+def set_trace_context(trace_id: str, span_id: str) -> None:
+    """Set the trace context in the current context"""
+    trace_id_ctx.set(trace_id)
+    span_id_ctx.set(span_id)
 
 
 def extract_trace_context(traceparent: str) -> Optional[Tuple[str, str]]:
@@ -67,39 +72,31 @@ def generate_trace_context() -> Tuple[str, str]:
     return (trace_id, span_id)
 
 
-class CorrelationIdMiddleware(BaseHTTPMiddleware):
+class TraceContextMiddleware(BaseHTTPMiddleware):
     """
-    Middleware to handle correlation IDs and W3C Trace Context for request tracing
+    W3C Trace Context Middleware
     
-    - Extracts W3C traceparent header or legacy correlation ID
+    - Extracts W3C traceparent header from incoming requests
     - Generates new trace context if none provided
     - Stores trace context in request state
-    - Adds trace headers to response for propagation
+    - Propagates traceparent header in responses
     """
     
     async def dispatch(self, request: Request, call_next):
-        # Try to extract W3C Trace Context from traceparent header
+        # Extract W3C Trace Context from traceparent header
         traceparent = request.headers.get("traceparent")
         trace_context = extract_trace_context(traceparent) if traceparent else None
         
         if trace_context:
             trace_id, span_id = trace_context
         else:
-            # Check for legacy correlation ID header
-            correlation_id = request.headers.get(config.correlation_id_header)
-            if correlation_id:
-                # Use correlation ID as trace ID
-                trace_id = correlation_id.replace("-", "")[:32].ljust(32, '0')
-                span_id = uuid.uuid4().hex[:16]
-            else:
-                # Generate new trace context
-                trace_id, span_id = generate_trace_context()
+            # Generate new trace context
+            trace_id, span_id = generate_trace_context()
         
         # Store in context and request state
-        set_correlation_id(trace_id)
+        set_trace_context(trace_id, span_id)
         request.state.trace_id = trace_id
         request.state.span_id = span_id
-        request.state.correlation_id = trace_id  # For backward compatibility
         
         # Process the request
         response = await call_next(request)
@@ -107,9 +104,6 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         # Add W3C traceparent header to response
         traceparent_response = f"00-{trace_id}-{span_id}-01"
         response.headers["traceparent"] = traceparent_response
-        
-        # Add legacy correlation ID header for backward compatibility
-        response.headers[config.correlation_id_header] = trace_id
         response.headers["X-Trace-ID"] = trace_id
         
         return response

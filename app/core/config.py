@@ -30,13 +30,16 @@ class Config(BaseSettings):
     log_format: str = Field(default="console", env="LOG_FORMAT")
     log_to_file: bool = Field(default=True, env="LOG_TO_FILE")
     log_to_console: bool = Field(default=True, env="LOG_TO_CONSOLE")
-    
-    # Security configuration
-    correlation_id_header: str = Field(default="X-Correlation-ID", env="CORRELATION_ID_HEADER")
+    log_file_path: str = Field(default="./logs/product-service.log", env="LOG_FILE_PATH")
     
     # Dapr configuration
     dapr_http_port: int = Field(default=3500, env="DAPR_HTTP_PORT")
     dapr_grpc_port: int = Field(default=50001, env="DAPR_GRPC_PORT")
+    
+    # Distributed tracing configuration (OpenTelemetry)
+    enable_tracing: bool = Field(default=False, env="ENABLE_TRACING")
+    otel_endpoint: Optional[str] = Field(default=None, env="OTEL_EXPORTER_OTLP_ENDPOINT")
+    trace_sample_rate: float = Field(default=1.0, env="TRACE_SAMPLE_RATE")
     
     class ConfigDict:
         env_file = ".env"

@@ -2,6 +2,6 @@
 Middleware modules for the Product Service
 """
 
-from .correlation_id import CorrelationIdMiddleware, get_correlation_id
+from .trace_context import TraceContextMiddleware, get_trace_id, get_span_id
 
-__all__ = ["CorrelationIdMiddleware", "get_correlation_id"]
+__all__ = ["TraceContextMiddleware", "get_trace_id", "get_span_id"]
