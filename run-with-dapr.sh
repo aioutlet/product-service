@@ -45,4 +45,4 @@ dapr run \
   --dapr-http-port $DAPR_HTTP_PORT \
   --dapr-grpc-port $DAPR_GRPC_PORT \
   --resources-path .dapr/components \
-  -- python -m uvicorn src.main:app --host 0.0.0.0 --port $DAPR_APP_PORT --reload
+  -- python -m uvicorn main:app --host 0.0.0.0 --port $DAPR_APP_PORT --reload

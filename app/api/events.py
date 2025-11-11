@@ -13,6 +13,21 @@ from app.core.logger import logger
 router = APIRouter(prefix="/dapr", tags=["dapr-pubsub"])
 
 
+@router.get("/config")
+async def get_dapr_config():
+    """
+    Dapr configuration endpoint.
+    Returns app-level configuration for Dapr runtime.
+    """
+    return {
+        "entities": [],
+        "actorIdleTimeout": "1h",
+        "actorScanInterval": "30s",
+        "drainOngoingCallTimeout": "1m",
+        "drainRebalancedActors": True
+    }
+
+
 @router.get("/subscribe")
 async def get_subscriptions():
     """

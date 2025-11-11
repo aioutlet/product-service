@@ -199,3 +199,8 @@ htmlcov/
 .coverage
 *.coverage
 coverage.xml
+.idea/.gitignore
+.idea/modules.xml
+.idea/product-service.iml
+.idea/vcs.xml
+.idea/inspectionProfiles/profiles_settings.xml
