@@ -36,10 +36,7 @@ class Config(BaseSettings):
     dapr_http_port: int = Field(default=3500, env="DAPR_HTTP_PORT")
     dapr_grpc_port: int = Field(default=50001, env="DAPR_GRPC_PORT")
     
-    # Distributed tracing configuration (OpenTelemetry)
-    enable_tracing: bool = Field(default=False, env="ENABLE_TRACING")
-    otel_endpoint: Optional[str] = Field(default=None, env="OTEL_EXPORTER_OTLP_ENDPOINT")
-    trace_sample_rate: float = Field(default=1.0, env="TRACE_SAMPLE_RATE")
+    # Note: Distributed tracing is configured in .dapr/config.yaml
     
     class ConfigDict:
         env_file = ".env"

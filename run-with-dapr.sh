@@ -5,9 +5,9 @@ echo "🚀 Starting Product Service with Dapr..."
 
 # Set Dapr app configuration
 export DAPR_APP_ID=product-service
-export DAPR_HTTP_PORT=3500
+export DAPR_HTTP_PORT=3501
 export DAPR_GRPC_PORT=50001
-export DAPR_APP_PORT=8003
+export DAPR_APP_PORT=1001
 
 echo "📦 Dapr Configuration:"
 echo "   App ID: $DAPR_APP_ID"
@@ -45,4 +45,7 @@ dapr run \
   --dapr-http-port $DAPR_HTTP_PORT \
   --dapr-grpc-port $DAPR_GRPC_PORT \
   --resources-path .dapr/components \
-  -- python -m uvicorn main:app --host 0.0.0.0 --port $DAPR_APP_PORT --reload
+  --config .dapr/config.yaml \
+  --placement-host-address "" \
+  --log-level warn \
+  -- python -m uvicorn main:app --host 0.0.0.0 --port $DAPR_APP_PORT --reload --reload-dir . --reload-dir app

@@ -2,6 +2,6 @@
 API module initialization
 """
 
-from . import products, health, operational, admin, home
+from . import products, operational, admin, home, events
 
-__all__ = ["products", "health", "operational", "admin", "home"]
+__all__ = ["products", "operational", "admin", "home", "events"]

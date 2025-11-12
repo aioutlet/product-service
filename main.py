@@ -16,13 +16,13 @@ from fastapi.responses import JSONResponse
 from app.core.config import config
 from app.core.errors import error_response_handler, http_exception_handler, ErrorResponse
 from app.core.logger import logger
-from app.core.telemetry import init_telemetry, instrument_app
+from app.core.telemetry import instrument_app
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
-from app.api import products, health, operational, admin, home, events
+from app.api import products, operational, admin, home, events
 from app.middleware import TraceContextMiddleware
 
-# Initialize OpenTelemetry tracing BEFORE creating FastAPI app
-init_telemetry()
+# Note: Dapr handles trace context propagation and OTLP export (configured in .dapr/config.yaml)
+# OpenTelemetry instrumentation creates spans for local operations
 
 
 @asynccontextmanager
@@ -57,7 +57,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Instrument app with OpenTelemetry for automatic tracing
+# Instrument app with OpenTelemetry for automatic span creation
 instrument_app(app)
 
 # Configure error handlers
@@ -72,8 +72,7 @@ app.add_middleware(TraceContextMiddleware)
 
 # Include API routers
 app.include_router(home.router, tags=["home"])
-app.include_router(health.router, prefix="/api", tags=["health"])
-app.include_router(operational.router, prefix="/api", tags=["operational"])
+app.include_router(operational.router, tags=["operational"])  # No /api prefix for health/metrics
 app.include_router(products.router, prefix="/api/products", tags=["products"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(events.router)  # Dapr pub/sub event subscriptions
