@@ -48,4 +48,4 @@ dapr run \
   --config .dapr/config.yaml \
   --placement-host-address "" \
   --log-level warn \
-  -- python -m uvicorn main:app --host 0.0.0.0 --port $DAPR_APP_PORT --reload --reload-dir . --reload-dir app
+  -- python -m uvicorn main:app --host 0.0.0.0 --port $DAPR_APP_PORT --reload --reload-include '*.py'

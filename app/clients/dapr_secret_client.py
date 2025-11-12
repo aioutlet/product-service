@@ -177,11 +177,18 @@ def get_database_config() -> Dict[str, Any]:
     Returns:
         Dictionary with database connection parameters
     """
+    username = secret_manager.get_secret('MONGO_INITDB_ROOT_USERNAME')
+    password = secret_manager.get_secret('MONGO_INITDB_ROOT_PASSWORD')
+    
+    # Filter out empty strings - treat them as None
+    username = username if username and username.strip() else None
+    password = password if password and password.strip() else None
+    
     return {
         'host': secret_manager.get_secret('MONGODB_HOST') or 'localhost',
         'port': int(secret_manager.get_secret('MONGODB_PORT') or '27019'),
-        'username': secret_manager.get_secret('MONGO_INITDB_ROOT_USERNAME'),
-        'password': secret_manager.get_secret('MONGO_INITDB_ROOT_PASSWORD'),
+        'username': username,
+        'password': password,
         'database': secret_manager.get_secret('MONGO_INITDB_DATABASE') or 'productdb',
     }
 
