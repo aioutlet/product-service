@@ -4,11 +4,12 @@ metadata:
   name: daprConfig
 spec:
   tracing:
-    samplingRate: '1'
-    otel:
-      endpointAddress: 'localhost:4318'
-      isSecure: false
-      protocol: 'http'
+    samplingRate: '0'  # Disable tracing for local dev (no collector running)
   features:
     - name: SchedulerReminders
       enabled: false
+    - name: ActorStateTTL
+      enabled: false
+  # Disable placement service for local development (only using pub/sub)
+  actorsService:
+    placementAddresses: []

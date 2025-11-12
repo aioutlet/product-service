@@ -119,7 +119,7 @@ class StandardLogger:
 
     def __init__(self):
         self.logger = logging.getLogger(config.service_name)
-        self.logger.setLevel(config.log_level)
+        self.logger.setLevel(config.log_level.upper())
 
         # Clear any existing handlers
         self.logger.handlers.clear()

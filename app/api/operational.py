@@ -252,6 +252,8 @@ async def check_dapr_sidecar_health() -> Dict[str, Any]:
                 response_time_ms = (time.time() - check_start) * 1000
                 
                 # Dapr health endpoint returns 204 No Content when healthy
+                # For local development, accept 500 if it's only placement service warning
+                # (we don't use actors in local dev)
                 if response.status in (200, 204):
                     logger.debug(
                         "Dapr sidecar health check passed",
@@ -271,7 +273,32 @@ async def check_dapr_sidecar_health() -> Dict[str, Any]:
                         "url": health_url,
                         "timestamp": datetime.now().isoformat(),
                     }
-                else:
+                elif response.status == 500:
+                    # Check if it's just placement service (actors) - not critical for pub/sub
+                    try:
+                        error_data = await response.json()
+                        error_msg = error_data.get("message", "")
+                        if "placement" in error_msg.lower():
+                            # Placement service not ready, but pub/sub still works
+                            logger.debug(
+                                "Dapr placement service not ready (expected in local dev without actors)",
+                                metadata={
+                                    "response_time_ms": response_time_ms,
+                                    "dapr_port": dapr_http_port,
+                                    "event": "health_check_dapr_placement_warning"
+                                }
+                            )
+                            return {
+                                "name": "dapr_sidecar",
+                                "status": "healthy",
+                                "response_time_ms": round(response_time_ms, 2),
+                                "dapr_http_port": dapr_http_port,
+                                "warning": "Placement service not ready (actors unavailable)",
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                    except:
+                        pass
+                    
                     error_msg = f"Dapr returned HTTP {response.status}"
                     return {
                         "name": "dapr_sidecar",
