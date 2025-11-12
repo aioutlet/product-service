@@ -24,8 +24,10 @@ class DaprSecretManager:
     """
     
     def __init__(self):
-        self.dapr_enabled = os.getenv('DAPR_ENABLED', 'true').lower() == 'true'
         self.environment = config.environment
+        
+        # Auto-detect Dapr availability by checking if Dapr sidecar is running
+        self.dapr_available = self._check_dapr_availability()
         
         # Use appropriate secret store based on environment
         if self.environment == 'production':
@@ -37,11 +39,37 @@ class DaprSecretManager:
             f"Secret manager initialized",
             metadata={
                 "event": "secret_manager_init",
-                "dapr_enabled": self.dapr_enabled and DAPR_AVAILABLE,
+                "dapr_available": self.dapr_available,
                 "environment": self.environment,
-                "secret_store": self.secret_store_name
+                "secret_store": self.secret_store_name if self.dapr_available else "environment-variables"
             }
         )
+    
+    def _check_dapr_availability(self) -> bool:
+        """Check if Dapr sidecar is available"""
+        if not DAPR_AVAILABLE:
+            return False
+        
+        try:
+            import requests
+            dapr_port = os.getenv('DAPR_HTTP_PORT', '3501')
+            logger.info(
+                f"Checking Dapr availability on port {dapr_port}",
+                metadata={"event": "dapr_health_check", "port": dapr_port}
+            )
+            response = requests.get(f'http://localhost:{dapr_port}/v1.0/healthz', timeout=0.5)
+            available = response.status_code == 204
+            logger.info(
+                f"Dapr health check result: {available}",
+                metadata={"event": "dapr_health_check_result", "available": available, "status_code": response.status_code}
+            )
+            return available
+        except Exception as e:
+            logger.info(
+                f"Dapr not available: {str(e)}",
+                metadata={"event": "dapr_health_check_failed", "error": str(e)}
+            )
+            return False
     
     def get_secret(self, secret_name: str) -> Optional[str]:
         """
@@ -57,8 +85,8 @@ class DaprSecretManager:
             1. Dapr secret store (if enabled and available)
             2. Environment variable (fallback)
         """
-        # If Dapr is disabled or not available, use environment variables
-        if not self.dapr_enabled or not DAPR_AVAILABLE:
+        # If Dapr is not available, use environment variables
+        if not self.dapr_available:
             value = os.getenv(secret_name)
             if value:
                 logger.debug(
@@ -184,13 +212,26 @@ def get_database_config() -> Dict[str, Any]:
     username = username if username and username.strip() else None
     password = password if password and password.strip() else None
     
-    return {
+    config = {
         'host': secret_manager.get_secret('MONGODB_HOST') or 'localhost',
         'port': int(secret_manager.get_secret('MONGODB_PORT') or '27019'),
         'username': username,
         'password': password,
         'database': secret_manager.get_secret('MONGO_INITDB_DATABASE') or 'productdb',
     }
+    
+    logger.info(
+        f"Database config retrieved",
+        metadata={
+            "event": "db_config_retrieved",
+            "host": config['host'],
+            "port": config['port'],
+            "database": config['database'],
+            "has_credentials": bool(username and password)
+        }
+    )
+    
+    return config
 
 
 def get_jwt_config() -> Dict[str, Any]:

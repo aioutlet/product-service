@@ -278,6 +278,12 @@ class ProductRepository:
         try:
             query = {"is_active": True}
             
+            # Log the collection name for debugging
+            logger.info(
+                f"Querying collection: {self.collection.name} in database: {self.collection.database.name}",
+                metadata={"event": "query_debug", "collection": self.collection.name, "database": self.collection.database.name}
+            )
+            
             # Hierarchical filtering
             if department:
                 query["department"] = department

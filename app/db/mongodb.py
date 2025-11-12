@@ -34,7 +34,7 @@ async def connect_to_mongo():
         password = db_config.get('password', '')
         host = db_config.get('host', 'localhost')
         port = db_config.get('port', '27019')
-        database = db_config.get('database', 'productdb')
+        database = db_config.get('database', 'product_service_db')
         
         if username and password:
             mongodb_url = f"mongodb://{username}:{password}@{host}:{port}/{database}?authSource=admin"
