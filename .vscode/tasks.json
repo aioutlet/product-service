@@ -2,24 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Kill Port 1001",
-      "type": "shell",
-      "command": "powershell",
-      "args": [
-        "-Command",
-        "$proc = Get-NetTCPConnection -LocalPort 1001 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; if ($proc) { Stop-Process -Id $proc -Force; Write-Host 'Killed process on port 1001' } else { Write-Host 'Port 1001 is free' }; Get-Process -Name daprd -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Write-Host 'Cleaned up Dapr processes'"
-      ],
-      "presentation": {
-        "echo": false,
-        "reveal": "silent",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "clear": false
-      },
-      "problemMatcher": []
-    },
-    {
       "label": "Start Dapr Sidecar",
       "type": "shell",
       "command": "dapr",

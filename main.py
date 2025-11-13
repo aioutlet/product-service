@@ -16,13 +16,11 @@ from fastapi.responses import JSONResponse
 from app.core.config import config
 from app.core.errors import error_response_handler, http_exception_handler, ErrorResponse
 from app.core.logger import logger
-from app.core.telemetry import instrument_app
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
 from app.api import products, operational, admin, home, events
 from app.middleware import TraceContextMiddleware
 
-# Note: Dapr handles trace context propagation and OTLP export (configured in .dapr/config.yaml)
-# OpenTelemetry instrumentation creates spans for local operations
+# Note: Dapr handles distributed tracing via config.yaml (OTEL Collector → Jaeger)
 
 
 @asynccontextmanager
@@ -56,9 +54,6 @@ app = FastAPI(
     version=config.service_version,
     lifespan=lifespan
 )
-
-# Instrument app with OpenTelemetry for automatic span creation
-instrument_app(app)
 
 # Configure error handlers
 app.add_exception_handler(ErrorResponse, error_response_handler)

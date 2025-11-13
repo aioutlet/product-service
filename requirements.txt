@@ -17,21 +17,8 @@ pytest-mock>=3.12.0
 pytest-cov>=4.1.0
 httpx>=0.25.0
 
-# Rate limiting
-slowapi
-
 # HTTP client
 aiohttp>=3.9.0
 
-# Dapr SDK for pub/sub
+# Dapr SDK for pub/sub and service invocation
 dapr>=1.12.0
-
-# Observability and Monitoring
-opentelemetry-api>=1.20.0
-opentelemetry-sdk>=1.20.0
-opentelemetry-exporter-otlp-proto-http>=1.20.0
-opentelemetry-instrumentation-fastapi>=0.41b0
-opentelemetry-instrumentation-httpx>=0.41b0
-opentelemetry-instrumentation-pymongo>=0.41b0
-opentelemetry-instrumentation-redis>=0.41b0
-opentelemetry-instrumentation-logging>=0.41b0

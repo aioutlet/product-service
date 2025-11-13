@@ -1,15 +1,20 @@
 apiVersion: dapr.io/v1alpha1
 kind: Configuration
 metadata:
-  name: daprConfig
+  name: product-service-config
 spec:
-  tracing:
-    samplingRate: '0'  # Disable tracing for local dev (no collector running)
+  # Suppress scheduler warnings for services that don't use scheduling features
   features:
     - name: SchedulerReminders
       enabled: false
-    - name: ActorStateTTL
-      enabled: false
-  # Disable placement service for local development (only using pub/sub)
-  actorsService:
-    placementAddresses: []
+  # Distributed Tracing Configuration
+  # Dapr automatically propagates W3C Trace Context via 'traceparent' header
+  # Services can extract traceId and spanId from this header for application logging
+  tracing:
+    samplingRate: '1' # 100% sampling - adjust for production (e.g., '0.1' for 10%)
+    # OpenTelemetry (OTLP) - Modern tracing protocol
+    # Sends to OTEL Collector which exports to Jaeger for visualization
+    otel:
+      endpointAddress: 'localhost:4318'
+      isSecure: false
+      protocol: 'http'
