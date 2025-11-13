@@ -22,7 +22,7 @@ class Config(BaseSettings):
     environment: str = Field(default="development", env="ENVIRONMENT")
     
     # Server configuration
-    port: int = Field(default=8003, env="PORT")
+    port: int = Field(default=1001, env="PORT")
     host: str = Field(default="0.0.0.0", env="HOST")
     
     # Logging configuration
@@ -33,7 +33,7 @@ class Config(BaseSettings):
     log_file_path: str = Field(default="./logs/product-service.log", env="LOG_FILE_PATH")
     
     # Dapr configuration
-    dapr_http_port: int = Field(default=3500, env="DAPR_HTTP_PORT")
+    dapr_http_port: int = Field(default=3501, env="DAPR_HTTP_PORT")
     dapr_grpc_port: int = Field(default=50001, env="DAPR_GRPC_PORT")
     
     # Note: Distributed tracing is configured in .dapr/config.yaml
