@@ -11,7 +11,7 @@ import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.core.config import config
-from app.events.publisher import DaprEventPublisher
+from app.events.publishers.publisher import DaprEventPublisher
 
 
 class TestDaprIntegration:
