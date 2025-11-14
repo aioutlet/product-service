@@ -1,12 +1,25 @@
 """Shared test fixtures for unit, integration, and e2e tests"""
 import pytest
 import asyncio
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 from datetime import datetime, UTC
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.testclient import TestClient
 
+
+# Mock database connection before importing main
+@pytest.fixture(scope="session", autouse=True)
+def mock_db_connection():
+    """Mock MongoDB connection for all tests"""
+    with patch('app.db.mongodb.connect_to_mongo', new_callable=AsyncMock) as mock_connect, \
+         patch('app.db.mongodb.close_mongo_connection', new_callable=AsyncMock) as mock_close:
+        mock_connect.return_value = None
+        mock_close.return_value = None
+        yield
+
+
+# Import after mocking
 from main import app
 from app.models.product import Product
 from app.schemas.product import ProductCreate
