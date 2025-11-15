@@ -38,11 +38,20 @@ async def connect_to_mongo():
         
         if username and password:
             mongodb_url = f"mongodb://{username}:{password}@{host}:{port}/{database}?authSource=admin"
+            # Log sanitized URL for debugging
+            sanitized_url = f"mongodb://{username}:***@{host}:{port}/{database}?authSource=admin"
+            logger.info(f"MongoDB URL: {sanitized_url}", metadata={"event": "mongodb_url_debug"})
         else:
             mongodb_url = f"mongodb://{host}:{port}/{database}"
+            logger.info(f"MongoDB URL: {mongodb_url}", metadata={"event": "mongodb_url_debug"})
         
         db.client = AsyncIOMotorClient(mongodb_url)
         db.database = db.client[database]
+        
+        logger.info(
+            f"Database object set to: {database}",
+            metadata={"event": "db_object_debug", "database_name": database, "db_database_name": db.database.name}
+        )
         
         # Test connection
         await db.client.admin.command('ping')
