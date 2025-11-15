@@ -1,22 +1,15 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: product-pubsub
+  name: event-bus
 spec:
   type: pubsub.rabbitmq
   version: v1
   metadata:
-    # RabbitMQ connection settings - using new format
     - name: connectionString
       value: 'amqp://admin:admin123@127.0.0.1:5672'
-    - name: protocol
-      value: 'amqp'
-    - name: hostname
-      value: '127.0.0.1'
-    - name: username
-      value: 'admin'
-    - name: password
-      value: 'admin123'
+    - name: consumerID
+      value: 'product-service'
     - name: durable
       value: 'true'
     - name: deletedWhenUnused
@@ -24,7 +17,7 @@ spec:
     - name: autoAck
       value: 'false'
     - name: deliveryMode
-      value: '2' # Persistent messages
+      value: '2'
     - name: requeueInFailure
       value: 'true'
     - name: prefetchCount
@@ -33,7 +26,6 @@ spec:
       value: '5'
     - name: concurrency
       value: 'parallel'
-    # Exchange configuration
     - name: exchangeKind
       value: 'topic'
 scopes:
