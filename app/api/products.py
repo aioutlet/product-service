@@ -45,71 +45,29 @@ async def check_product_exists(
 
 # Product discovery endpoints
 @router.get(
-    "/storefront-data",
+    "/trending",
     response_model=dict,
     responses={503: {"model": ErrorResponseModel}},
     tags=["storefront"]
 )
-async def get_storefront_data(
+async def get_trending(
     products_limit: int = Query(4, ge=1, le=20, description="Max trending products to return"),
     categories_limit: int = Query(5, ge=1, le=20, description="Max trending categories to return"),
     service: ProductService = Depends(get_product_service),
 ):
     """
-    Get combined storefront data in a single optimized call.
+    Get trending products and categories in a single optimized call.
     
     Returns:
     - trending_products: Products with review_aggregates and trending scores
     - trending_categories: Categories with product counts and ratings
     
-    This endpoint replaces separate calls to /trending and /trending-categories,
+    This endpoint fetches both trending products and categories in one request,
     reducing round trips and improving storefront performance.
     
     Supports both Dapr and direct HTTP calls.
     """
     return await service.get_storefront_data(products_limit, categories_limit)
-
-
-@router.get(
-    "/trending-categories",
-    response_model=list[dict],
-    responses={503: {"model": ErrorResponseModel}},
-)
-async def get_trending_categories(
-    limit: int = Query(5, ge=1, le=20, description="Max trending categories to return"),
-    service: ProductService = Depends(get_product_service),
-):
-    """
-    Get trending categories based on product popularity.
-    
-    Trending algorithm per category:
-    - Product count in category
-    - Average rating across products
-    - Total reviews across products
-    - Score = (avg_rating × total_reviews × product_count)
-    - Returns top N categories by score
-    """
-    return await service.get_trending_categories(limit)
-
-
-@router.get(
-    "/trending",
-    response_model=list[ProductResponse],
-    responses={503: {"model": ErrorResponseModel}},
-)
-async def get_trending_products(
-    limit: int = Query(4, ge=1, le=20, description="Max trending products to return"),
-    service: ProductService = Depends(get_product_service),
-):
-    """
-    Get recently created products (trending placeholder).
-    
-    NOTE: Full trending algorithm with reviews/ratings should be implemented in Web BFF
-    by aggregating data from both Product Service and Review Service.
-    
-    This returns recently created products only.
-    """
-    return await service.get_trending_products(limit)
 
 
 # Product search and listing
@@ -132,13 +90,14 @@ async def search_products(
     max_price: float = Query(None, ge=0, description="Maximum price"),
     tags: list[str] = Query(None, description="Filter by tags"),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
-    limit: int = Query(20, ge=1, le=100, description="Max items to return"),
+    limit: int = Query(None, ge=1, le=1000, description="Max items to return (omit for all products)"),
     service: ProductService = Depends(get_product_service),
 ):
     """
     Search products by text in name and description with optional filters.
     Supports hierarchical filtering by department/category/subcategory.
     Returns paginated results with metadata.
+    If limit is not provided, returns all products matching the search.
     """
     # Add no-cache headers to prevent client-side caching
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -151,7 +110,7 @@ async def search_products(
 
 
 @router.get(
-    "/",
+    "",
     responses={404: {"model": ErrorResponseModel}},
 )
 async def list_products(
@@ -162,12 +121,13 @@ async def list_products(
     max_price: float = Query(None, ge=0, description="Maximum price"),
     tags: List[str] = Query(None, description="Filter by tags"),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
-    limit: int = Query(20, ge=1, le=100, description="Max items to return"),
+    limit: int = Query(None, ge=1, le=1000, description="Max items to return (omit for all products)"),
     service: ProductService = Depends(get_product_service),
 ):
     """
     List products with optional filters and pagination.
     Supports hierarchical filtering by department/category/subcategory.
+    If limit is not provided, returns all products matching the filters.
     """
     return await service.list_products(
         department, category, subcategory, min_price, max_price, tags, skip, limit

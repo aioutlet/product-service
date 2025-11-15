@@ -52,7 +52,8 @@ app = FastAPI(
     title="Product Service",
     description="Microservice for product management with clean architecture",
     version=config.service_version,
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False  # Prevent 307 redirects that break Dapr invoke with query params
 )
 
 # Configure error handlers

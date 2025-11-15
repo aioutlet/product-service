@@ -151,7 +151,7 @@ class ProductService:
                              max_price: float = None,
                              tags: List[str] = None,
                              skip: int = 0,
-                             limit: int = 20) -> ProductSearchResponse:
+                             limit: int = None) -> ProductSearchResponse:
         """Search products with filters"""
         if not search_text or not search_text.strip():
             raise ErrorResponse("Search text cannot be empty", status_code=400)
@@ -162,8 +162,12 @@ class ProductService:
         )
         
         # Calculate pagination metadata
-        current_page = (skip // limit) + 1 if limit > 0 else 1
-        total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
+        if limit is not None and limit > 0:
+            current_page = (skip // limit) + 1
+            total_pages = (total_count + limit - 1) // limit
+        else:
+            current_page = 1
+            total_pages = 1
         
         return ProductSearchResponse(
             products=products,
@@ -180,7 +184,7 @@ class ProductService:
                            max_price: float = None,
                            tags: List[str] = None,
                            skip: int = 0,
-                           limit: int = 20) -> Dict[str, Any]:
+                           limit: int = None) -> Dict[str, Any]:
         """List products with filters"""
         products, total_count = await self.repository.list_products(
             department, category, subcategory,
@@ -188,8 +192,12 @@ class ProductService:
         )
         
         # Calculate pagination metadata
-        current_page = (skip // limit) + 1 if limit > 0 else 1
-        total_pages = (total_count + limit - 1) // limit if limit > 0 else 1
+        if limit is not None and limit > 0:
+            current_page = (skip // limit) + 1
+            total_pages = (total_count + limit - 1) // limit
+        else:
+            current_page = 1
+            total_pages = 1
         
         logger.info(
             f"Listed {len(products)} products",
@@ -217,28 +225,6 @@ class ProductService:
             "current_page": current_page,
             "total_pages": total_pages
         }
-    
-    async def get_trending_categories(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """Get trending categories"""
-        categories = await self.repository.get_trending_categories(limit)
-        
-        logger.info(
-            f"Fetched {len(categories)} trending categories",
-            metadata={"event": "get_trending_categories", "count": len(categories)}
-        )
-        
-        return categories
-    
-    async def get_trending_products(self, limit: int = 4) -> List[ProductResponse]:
-        """Get trending products"""
-        products = await self.repository.get_trending_products(limit)
-        
-        logger.info(
-            f"Fetched {len(products)} trending products",
-            metadata={"event": "get_trending_products", "count": len(products)}
-        )
-        
-        return products
     
     async def get_admin_stats(self) -> ProductStatsResponse:
         """Get product statistics for admin dashboard"""

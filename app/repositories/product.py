@@ -212,7 +212,7 @@ class ProductRepository:
                      max_price: float = None,
                      tags: List[str] = None,
                      skip: int = 0,
-                     limit: int = 20) -> tuple[List[ProductResponse], int]:
+                     limit: int = None) -> tuple[List[ProductResponse], int]:
         """Search products with filters and pagination"""
         try:
             # Build query
@@ -228,7 +228,7 @@ class ProductRepository:
                     {"brand": search_pattern},
                 ]
             
-            # Hierarchical filters
+            # Hierarchical filters - case insensitive regex
             if department:
                 query["department"] = {"$regex": f"^{department}$", "$options": "i"}
             if category:
@@ -249,12 +249,16 @@ class ProductRepository:
             if tags:
                 query["tags"] = {"$in": tags}
             
-            # Execute search with pagination
-            cursor = self.collection.find(query).skip(skip).limit(limit)
-            docs = await cursor.to_list(length=limit)
-            
             # Get total count
             total_count = await self.collection.count_documents(query)
+            
+            # Execute search with pagination
+            cursor = self.collection.find(query).skip(skip)
+            if limit is not None:
+                cursor = cursor.limit(limit)
+                docs = await cursor.to_list(length=limit)
+            else:
+                docs = await cursor.to_list(length=None)
             
             # Convert to response models
             products = [self._doc_to_response(doc) for doc in docs]
@@ -273,7 +277,7 @@ class ProductRepository:
                            max_price: float = None,
                            tags: List[str] = None,
                            skip: int = 0,
-                           limit: int = 20) -> tuple[List[ProductResponse], int]:
+                           limit: int = None) -> tuple[List[ProductResponse], int]:
         """List products with filters and pagination"""
         try:
             query = {"is_active": True}
@@ -284,13 +288,13 @@ class ProductRepository:
                 metadata={"event": "query_debug", "collection": self.collection.name, "database": self.collection.database.name}
             )
             
-            # Hierarchical filtering
+            # Hierarchical filtering - case insensitive regex
             if department:
-                query["department"] = department
+                query["department"] = {"$regex": f"^{department}$", "$options": "i"}
             if category:
-                query["category"] = category
+                query["category"] = {"$regex": f"^{category}$", "$options": "i"}
             if subcategory:
-                query["subcategory"] = subcategory
+                query["subcategory"] = {"$regex": f"^{subcategory}$", "$options": "i"}
             
             # Price range filtering
             if min_price is not None or max_price is not None:
@@ -305,12 +309,16 @@ class ProductRepository:
             if tags:
                 query["tags"] = {"$in": tags}
             
-            # Execute query with pagination
-            cursor = self.collection.find(query).skip(skip).limit(limit)
-            docs = await cursor.to_list(length=limit)
-            
             # Get total count
             total_count = await self.collection.count_documents(query)
+            
+            # Execute query with pagination
+            cursor = self.collection.find(query).skip(skip)
+            if limit is not None:
+                cursor = cursor.limit(limit)
+                docs = await cursor.to_list(length=limit)
+            else:
+                docs = await cursor.to_list(length=None)
             
             # Convert to response models
             products = [self._doc_to_response(doc) for doc in docs]
@@ -322,7 +330,10 @@ class ProductRepository:
             raise ErrorResponse("Database error during product listing", status_code=503)
     
     async def get_trending_categories(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """Get trending categories by product count"""
+        """
+        Get trending categories by product count (used by storefront-data endpoint only).
+        This is an internal method for the combined storefront endpoint.
+        """
         try:
             pipeline = [
                 # Filter: only active products with valid categories
@@ -369,22 +380,6 @@ class ProductRepository:
         except PyMongoError as e:
             logger.error(f"MongoDB error getting trending categories: {e}")
             raise ErrorResponse("Database error during trending categories retrieval", status_code=503)
-    
-    async def get_trending_products(self, limit: int = 4) -> List[ProductResponse]:
-        """Get trending products (recently created active products)"""
-        try:
-            cursor = self.collection.find(
-                {"is_active": True}
-            ).sort("created_at", -1).limit(limit)
-            
-            docs = await cursor.to_list(length=limit)
-            products = [self._doc_to_response(doc) for doc in docs]
-            
-            return products
-            
-        except PyMongoError as e:
-            logger.error(f"MongoDB error getting trending products: {e}")
-            raise ErrorResponse("Database error during trending products retrieval", status_code=503)
     
     async def get_trending_products_with_scores(self, limit: int = 4) -> List[Dict]:
         """

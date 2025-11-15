@@ -20,4 +20,4 @@ dapr run \
   --resources-path "$SCRIPT_DIR/.dapr/components" \
   --config "$SCRIPT_DIR/.dapr/config.yaml" \
   --log-level warn \
-  -- python -m uvicorn main:app --host 0.0.0.0 --port 1001 --reload
+  -- python -m uvicorn main:app --host 0.0.0.0 --port 1001 --reload --reload-delay 2
