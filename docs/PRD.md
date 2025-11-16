@@ -1380,6 +1380,7 @@ Product Service stores product data in MongoDB with the following complete schem
   },
 
   // === AUDIT FIELDS ===
+  "is_active": true,
   "createdAt": "2025-10-01T10:00:00Z",
   "createdBy": "admin-user-123",
   "updatedAt": "2025-11-03T10:00:00Z",
@@ -1406,10 +1407,16 @@ Product Service stores product data in MongoDB with the following complete schem
 // Unique SKU Index
 { "sku": 1 }  // Unique constraint
 
+// Active Status Index (for soft delete queries)
+{ "is_active": 1 }
+
 // Search & Filter Indexes
 { "status": 1, "taxonomy.category": 1, "price": 1 }
 { "status": 1, "reviewAggregates.averageRating": -1 }
 { "status": 1, "createdAt": -1 }
+
+// Compound Index for Common Queries
+{ "is_active": 1, "status": 1, "taxonomy.category": 1 }
 
 // Full-Text Search Index
 { "name": "text", "description": "text", "tags": "text", "searchKeywords": "text" }

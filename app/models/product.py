@@ -43,6 +43,24 @@ class ReviewAggregates(BaseModel):
     last_updated: datetime = Field(default_factory=utc_now)
 
 
+class AvailabilityStatus(BaseModel):
+    """Model for inventory availability status (denormalized from Inventory Service)"""
+    status: str = Field(default="unknown")  # in-stock, out-of-stock, low-stock, unknown
+    available_quantity: int = Field(default=0, ge=0)
+    last_updated: datetime = Field(default_factory=utc_now)
+
+
+class ProductTaxonomy(BaseModel):
+    """Hierarchical category taxonomy"""
+    department: Optional[str] = None      # Level 1: Women, Men, Kids, Electronics
+    category: Optional[str] = None        # Level 2: Clothing, Accessories, Computers
+    subcategory: Optional[str] = None     # Level 3: Tops, Laptops, Headphones
+    productType: Optional[str] = Field(None, alias="product_type")  # Level 4: T-Shirts, Gaming Laptops
+    
+    class Config:
+        populate_by_name = True
+
+
 class ProductBase(BaseModel):
     """Base Product model with all common fields"""
     
@@ -52,12 +70,10 @@ class ProductBase(BaseModel):
     price: float
     brand: Optional[str] = None
     sku: Optional[str] = None
+    status: str = Field(default="active")  # active, inactive, draft
     
-    # Hierarchical category taxonomy
-    department: Optional[str] = None      # Level 1: Women, Men, Kids, Electronics
-    category: Optional[str] = None        # Level 2: Clothing, Accessories, Computers
-    subcategory: Optional[str] = None     # Level 3: Tops, Laptops, Headphones
-    product_type: Optional[str] = None    # Level 4: T-Shirts, Gaming Laptops
+    # Hierarchical category taxonomy (nested object per PRD)
+    taxonomy: ProductTaxonomy = Field(default_factory=ProductTaxonomy)
     
     # Media and metadata
     images: List[str] = []
@@ -70,16 +86,19 @@ class ProductBase(BaseModel):
     # Product specifications
     specifications: Dict[str, str] = {}
     
-    # Review aggregates
-    review_aggregates: ReviewAggregates = Field(default_factory=ReviewAggregates)
+    # Denormalized data from other services
+    availabilityStatus: Optional[AvailabilityStatus] = Field(None, alias="availability_status")
+    reviewAggregates: Optional[ReviewAggregates] = Field(None, alias="review_aggregates")
     
     # Audit trail
     created_by: str = "system"
     updated_by: Optional[str] = None
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
-    is_active: bool = True
     history: List[ProductHistoryEntry] = []
+    
+    class Config:
+        populate_by_name = True
 
 
 class Product(ProductBase):

@@ -5,7 +5,7 @@ API schemas for Product endpoints following FastAPI best practices
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from app.models.product import ProductBase, ProductHistoryEntry
+from app.models.product import ProductBase, ProductHistoryEntry, ProductTaxonomy
 
 
 class ProductCreate(BaseModel):
@@ -15,12 +15,10 @@ class ProductCreate(BaseModel):
     price: float = Field(..., ge=0)
     brand: Optional[str] = Field(None, max_length=100)
     sku: Optional[str] = Field(None, max_length=50)
+    status: str = Field(default="active")
     
-    # Hierarchical category taxonomy
-    department: Optional[str] = Field(None, max_length=100)
-    category: Optional[str] = Field(None, max_length=100)
-    subcategory: Optional[str] = Field(None, max_length=100)
-    product_type: Optional[str] = Field(None, max_length=100)
+    # Hierarchical category taxonomy (nested object per PRD)
+    taxonomy: ProductTaxonomy = Field(default_factory=ProductTaxonomy)
     
     # Media and metadata
     images: List[str] = []
@@ -41,12 +39,10 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     brand: Optional[str] = Field(None, max_length=100)
     sku: Optional[str] = Field(None, max_length=50)
+    status: Optional[str] = None
     
-    # Hierarchical category taxonomy
-    department: Optional[str] = Field(None, max_length=100)
-    category: Optional[str] = Field(None, max_length=100)
-    subcategory: Optional[str] = Field(None, max_length=100)
-    product_type: Optional[str] = Field(None, max_length=100)
+    # Hierarchical category taxonomy (nested object per PRD)
+    taxonomy: Optional[ProductTaxonomy] = None
     
     # Media and metadata
     images: Optional[List[str]] = None

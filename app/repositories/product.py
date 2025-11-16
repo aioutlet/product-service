@@ -228,13 +228,13 @@ class ProductRepository:
                     {"brand": search_pattern},
                 ]
             
-            # Hierarchical filters - case insensitive regex
+            # Hierarchical filters - case insensitive regex (nested taxonomy)
             if department:
-                query["department"] = {"$regex": f"^{department}$", "$options": "i"}
+                query["taxonomy.department"] = {"$regex": f"^{department}$", "$options": "i"}
             if category:
-                query["category"] = {"$regex": f"^{category}$", "$options": "i"}
+                query["taxonomy.category"] = {"$regex": f"^{category}$", "$options": "i"}
             if subcategory:
-                query["subcategory"] = {"$regex": f"^{subcategory}$", "$options": "i"}
+                query["taxonomy.subcategory"] = {"$regex": f"^{subcategory}$", "$options": "i"}
             
             # Price range
             if min_price is not None or max_price is not None:
@@ -288,13 +288,13 @@ class ProductRepository:
                 metadata={"event": "query_debug", "collection": self.collection.name, "database": self.collection.database.name}
             )
             
-            # Hierarchical filtering - case insensitive regex
+            # Hierarchical filtering - case insensitive regex (nested taxonomy per PRD)
             if department:
-                query["department"] = {"$regex": f"^{department}$", "$options": "i"}
+                query["taxonomy.department"] = {"$regex": f"^{department}$", "$options": "i"}
             if category:
-                query["category"] = {"$regex": f"^{category}$", "$options": "i"}
+                query["taxonomy.category"] = {"$regex": f"^{category}$", "$options": "i"}
             if subcategory:
-                query["subcategory"] = {"$regex": f"^{subcategory}$", "$options": "i"}
+                query["taxonomy.subcategory"] = {"$regex": f"^{subcategory}$", "$options": "i"}
             
             # Price range filtering
             if min_price is not None or max_price is not None:
