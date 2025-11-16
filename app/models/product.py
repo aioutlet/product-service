@@ -91,6 +91,7 @@ class ProductBase(BaseModel):
     reviewAggregates: Optional[ReviewAggregates] = Field(None, alias="review_aggregates")
     
     # Audit trail
+    is_active: bool = True
     created_by: str = "system"
     updated_by: Optional[str] = None
     created_at: datetime = Field(default_factory=utc_now)
