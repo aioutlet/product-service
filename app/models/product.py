@@ -50,6 +50,13 @@ class AvailabilityStatus(BaseModel):
     last_updated: datetime = Field(default_factory=utc_now)
 
 
+class ProductVariant(BaseModel):
+    """Model for product variants (specific color/size combinations with unique SKU)"""
+    sku: str = Field(..., description="Unique SKU for this variant")
+    color: Optional[str] = Field(None, description="Color of this variant")
+    size: Optional[str] = Field(None, description="Size of this variant")
+
+
 class ProductTaxonomy(BaseModel):
     """Hierarchical category taxonomy"""
     department: Optional[str] = None      # Level 1: Women, Men, Kids, Electronics
@@ -82,6 +89,7 @@ class ProductBase(BaseModel):
     # Product variations
     colors: List[str] = []
     sizes: List[str] = []
+    variants: List[ProductVariant] = Field(default_factory=list, description="SKU variants for each color/size combination")
     
     # Product specifications
     specifications: Dict[str, str] = {}
