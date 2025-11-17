@@ -301,6 +301,26 @@ class ProductService:
                 status_code=500
             )
     
+    async def get_all_categories(self) -> List[str]:
+        """Get all distinct categories from active products"""
+        logger.info("Fetching all categories", metadata={"event": "get_all_categories"})
+        
+        try:
+            categories = await self.repository.get_all_categories()
+            
+            logger.info(
+                f"Fetched {len(categories)} categories",
+                metadata={"event": "categories_fetched", "count": len(categories)}
+            )
+            
+            return categories
+        except Exception as e:
+            logger.error(
+                f"Error fetching categories: {str(e)}",
+                metadata={"event": "get_categories_error", "error": str(e)}
+            )
+            raise
+    
     async def check_product_exists(self, product_id: str) -> Dict[str, bool]:
         """Check if product exists (for inter-service communication)"""
         exists = await self.repository.exists(product_id)

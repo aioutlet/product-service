@@ -24,6 +24,22 @@ from app.core.logger import logger
 router = APIRouter()
 
 
+# Categories endpoint
+@router.get(
+    "/categories",
+    response_model=List[str],
+    tags=["categories"]
+)
+async def get_categories(
+    service: ProductService = Depends(get_product_service),
+):
+    """
+    Get all distinct product categories.
+    Returns a sorted list of category names from active products.
+    """
+    return await service.get_all_categories()
+
+
 # Internal endpoints (for inter-service communication)
 @router.get(
     "/internal/{product_id}/exists",

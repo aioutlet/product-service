@@ -539,3 +539,15 @@ class ProductRepository:
         except PyMongoError as e:
             logger.error(f"MongoDB error checking product existence: {e}")
             return False
+
+    async def get_all_categories(self) -> List[str]:
+        """Get all distinct categories from active products"""
+        try:
+            categories = await self.collection.distinct(
+                "category",
+                {"is_active": True, "category": {"$ne": None, "$ne": ""}}
+            )
+            return sorted(categories)
+        except PyMongoError as e:
+            logger.error(f"MongoDB error getting categories: {e}")
+            raise ErrorResponse(f"Failed to fetch categories: {str(e)}", status_code=500)
