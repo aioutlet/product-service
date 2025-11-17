@@ -340,13 +340,13 @@ class ProductRepository:
                 {
                     "$match": {
                         "is_active": True,
-                        "category": {"$exists": True, "$ne": None, "$ne": ""}
+                        "taxonomy.category": {"$exists": True, "$ne": None, "$ne": ""}
                     }
                 },
                 # Group by category and count
                 {
                     "$group": {
-                        "_id": "$category",
+                        "_id": "$taxonomy.category",
                         "product_count": {"$sum": 1},
                         "featured_product": {
                             "$first": {
