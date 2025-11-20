@@ -10,7 +10,7 @@ from fastapi import Header, HTTPException, status, Depends
 from app.core.config import config
 from app.core.logger import logger
 from app.models.user import User
-from app.clients.dapr_secret_client import get_jwt_config
+from app.core.secret_manager import get_jwt_config
 
 # Cache JWT config to avoid repeated Dapr calls
 _jwt_config_cache = None
@@ -51,7 +51,8 @@ async def decode_jwt(token: str) -> dict:
             token,
             jwt_config['secret'],
             algorithms=[jwt_config['algorithm']],
-            audience='aioutlet-platform'  # Verify audience matches auth-service
+            issuer=jwt_config['issuer'],  # Verify issuer (auth-service)
+            audience=jwt_config['audience']  # Verify audience (aioutlet-platform)
         )
         return payload
     except jwt.ExpiredSignatureError:
@@ -109,29 +110,6 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized: Invalid or expired token"
         )
-
-
-async def get_current_user_optional(
-    authorization: Optional[str] = Header(None)
-) -> Optional[User]:
-    """
-    Optional authentication dependency.
-    Returns User if valid token provided, None otherwise.
-    
-    Usage:
-        @router.get("/")
-        async def list_items(user: Optional[User] = Depends(get_current_user_optional)):
-            # user may be None
-            pass
-    """
-    if not authorization:
-        return None
-    
-    try:
-        return await get_current_user(authorization)
-    except HTTPException:
-        # Invalid token, but optional auth so return None
-        return None
 
 
 async def require_admin(user: User = Depends(get_current_user)) -> User:

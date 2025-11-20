@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 from app.core.errors import ErrorResponse
 from app.core.logger import logger
 from app.repositories.product import ProductRepository
-from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductSearchResponse, ProductStatsResponse
+from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductStatsResponse
 from app.events import event_publisher
 from app.middleware.trace_context import get_trace_id
 
@@ -142,54 +142,30 @@ class ProductService:
         
         return product
     
-    async def search_products(self,
-                             search_text: str,
-                             department: str = None,
-                             category: str = None,
-                             subcategory: str = None,
-                             min_price: float = None,
-                             max_price: float = None,
-                             tags: List[str] = None,
-                             skip: int = 0,
-                             limit: int = None) -> ProductSearchResponse:
-        """Search products with filters"""
-        if not search_text or not search_text.strip():
-            raise ErrorResponse("Search text cannot be empty", status_code=400)
-        
-        products, total_count = await self.repository.search(
-            search_text, department, category, subcategory,
-            min_price, max_price, tags, skip, limit
-        )
-        
-        # Calculate pagination metadata
-        if limit is not None and limit > 0:
-            current_page = (skip // limit) + 1
-            total_pages = (total_count + limit - 1) // limit
+    async def get_products(self,
+                          search_text: str = None,
+                          department: str = None,
+                          category: str = None,
+                          subcategory: str = None,
+                          min_price: float = None,
+                          max_price: float = None,
+                          tags: List[str] = None,
+                          skip: int = 0,
+                          limit: int = None) -> Dict[str, Any]:
+        """Get products with optional search and filters"""
+        # If search_text is provided, perform search; otherwise, list products
+        if search_text and search_text.strip():
+            products, total_count = await self.repository.search(
+                search_text, department, category, subcategory,
+                min_price, max_price, tags, skip, limit
+            )
+            event_name = "search_products"
         else:
-            current_page = 1
-            total_pages = 1
-        
-        return ProductSearchResponse(
-            products=products,
-            total_count=total_count,
-            current_page=current_page,
-            total_pages=total_pages
-        )
-    
-    async def list_products(self,
-                           department: str = None,
-                           category: str = None,
-                           subcategory: str = None,
-                           min_price: float = None,
-                           max_price: float = None,
-                           tags: List[str] = None,
-                           skip: int = 0,
-                           limit: int = None) -> Dict[str, Any]:
-        """List products with filters"""
-        products, total_count = await self.repository.list_products(
-            department, category, subcategory,
-            min_price, max_price, tags, skip, limit
-        )
+            products, total_count = await self.repository.list_products(
+                department, category, subcategory,
+                min_price, max_price, tags, skip, limit
+            )
+            event_name = "list_products"
         
         # Calculate pagination metadata
         if limit is not None and limit > 0:
@@ -200,11 +176,12 @@ class ProductService:
             total_pages = 1
         
         logger.info(
-            f"Listed {len(products)} products",
+            f"Fetched {len(products)} products",
             metadata={
-                "event": "list_products",
+                "event": event_name,
                 "count": len(products),
                 "total": total_count,
+                "search_text": search_text,
                 "filters": {
                     "department": department,
                     "category": category,
@@ -240,14 +217,14 @@ class ProductService:
         
         return ProductStatsResponse(**stats)
     
-    async def get_storefront_data(
+    async def get_trending_products_and_categories(
         self, 
         products_limit: int = 4, 
         categories_limit: int = 5
     ) -> Dict[str, Any]:
         """
-        Get combined storefront data in a single call.
-        Returns trending products and categories optimized for homepage.
+        Get trending products and categories in a single call.
+        Optimized for homepage display.
         
         Products include:
         - Full product details with review_aggregates
@@ -260,9 +237,9 @@ class ProductService:
         """
         try:
             logger.info(
-                "Fetching storefront data",
+                "Fetching trending products and categories",
                 metadata={
-                    "event": "get_storefront_data",
+                    "event": "get_trending_products_and_categories",
                     "products_limit": products_limit,
                     "categories_limit": categories_limit
                 }
@@ -275,9 +252,9 @@ class ProductService:
             )
             
             logger.info(
-                "Storefront data fetched successfully",
+                "Trending products and categories fetched successfully",
                 metadata={
-                    "event": "storefront_data_fetched",
+                    "event": "trending_data_fetched",
                     "products_count": len(products) if products else 0,
                     "categories_count": len(categories) if categories else 0
                 }
@@ -289,15 +266,15 @@ class ProductService:
             }
         except Exception as e:
             logger.error(
-                f"Error fetching storefront data: {str(e)}",
+                f"Error fetching trending data: {str(e)}",
                 metadata={
-                    "event": "get_storefront_data_error",
+                    "event": "get_trending_data_error",
                     "error": str(e),
                     "error_type": type(e).__name__
                 }
             )
             raise ErrorResponse(
-                f"Failed to fetch storefront data: {str(e)}", 
+                f"Failed to fetch trending products and categories: {str(e)}", 
                 status_code=500
             )
     

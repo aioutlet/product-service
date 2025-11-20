@@ -7,29 +7,19 @@ Falls back to environment variables if Dapr is not available.
 import os
 from typing import Dict, Any, Optional
 
-try:
-    from dapr.clients import DaprClient
-    DAPR_AVAILABLE = True
-except ImportError:
-    DAPR_AVAILABLE = False
-
+from dapr.clients import DaprClient
 from app.core.logger import logger
 from app.core.config import config
 
 
-class DaprSecretManager:
+class SecretManager:
     """
     Secret manager that uses Dapr secret store building block.
     """
     
     def __init__(self):
         self.environment = config.environment
-        
-        # Use appropriate secret store based on environment
-        if self.environment == 'production':
-            self.secret_store_name = 'azure-keyvault-secret-store'
-        else:
-            self.secret_store_name = 'local-secret-store'
+        self.secret_store_name = 'secret-store'
         
         logger.info(
             f"Secret manager initialized",
@@ -57,41 +47,11 @@ class DaprSecretManager:
                     key=secret_name
                 )
                 
-                # Handle different response types
-                if hasattr(response.secret, 'get'):
-                    # Dict-like object, try to get the value by key
-                    value = response.secret.get(secret_name)
-                    if value is not None:
-                        logger.debug(
-                            f"Retrieved secret from Dapr",
-                            metadata={
-                                "event": "secret_retrieved",
-                                "secret_name": secret_name,
-                                "source": "dapr",
-                                "store": self.secret_store_name
-                            }
-                        )
-                        return str(value)
-                    
-                    # If not found by key, try getting first value
-                    if response.secret:
-                        values = list(response.secret.values())
-                        if values:
-                            logger.debug(
-                                f"Retrieved secret from Dapr (first value)",
-                                metadata={
-                                    "event": "secret_retrieved",
-                                    "secret_name": secret_name,
-                                    "source": "dapr",
-                                    "store": self.secret_store_name
-                                }
-                            )
-                            return str(values[0])
-                
-                elif response.secret:
-                    # Direct value
+                # Dapr returns a dictionary with the secret key
+                if response.secret and secret_name in response.secret:
+                    value = response.secret[secret_name]
                     logger.debug(
-                        f"Retrieved secret from Dapr (direct)",
+                        f"Retrieved secret from Dapr",
                         metadata={
                             "event": "secret_retrieved",
                             "secret_name": secret_name,
@@ -99,9 +59,8 @@ class DaprSecretManager:
                             "store": self.secret_store_name
                         }
                     )
-                    return str(response.secret)
-                    
-                # If we get here, no value was found in Dapr
+                    return str(value)
+                
                 logger.warning(
                     f"Secret not found in Dapr store",
                     metadata={
@@ -123,22 +82,10 @@ class DaprSecretManager:
                 }
             )
             raise
-    
-    def get_multiple_secrets(self, secret_names: list[str]) -> Dict[str, Optional[str]]:
-        """
-        Get multiple secrets at once.
-        
-        Args:
-            secret_names: List of secret names to retrieve
-            
-        Returns:
-            Dictionary mapping secret names to their values
-        """
-        return {name: self.get_secret(name) for name in secret_names}
 
 
 # Global instance
-secret_manager = DaprSecretManager()
+secret_manager = SecretManager()
 
 
 def get_database_config() -> Dict[str, Any]:
@@ -202,9 +149,13 @@ def get_jwt_config() -> Dict[str, Any]:
     # Get from environment variables directly - no need for secret store
     jwt_algorithm = os.environ.get('JWT_ALGORITHM', 'HS256')
     jwt_expiration = int(os.environ.get('JWT_EXPIRATION', '3600'))
+    jwt_issuer = os.environ.get('JWT_ISSUER', 'auth-service')
+    jwt_audience = os.environ.get('JWT_AUDIENCE', 'aioutlet-platform')
     
     return {
         'secret': jwt_secret,
         'algorithm': jwt_algorithm,
-        'expiration': jwt_expiration
+        'expiration': jwt_expiration,
+        'issuer': jwt_issuer,
+        'audience': jwt_audience
     }

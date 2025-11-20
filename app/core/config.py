@@ -3,7 +3,7 @@ Core configuration and settings for the Product Service
 Following FastAPI best practices for configuration management
 
 Note: For sensitive secrets (database credentials, JWT secrets), use:
-- from app.clients.dapr_secret_client import get_database_config, get_jwt_config
+- from app.core.secret_manager import get_database_config, get_jwt_config
 """
 
 import os

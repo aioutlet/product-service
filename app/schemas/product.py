@@ -5,7 +5,7 @@ API schemas for Product endpoints following FastAPI best practices
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from app.models.product import ProductBase, ProductHistoryEntry, ProductTaxonomy
+from app.models.product import ProductBase, ProductTaxonomy
 
 
 class ProductCreate(BaseModel):
@@ -62,14 +62,6 @@ class ProductResponse(ProductBase):
     
     class Config:
         from_attributes = True
-
-
-class ProductSearchResponse(BaseModel):
-    """Response schema for product search with pagination"""
-    products: List[ProductResponse]
-    total_count: int
-    current_page: int
-    total_pages: int
 
 
 class ProductStatsResponse(BaseModel):

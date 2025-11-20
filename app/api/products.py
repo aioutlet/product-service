@@ -8,14 +8,13 @@ from typing import List
 from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.dependencies.product import get_product_service
-from app.dependencies.auth import get_current_user, get_current_user_optional
+from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.services.product import ProductService
 from app.schemas.product import (
     ProductCreate, 
     ProductUpdate, 
-    ProductResponse, 
-    ProductSearchResponse,
+    ProductResponse,
     ProductStatsResponse
 )
 from app.core.errors import ErrorResponseModel, ErrorResponse
@@ -83,14 +82,13 @@ async def get_trending(
     
     Supports both Dapr and direct HTTP calls.
     """
-    return await service.get_storefront_data(products_limit, categories_limit)
+    return await service.get_trending_products_and_categories(products_limit, categories_limit)
 
 
 # Product search and listing
 @router.get(
     "/search",
-    response_model=ProductSearchResponse,
-    responses={400: {"model": ErrorResponseModel}, 404: {"model": ErrorResponseModel}},
+    responses={404: {"model": ErrorResponseModel}},
 )
 async def search_products(
     response: Response,
@@ -120,8 +118,9 @@ async def search_products(
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
 
-    return await service.search_products(
-        q, department, category, subcategory, min_price, max_price, tags, skip, limit
+    return await service.get_products(
+        search_text=q, department=department, category=category, subcategory=subcategory, 
+        min_price=min_price, max_price=max_price, tags=tags, skip=skip, limit=limit
     )
 
 
@@ -145,8 +144,9 @@ async def list_products(
     Supports hierarchical filtering by department/category/subcategory.
     If limit is not provided, returns all products matching the filters.
     """
-    return await service.list_products(
-        department, category, subcategory, min_price, max_price, tags, skip, limit
+    return await service.get_products(
+        search_text=None, department=department, category=category, subcategory=subcategory,
+        min_price=min_price, max_price=max_price, tags=tags, skip=skip, limit=limit
     )
 
 
