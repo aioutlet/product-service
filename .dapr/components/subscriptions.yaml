@@ -1,0 +1,64 @@
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: review-created-subscription
+spec:
+  topic: review-events
+  route: /dapr/events/review.created
+  pubsubname: review-pubsub
+  metadata:
+    rawPayload: "false"
+scopes:
+  - product-service
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: review-updated-subscription
+spec:
+  topic: review-events
+  route: /dapr/events/review.updated
+  pubsubname: review-pubsub
+  metadata:
+    rawPayload: "false"
+scopes:
+  - product-service
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: review-deleted-subscription
+spec:
+  topic: review-events
+  route: /dapr/events/review.deleted
+  pubsubname: review-pubsub
+  metadata:
+    rawPayload: "false"
+scopes:
+  - product-service
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: inventory-updated-subscription
+spec:
+  topic: inventory.updated
+  route: /dapr/events/inventory.updated
+  pubsubname: event-bus
+  metadata:
+    rawPayload: "false"
+scopes:
+  - product-service
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: inventory-low-stock-subscription
+spec:
+  topic: inventory.low_stock
+  route: /dapr/events/inventory.low_stock
+  pubsubname: event-bus
+  metadata:
+    rawPayload: "false"
+scopes:
+  - product-service
