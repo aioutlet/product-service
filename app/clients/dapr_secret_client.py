@@ -180,12 +180,31 @@ def get_database_config() -> Dict[str, Any]:
 def get_jwt_config() -> Dict[str, Any]:
     """
     Get JWT configuration from secrets or environment variables.
+    Only JWT_SECRET is truly secret - algorithm and expiration are just config.
     
     Returns:
         Dictionary with JWT configuration parameters
     """
+    # Only the secret key is actually secret - get it securely
+    jwt_secret = secret_manager.get_secret('JWT_SECRET')
+    if not jwt_secret:
+        # Fallback to environment variable (for local dev)
+        jwt_secret = os.environ.get('JWT_SECRET', 'your_jwt_secret_key')
+        logger.warning(
+            "JWT_SECRET not found in secret store, using environment variable or default",
+            metadata={
+                "event": "jwt_secret_fallback",
+                "source": "environment" if os.environ.get('JWT_SECRET') else "default"
+            }
+        )
+    
+    # Algorithm and expiration are just configuration, not secrets
+    # Get from environment variables directly - no need for secret store
+    jwt_algorithm = os.environ.get('JWT_ALGORITHM', 'HS256')
+    jwt_expiration = int(os.environ.get('JWT_EXPIRATION', '3600'))
+    
     return {
-        'secret': secret_manager.get_secret('JWT_SECRET') or 'your_jwt_secret_key',
-        'algorithm': secret_manager.get_secret('JWT_ALGORITHM') or 'HS256',
-        'expiration': int(secret_manager.get_secret('JWT_EXPIRATION') or '3600')
+        'secret': jwt_secret,
+        'algorithm': jwt_algorithm,
+        'expiration': jwt_expiration
     }

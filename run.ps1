@@ -2,6 +2,8 @@
 # Run Product Service with Dapr sidecar
 # Usage: .\run.ps1
 
+$Host.UI.RawUI.WindowTitle = "Product Service"
+
 Write-Host "Starting Product Service with Dapr..." -ForegroundColor Green
 Write-Host "Service will be available at: http://localhost:1001" -ForegroundColor Cyan
 Write-Host "API documentation: http://localhost:1001/docs" -ForegroundColor Cyan
