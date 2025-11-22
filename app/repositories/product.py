@@ -497,6 +497,7 @@ class ProductRepository:
     async def get_stats(self) -> Dict[str, int]:
         """Get product statistics for admin dashboard"""
         try:
+            # Count all products (including inactive) for accurate dashboard stats
             total = await self.collection.count_documents({})
             active = await self.collection.count_documents({"is_active": True})
             
