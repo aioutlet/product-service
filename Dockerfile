@@ -42,6 +42,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM dependencies AS development
 
 # Copy application code
+# Note: In development, mount code as volume: docker run -v ./:/app
 COPY --chown=productuser:appgroup . .
 
 # Create logs directory
@@ -53,9 +54,9 @@ USER productuser
 # Expose port
 EXPOSE 1001
 
-# Health check
+# Health check (using Python to avoid curl dependency)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:1001/readiness || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:1001/readiness')" || exit 1
 
 # Start development server with auto-reload
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "1001", "--reload"]
@@ -67,16 +68,13 @@ FROM base AS production
 
 # Copy installed dependencies from dependencies stage
 COPY --from=dependencies /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=dependencies /usr/local/bin /usr/local/bin
+COPY --from=dependencies /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
-# Copy application code
+# Copy application code (unnecessary files excluded via .dockerignore)
 COPY --chown=productuser:appgroup . .
 
 # Create logs directory
 RUN mkdir -p logs && chown -R productuser:appgroup logs
-
-# Remove unnecessary files for production
-RUN rm -rf tests/ .git/ .github/ .vscode/ *.md .env.* docker-compose* __pycache__/ .pytest_cache/
 
 # Switch to non-root user
 USER productuser
@@ -84,14 +82,17 @@ USER productuser
 # Expose port
 EXPOSE 1001
 
-# Health check
+# Health check (using Python to avoid curl dependency)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:1001/readiness || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:1001/readiness')" || exit 1
 
-# Start production server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "1001", "--workers", "4"]
+# Start production server (workers configurable via WORKERS env var, default: 4)
+CMD sh -c "uvicorn main:app --host 0.0.0.0 --port 1001 --workers ${WORKERS:-4}"
 
-# Labels for better image management
+# Labels for better image management and security scanning
 LABEL maintainer="AIOutlet Team"
 LABEL service="product-service"
 LABEL version="1.0.0"
+LABEL org.opencontainers.image.source="https://github.com/aioutlet/aioutlet"
+LABEL org.opencontainers.image.description="Product Service for AIOutlet platform"
+LABEL org.opencontainers.image.vendor="AIOutlet"
