@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # MongoDB for Product Service
+  product-mongodb:
+    image: mongo:latest
+    container_name: product-mongodb
+    restart: unless-stopped
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: product_service_db
+    volumes:
+      - product_mongodb_data:/data/db
+    networks:
+      - aioutlet-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Product Service
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: product-service
+    restart: unless-stopped
+    ports:
+      - "1002:1002"
+    environment:
+      - FLASK_ENV=production
+      - PORT=1002
+      - MONGODB_URI=mongodb://admin:admin123@product-mongodb:27017/product_service_db?authSource=admin
+      - RABBITMQ_URL=amqp://admin:admin123@rabbitmq-message-broker:5672
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+    depends_on:
+      product-mongodb:
+        condition: service_healthy
+    networks:
+      - aioutlet-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  product_mongodb_data:
+    name: product_mongodb_data
+
+networks:
+  aioutlet-network:
+    external: true
